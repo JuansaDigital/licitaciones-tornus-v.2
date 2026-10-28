@@ -121,3 +121,4 @@ class ConfiguracionController extends Controller
         return back()->with('status', "El usuario {$nombre} ha sido eliminado del sistema.");
     }
 }
+
