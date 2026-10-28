@@ -4,6 +4,7 @@ use App\Http\Controllers\AfinidadController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CarteraController;
+use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\MarketController;
 use App\Http\Controllers\RadarController;
 use App\Services\MarketService;
@@ -35,6 +36,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/seleccionar-pais', [MarketController::class, 'showSelect'])->name('market.select');
     Route::get('/seleccionar-pais/{market}', [MarketController::class, 'selectMarket'])->name('market.set');
     Route::get('/market/switch/{market}', [MarketController::class, 'selectMarket'])->name('market.switch');
+
+    // Módulo de Configuración de Usuarios y Roles
+    Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion');
+    Route::post('/configuracion/usuarios', [ConfiguracionController::class, 'store'])->name('configuracion.usuarios.store');
+    Route::post('/configuracion/usuarios/{id}/password', [ConfiguracionController::class, 'updatePassword'])->name('configuracion.usuarios.password');
+    Route::post('/configuracion/usuarios/{id}/toggle-status', [ConfiguracionController::class, 'toggleStatus'])->name('configuracion.usuarios.toggle_status');
+    Route::delete('/configuracion/usuarios/{id}', [ConfiguracionController::class, 'destroy'])->name('configuracion.usuarios.destroy');
 
     // Módulo A & B: Radar en Vivo y Filtros
     Route::get('/radar', [RadarController::class, 'index'])->name('radar');

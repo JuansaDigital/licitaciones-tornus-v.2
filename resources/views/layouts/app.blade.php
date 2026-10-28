@@ -66,11 +66,21 @@
                         </a>
                     </div>
 
-                    <!-- Usuario y Logout -->
-                    <div class="flex items-center gap-3 pl-2 border-l border-[#15424d]">
+                    <!-- Usuario, Configuración y Logout -->
+                    <div class="flex items-center gap-2 sm:gap-3 pl-2 border-l border-[#15424d]">
                         <span class="hidden lg:inline-block text-xs font-mono text-[#9db3b4]">
                             {{ Auth::user()->name ?? 'Usuario' }}
                         </span>
+
+                        <a href="{{ route('configuracion') }}" 
+                            class="p-1.5 text-[#9db3b4] hover:text-[#fbfb75] hover:bg-[#0b4a57] rounded transition-colors"
+                            title="Configuración de Equipo y Usuarios">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0-1.82-.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </a>
+
                         <form action="{{ route('logout') }}" method="POST" class="inline">
                             @csrf
                             <button type="submit" title="Cerrar Sesión" class="p-1.5 text-[#9db3b4] hover:text-[#fbfb75] hover:bg-[#0b4a57] rounded transition-colors cursor-pointer">

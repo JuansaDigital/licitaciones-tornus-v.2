@@ -27,6 +27,19 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::user();
+            if (!$user->isActivo()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->withErrors([
+                    'email' => 'Esta cuenta se encuentra desactivada. Contacta al administrador.',
+                ])->onlyInput('email');
+            }
+
+            $user->ultimo_acceso = now();
+            $user->save();
+
             $request->session()->regenerate();
             // La pantalla de selección de país viene después dentro del panel
             return redirect()->route('market.select');
