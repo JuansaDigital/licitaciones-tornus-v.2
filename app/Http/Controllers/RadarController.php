@@ -6,6 +6,7 @@ use App\Models\Licitacion;
 use App\Services\Ingestion\OecePeruService;
 use App\Services\Ingestion\SecopColombiaService;
 use App\Services\MarketService;
+use App\Services\RadarFilterService;
 use Illuminate\Http\Request;
 
 class RadarController extends Controller
@@ -13,9 +14,22 @@ class RadarController extends Controller
     public function index(Request $request)
     {
         $connection = MarketService::connection();
+        $currentMarket = MarketService::current();
         $query = Licitacion::on($connection);
 
-        // 1. Filtro de búsqueda textual con Anti-Falsos Positivos
+        // 0. Cargar palabras clave y exclusiones activas
+        $filters = RadarFilterService::getData($currentMarket);
+        $keywords = $filters['keywords'];
+        $exclusions = $filters['exclusions'];
+
+        // 1. REGLA ESTRICTA DE VIGENCIA: Excluir propuestas vencidas y canceladas
+        $today = now()->toDateString();
+        $query->where(function ($q) use ($today) {
+            $q->whereNull('fecha_cierre')
+              ->orWhereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today]);
+        })->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado']);
+
+        // 2. Aplicar filtro de búsqueda textual
         $search = trim($request->input('q', ''));
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
@@ -35,13 +49,21 @@ class RadarController extends Controller
             }
         }
 
-        // 2. Filtro territorial
+        // 3. Aplicar filtro de exclusiones automáticas (si no está buscando explícitamente esa palabra)
+        foreach ($exclusions as $ex) {
+            $exTrim = trim($ex);
+            if (!empty($exTrim) && (empty($search) || stripos($search, $exTrim) === false)) {
+                $query->where('objeto', 'not like', "%{$exTrim}%");
+            }
+        }
+
+        // 4. Filtro territorial
         $selectedRegion = trim($request->input('region', ''));
         if (!empty($selectedRegion)) {
             $query->where('departamento', 'like', "%{$selectedRegion}%");
         }
 
-        // 3. Regiones disponibles para el filtro
+        // 5. Regiones disponibles para el filtro
         $regions = Licitacion::on($connection)
             ->whereNotNull('departamento')
             ->where('departamento', '!=', '')
@@ -50,31 +72,35 @@ class RadarController extends Controller
             ->pluck('departamento')
             ->toArray();
 
-        // 4. Conteo de totales
-        $totalCount = Licitacion::on($connection)->count();
+        // 6. Conteo de propuestas vigentes en el mercado
+        $totalCount = Licitacion::on($connection)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('fecha_cierre')
+                  ->orWhereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today]);
+            })
+            ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
+            ->count();
 
-        // 5. Filtro de Urgencia / Vencimiento
+        // 7. Filtro de Urgencia / Vencimiento
         $selectedUrgency = $request->input('urgency', 'all');
-        $now = now();
+        $dateCritical = now()->addDays(2)->toDateString();
+        $dateWeek = now()->addDays(7)->toDateString();
 
         if ($selectedUrgency === 'critical') {
-            // < 48 horas
             $query->whereNotNull('fecha_cierre')
-                  ->where('fecha_cierre', '>=', $now->toIso8601String())
-                  ->where('fecha_cierre', '<=', $now->copy()->addHours(48)->toIso8601String());
+                  ->whereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today])
+                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateCritical]);
         } elseif ($selectedUrgency === 'week') {
-            // 3 a 7 días
             $query->whereNotNull('fecha_cierre')
-                  ->where('fecha_cierre', '>', $now->copy()->addHours(48)->toIso8601String())
-                  ->where('fecha_cierre', '<=', $now->copy()->addDays(7)->toIso8601String());
+                  ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateCritical])
+                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateWeek]);
         } elseif ($selectedUrgency === 'ideal') {
-            // > 7 días
             $query->whereNotNull('fecha_cierre')
-                  ->where('fecha_cierre', '>', $now->copy()->addDays(7)->toIso8601String());
+                  ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateWeek]);
         } elseif ($selectedUrgency === 'recent') {
-            // Convocada en las últimas 24 horas
+            $dateRecent = now()->subHours(24)->toDateString();
             $query->whereNotNull('fecha_publicacion')
-                  ->where('fecha_publicacion', '>=', $now->copy()->subHours(24)->toIso8601String());
+                  ->whereRaw("substr(fecha_publicacion, 1, 10) >= ?", [$dateRecent]);
         }
 
         $licitaciones = $query
@@ -88,8 +114,60 @@ class RadarController extends Controller
             'selectedRegion',
             'selectedUrgency',
             'search',
-            'totalCount'
+            'totalCount',
+            'keywords',
+            'exclusions'
         ));
+    }
+
+    public function addKeyword(Request $request)
+    {
+        $request->validate(['keyword' => 'required|string|max:100']);
+        RadarFilterService::addKeyword(MarketService::current(), $request->input('keyword'));
+        return back()->with('status', "Palabra clave '{$request->input('keyword')}' agregada al Radar.");
+    }
+
+    public function updateKeyword(Request $request)
+    {
+        $request->validate([
+            'old_keyword' => 'required|string',
+            'keyword' => 'required|string|max:100'
+        ]);
+
+        RadarFilterService::updateKeyword(
+            MarketService::current(),
+            $request->input('old_keyword'),
+            $request->input('keyword')
+        );
+
+        return back()->with('status', "Palabra clave actualizada correctamente.");
+    }
+
+    public function removeKeyword(Request $request)
+    {
+        $request->validate(['keyword' => 'required|string']);
+        RadarFilterService::removeKeyword(MarketService::current(), $request->input('keyword'));
+        return back()->with('status', "Palabra clave '{$request->input('keyword')}' eliminada.");
+    }
+
+    public function addExclusion(Request $request)
+    {
+        $request->validate(['exclusion' => 'required|string|max:100']);
+        RadarFilterService::addExclusion(MarketService::current(), $request->input('exclusion'));
+        return back()->with('status', "Término de exclusión '{$request->input('exclusion')}' agregado.");
+    }
+
+    public function removeExclusion(Request $request)
+    {
+        $request->validate(['exclusion' => 'required|string']);
+        RadarFilterService::removeExclusion(MarketService::current(), $request->input('exclusion'));
+        return back()->with('status', "Término de exclusión eliminado.");
+    }
+
+    public function resetFilters(Request $request)
+    {
+        RadarFilterService::resetDefaults(MarketService::current());
+        return back()->with('status', 'Palabras clave y términos de exclusión restablecidos a los valores predeterminados.');
     }
 
     public function toggleCartera(Request $request, $id)
@@ -128,4 +206,3 @@ class RadarController extends Controller
         return back()->with('status', "Radar sincronizado. Se actualizaron {$synced} registros en vivo.");
     }
 }
-

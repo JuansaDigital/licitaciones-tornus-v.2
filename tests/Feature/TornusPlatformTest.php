@@ -173,4 +173,49 @@ class TornusPlatformTest extends TestCase
         $newMember->refresh();
         $this->assertTrue(Hash::check('nuevaClave456', $newMember->password));
     }
+
+    public function test_radar_displays_accordions_for_keywords_and_exclusions(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('radar'));
+        $response->assertStatus(200);
+        $response->assertSee('PALABRAS CLAVE DEL RADAR');
+        $response->assertSee('PALABRAS A EXCLUIR EN EL RADAR');
+        $response->assertSee('AGREGAR PALABRA CLAVE');
+        $response->assertSee('AGREGAR EXCLUSIÓN');
+        $response->assertSee('RESTABLECER PALABRAS PREDETERMINADAS');
+        $response->assertSee('GUARDAR Y ACTUALIZAR RADAR');
+    }
+
+    public function test_keywords_and_exclusions_management(): void
+    {
+        $user = User::factory()->create();
+
+        // Agregar palabra clave
+        $this->actingAs($user)->post(route('radar.keywords.add'), [
+            'keyword' => 'TURISMO SOSTENIBLE'
+        ])->assertSessionHas('status');
+
+        // Editar palabra clave
+        $this->actingAs($user)->post(route('radar.keywords.update'), [
+            'old_keyword' => 'TURISMO SOSTENIBLE',
+            'keyword' => 'ECOTURISMO AVANZADO'
+        ])->assertSessionHas('status');
+
+        // Eliminar palabra clave
+        $this->actingAs($user)->post(route('radar.keywords.remove'), [
+            'keyword' => 'ECOTURISMO AVANZADO'
+        ])->assertSessionHas('status');
+
+        // Agregar exclusión
+        $this->actingAs($user)->post(route('radar.exclusions.add'), [
+            'exclusion' => 'FERRETERIA'
+        ])->assertSessionHas('status');
+
+        // Eliminar exclusión
+        $this->actingAs($user)->post(route('radar.exclusions.remove'), [
+            'exclusion' => 'FERRETERIA'
+        ])->assertSessionHas('status');
+    }
 }

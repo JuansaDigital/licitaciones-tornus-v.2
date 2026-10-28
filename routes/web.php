@@ -48,6 +48,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/radar', [RadarController::class, 'index'])->name('radar');
     Route::post('/radar/sync', [RadarController::class, 'sync'])->name('radar.sync');
     Route::post('/radar/{id}/cartera', [RadarController::class, 'toggleCartera'])->name('radar.cartera');
+    Route::post('/radar/keywords', [RadarController::class, 'addKeyword'])->name('radar.keywords.add');
+    Route::post('/radar/keywords/update', [RadarController::class, 'updateKeyword'])->name('radar.keywords.update');
+    Route::post('/radar/keywords/remove', [RadarController::class, 'removeKeyword'])->name('radar.keywords.remove');
+    Route::post('/radar/exclusions', [RadarController::class, 'addExclusion'])->name('radar.exclusions.add');
+    Route::post('/radar/exclusions/remove', [RadarController::class, 'removeExclusion'])->name('radar.exclusions.remove');
+    Route::post('/radar/filters/reset', [RadarController::class, 'resetFilters'])->name('radar.filters.reset');
 
     // Módulo E: Mi Cartera (Tablero Comercial)
     Route::get('/cartera', [CarteraController::class, 'index'])->name('cartera');

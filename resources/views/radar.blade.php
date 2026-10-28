@@ -95,6 +95,171 @@
         </form>
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- ACORDEÓN 1: PALABRAS CLAVE DEL RADAR                                      -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg shadow-xs overflow-hidden">
+        
+        <!-- Botón de apertura/cierre del acordeón -->
+        <button type="button" onclick="toggleAccordion('accordion-keywords', 'chevron-keywords')" 
+            class="w-full p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#f7f2df]/50 transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+                <h2 class="font-['Instrument_Serif',serif] text-xl sm:text-2xl text-[#00232c] font-normal tracking-tight uppercase">
+                    PALABRAS CLAVE DEL RADAR
+                </h2>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-[#f7f2df] text-[#56686b] border border-[#e3dbc2] font-semibold">
+                    {{ count($keywords) }} activas
+                </span>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-mono text-[#56686b]">
+                <span>Términos de búsqueda en {{ App\Services\MarketService::sourceName() }}. Toca para ver, agregar o editar.</span>
+                <svg id="chevron-keywords" class="w-4 h-4 text-[#00232c] transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+        </button>
+
+        <!-- Contenido desplegable del acordeón -->
+        <div id="accordion-keywords" class="p-5 pt-0 border-t border-[#f2ece0] space-y-5">
+            <p class="text-xs font-mono text-[#56686b] pt-4">
+                El Radar busca cada término en el nombre, la descripción o la entidad del proceso. Agrega, edita o elimina términos y luego vuelve a consultar {{ App\Services\MarketService::sourceName() }}.
+            </p>
+
+            <!-- Formulario para Agregar Nueva Palabra Clave -->
+            <form action="{{ route('radar.keywords.add') }}" method="POST" class="space-y-2">
+                @csrf
+                <label class="block text-[11px] font-mono font-semibold uppercase tracking-wider text-[#56686b]">
+                    NUEVA PALABRA O FRASE
+                </label>
+                <div class="flex flex-col sm:flex-row items-center gap-2 max-w-xl">
+                    <input type="text" name="keyword" required placeholder="Ej.: turismo comunitario"
+                        class="w-full px-3 py-2 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c]">
+                    <button type="submit" 
+                        class="w-full sm:w-auto px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold tracking-wider whitespace-nowrap transition-colors shadow-xs cursor-pointer">
+                        AGREGAR PALABRA CLAVE
+                    </button>
+                </div>
+            </form>
+
+            <!-- Rejilla de Palabras Clave Configuradas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2">
+                @foreach($keywords as $kw)
+                    <div class="bg-white border border-[#e3dbc2] rounded p-2.5 flex items-center justify-between gap-2 shadow-2xs hover:border-[#00232c] transition-colors">
+                        <a href="{{ route('radar', ['q' => $kw]) }}" 
+                            class="font-mono text-xs font-bold text-[#00232c] hover:underline truncate"
+                            title="Filtrar radar por: {{ $kw }}">
+                            {{ $kw }}
+                        </a>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button type="button" onclick="openEditKeywordModal('{{ addslashes($kw) }}')" 
+                                class="px-2 py-0.5 rounded text-[10px] font-mono text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] border border-transparent hover:border-[#e3dbc2] transition-colors cursor-pointer">
+                                EDITAR
+                            </button>
+                            <form action="{{ route('radar.keywords.remove') }}" method="POST" class="inline">
+                                @csrf
+                                <input type="hidden" name="keyword" value="{{ $kw }}">
+                                <button type="submit" class="px-2 py-0.5 rounded text-[10px] font-mono text-[#56686b] hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer">
+                                    ELIMINAR
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Barra inferior con totales y botón para restablecer -->
+            <div class="pt-4 border-t border-[#f2ece0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+                <span class="text-[#56686b]">
+                    {{ count($keywords) }} de 50 palabras o frases configuradas.
+                </span>
+
+                <div class="flex items-center gap-2">
+                    <form action="{{ route('radar.filters.reset') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="px-3 py-1.5 rounded border border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df] transition-colors cursor-pointer">
+                            RESTABLECER PALABRAS PREDETERMINADAS
+                        </button>
+                    </form>
+
+                    <form action="{{ route('radar.sync') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="px-3.5 py-1.5 rounded bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] font-semibold transition-colors shadow-xs cursor-pointer">
+                            GUARDAR Y ACTUALIZAR RADAR
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- ACORDEÓN 2: PALABRAS A EXCLUIR EN EL RADAR (ANTI-FALSOS POSITIVOS)        -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg shadow-xs overflow-hidden">
+        
+        <!-- Botón de apertura/cierre del acordeón -->
+        <button type="button" onclick="toggleAccordion('accordion-exclusions', 'chevron-exclusions')" 
+            class="w-full p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#f7f2df]/50 transition-colors cursor-pointer">
+            <div class="flex items-center gap-3">
+                <h2 class="font-['Instrument_Serif',serif] text-xl sm:text-2xl text-[#00232c] font-normal tracking-tight uppercase">
+                    PALABRAS A EXCLUIR EN EL RADAR
+                </h2>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
+                    {{ count($exclusions) }} términos
+                </span>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-mono text-[#56686b]">
+                <span>Filtro de exclusión automática (policía, militar, aseo, combustible, dotaciones). Toca para ver o modificar.</span>
+                <svg id="chevron-exclusions" class="w-4 h-4 text-[#00232c] transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </div>
+        </button>
+
+        <!-- Contenido desplegable del acordeón -->
+        <div id="accordion-exclusions" class="p-5 pt-0 border-t border-[#f2ece0] space-y-5">
+            <p class="text-xs font-mono text-[#56686b] pt-4">
+                Cualquier licitación cuyo objeto o entidad contenga una de estas palabras será descartada automáticamente del Radar. Agrega o elimina términos según el foco de Tornus.
+            </p>
+
+            <!-- Formulario para Agregar Término de Exclusión -->
+            <form action="{{ route('radar.exclusions.add') }}" method="POST" class="space-y-2">
+                @csrf
+                <label class="block text-[11px] font-mono font-semibold uppercase tracking-wider text-[#56686b]">
+                    NUEVA PALABRA O TÉRMINO A EXCLUIR
+                </label>
+                <div class="flex flex-col sm:flex-row items-center gap-2 max-w-xl">
+                    <input type="text" name="exclusion" required placeholder="Ej.: vigilancia, policía, dotación"
+                        class="w-full px-3 py-2 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c]">
+                    <button type="submit" 
+                        class="w-full sm:w-auto px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold tracking-wider whitespace-nowrap transition-colors shadow-xs cursor-pointer">
+                        AGREGAR EXCLUSIÓN
+                    </button>
+                </div>
+            </form>
+
+            <!-- Rejilla de Términos Excluidos -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 pt-2">
+                @foreach($exclusions as $ex)
+                    <div class="bg-white border border-[#e3dbc2] rounded p-2.5 flex items-center justify-between gap-1.5 shadow-2xs">
+                        <span class="font-mono text-xs font-bold text-[#00232c] truncate">
+                            {{ $ex }}
+                        </span>
+                        <form action="{{ route('radar.exclusions.remove') }}" method="POST" class="shrink-0 inline">
+                            @csrf
+                            <input type="hidden" name="exclusion" value="{{ $ex }}">
+                            <button type="submit" class="text-[10px] font-mono text-rose-700 hover:text-rose-900 transition-colors font-medium cursor-pointer">
+                                × QUITAR
+                            </button>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+
+        </div>
+    </div>
+
     <!-- Lista Dinámica de Licitaciones -->
     @if ($licitaciones->isEmpty())
         <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg p-10 text-center text-[#56686b] font-mono text-xs">
@@ -221,4 +386,58 @@
     @endif
 
 </div>
+
+<!-- Modal para Editar Palabra Clave -->
+<div id="modal-edit-keyword" class="fixed inset-0 z-50 bg-[#00232c]/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-[#e3dbc2]">
+            <h3 class="font-['Instrument_Serif',serif] text-xl text-[#00232c]">Editar Palabra Clave</h3>
+            <button type="button" onclick="closeEditKeywordModal()" class="text-[#56686b] hover:text-[#00232c] text-lg font-mono">✕</button>
+        </div>
+        <form action="{{ route('radar.keywords.update') }}" method="POST" class="space-y-4">
+            @csrf
+            <input type="hidden" name="old_keyword" id="edit-old-keyword" value="">
+            <div>
+                <label class="block text-xs font-mono text-[#56686b] mb-1">TÉRMINO O FRASE</label>
+                <input type="text" name="keyword" id="edit-new-keyword" required
+                    class="w-full px-3 py-2 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] font-sans">
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <button type="button" onclick="closeEditKeywordModal()" class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono text-[#56686b] hover:bg-[#f7f2df] cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold cursor-pointer">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleAccordion(contentId, chevronId) {
+    const content = document.getElementById(contentId);
+    const chevron = document.getElementById(chevronId);
+    if (!content) return;
+    
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+    } else {
+        content.classList.add('hidden');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+function openEditKeywordModal(keyword) {
+    document.getElementById('edit-old-keyword').value = keyword;
+    document.getElementById('edit-new-keyword').value = keyword;
+    document.getElementById('modal-edit-keyword').classList.remove('hidden');
+    document.getElementById('edit-new-keyword').focus();
+}
+
+function closeEditKeywordModal() {
+    document.getElementById('modal-edit-keyword').classList.add('hidden');
+}
+</script>
 @endsection
