@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@theme {
+    --font-display: "Instrument Serif", Georgia, serif;
+    --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+    --color-tornus-petroleo: #00232c;
+    --color-tornus-crema: #f7f2df;
+    --color-tornus-surface: #fffdf6;
+    --color-tornus-solar: #fbfb75;
+    --color-tornus-accent: #0b4a57;
+    --color-tornus-terracota: #b07a12;
+    --color-tornus-line: #e3dbc2;
+    --color-tornus-muted: #56686b;
+}
+
+body {
+    background-color: var(--color-tornus-crema);
+    color: var(--color-tornus-petroleo);
+    font-family: var(--font-body);
+}
