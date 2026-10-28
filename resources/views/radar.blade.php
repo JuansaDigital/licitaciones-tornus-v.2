@@ -120,7 +120,7 @@
         </button>
 
         <!-- Contenido desplegable del acordeón -->
-        <div id="accordion-keywords" class="p-5 pt-0 border-t border-[#f2ece0] space-y-5">
+        <div id="accordion-keywords" class="hidden p-5 pt-0 border-t border-[#f2ece0] space-y-5">
             <p class="text-xs font-mono text-[#56686b] pt-4">
                 El Radar busca cada término en el nombre, la descripción o la entidad del proceso. Agrega, edita o elimina términos y luego vuelve a consultar {{ App\Services\MarketService::sourceName() }}.
             </p>
@@ -218,7 +218,7 @@
         </button>
 
         <!-- Contenido desplegable del acordeón -->
-        <div id="accordion-exclusions" class="p-5 pt-0 border-t border-[#f2ece0] space-y-5">
+        <div id="accordion-exclusions" class="hidden p-5 pt-0 border-t border-[#f2ece0] space-y-5">
             <p class="text-xs font-mono text-[#56686b] pt-4">
                 Cualquier licitación cuyo objeto o entidad contenga una de estas palabras será descartada automáticamente del Radar. Agrega o elimina términos según el foco de Tornus.
             </p>
@@ -270,58 +270,55 @@
             @foreach($licitaciones as $lic)
                 @php
                     $urgency = $lic->urgency_info;
-                    $borderClass = $lic->score !== null 
-                        ? ($lic->score >= 70 ? 'border-l-4 border-l-emerald-600' : ($lic->score >= 40 ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-rose-500')) 
-                        : 'border-l-4 border-l-[#00232c]';
                 @endphp
-                <div class="bg-[#fffdf6] border border-[#e3dbc2] {{ $borderClass }} rounded-lg p-5 shadow-xs hover:border-[#0b4a57] transition-all">
+                <div id="lic-card-{{ $lic->id }}" class="licitacion-card bg-[#fffdf6] border border-[#e3dbc2] border-l-4 border-l-[#8a252c] rounded p-4 sm:p-5 shadow-xs hover:border-[#0b4a57] transition-all">
                     
-                    <!-- Fila Superior de Badges y Cuantía -->
-                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2.5">
+                    <!-- Fila Superior: Badges a la izquierda y Presupuesto a la derecha -->
+                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-2">
                         <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
-                            <!-- Badge de Vencimiento -->
-                            <span class="px-2.5 py-0.5 rounded border {{ $urgency['class'] }}">
-                                {{ $urgency['badge'] }}
+                            <!-- Badge de Vencimiento: Cierra hoy / Cierra en X días -->
+                            <span class="px-2 py-0.5 rounded bg-[#fcedeb] text-[#8a252c] font-medium">
+                                {{ $urgency['is_critical'] ? 'Cierra hoy' : $urgency['badge'] }}
                             </span>
 
-                            <!-- Departamento -->
-                            <span class="px-2.5 py-0.5 rounded bg-[#00232c] text-[#fbfb75] font-semibold">
-                                {{ $lic->departamento ?: 'Nacional' }}
+                            <!-- Departamento / Resto del país -->
+                            <span class="px-2 py-0.5 rounded bg-[#00232c] text-[#fbfb75] font-bold">
+                                {{ $lic->departamento ?: 'Resto del país' }}
                             </span>
 
                             <!-- Categoría -->
-                            <span class="px-2.5 py-0.5 rounded bg-[#f7f2df] text-[#56686b] border border-[#e3dbc2]">
+                            <span class="px-2 py-0.5 rounded bg-[#ece6d5] text-[#56686b]">
                                 {{ $lic->categoria ?: 'Servicios Generales' }}
                             </span>
 
                             <!-- Estado / Fase -->
-                            <span class="px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                <span>{{ $lic->fase ?: ($lic->estado ?: 'Convocado · Recibiendo ofertas') }}</span>
+                                <span>{{ $lic->fase ?: 'Convocado · Recibiendo ofertas' }}</span>
                             </span>
 
-                            <!-- Plazo de Ejecución -->
-                            <span class="px-2 py-0.5 rounded text-[#56686b] flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <!-- Plazo en días -->
+                            <span class="px-1.5 py-0.5 text-[#56686b] flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
                                 <span>{{ $lic->prov_unicos ? $lic->prov_unicos . ' día(s)' : '60 día(s)' }}</span>
                             </span>
 
-                            <!-- Vistas / Competencia -->
-                            <span class="px-2 py-0.5 rounded text-[#56686b]">
-                                1 vistas
+                            <!-- Modalidad -->
+                            <span class="px-2 py-0.5 rounded bg-[#dce6e7] text-[#0b4a57] font-medium">
+                                {{ $lic->tipo_proceso ?: 'Mínima cuantía' }}
                             </span>
                         </div>
 
                         <!-- Presupuesto Oficial & Cierre -->
                         <div class="text-right shrink-0">
-                            <div class="font-bold text-lg text-[#00232c] tracking-tight">
+                            <div class="font-bold text-xl sm:text-2xl text-[#00232c] tracking-tight">
                                 {{ $lic->formatted_cuantia }}
                             </div>
                             <div class="text-[11px] font-mono text-[#56686b]">
-                                Recepción de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? date('d M', strtotime($lic->fecha_cierre)) : 'Pendiente' }}</strong>
+                                Recepción de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? date('d M', strtotime($lic->fecha_cierre)) : '28 oct' }}</strong>
                             </div>
                             <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5">
                                 {{ $lic->referencia ?: $lic->external_id }}
@@ -329,86 +326,116 @@
                         </div>
                     </div>
 
-                    <!-- Sub-badges de Modalidad -->
-                    <div class="flex items-center gap-2 mb-2 font-mono text-[10px]">
-                        <span class="px-2 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-200 font-semibold">
-                            {{ $lic->tipo_proceso ?: 'Convocatoria Pública' }}
-                        </span>
-                        <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
-                            Relacionado
-                        </span>
-                    </div>
-
-                    <!-- Título / Objeto Contractual -->
-                    <h3 class="text-base font-semibold text-[#00232c] mb-2 leading-snug">
+                    <!-- Objeto / Título -->
+                    <h3 class="text-sm sm:text-[15px] font-bold text-[#00232c] leading-snug line-clamp-2 mb-2">
                         {{ $lic->objeto }}
                     </h3>
 
-                    <!-- Entidad y Ubicación -->
-                    <div class="text-xs font-mono text-[#56686b] mb-4 flex flex-wrap items-center gap-3">
-                        <span class="font-bold text-[#00232c]">{{ $lic->departamento ?: 'Nacional' }}</span>
-                        <span>{{ $lic->entidad }}</span>
-                    </div>
-
-                    <!-- Fila de Acciones: Botones Ficha, Analizar con Gemini y Cartera -->
-                    <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#f2ece0]">
+                    <!-- Fila Inferior: Ubicación a la izquierda y 2 Filas de Botones a la derecha -->
+                    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pt-1">
                         
-                        <!-- Afinidad Evaluada en la Tarjeta -->
-                        <div id="card-affinity-{{ $lic->id }}" class="flex items-center gap-2">
-                            @if($lic->score !== null)
-                                <span class="px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center gap-1.5 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200') }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $lic->score >= 70 ? 'bg-emerald-600' : ($lic->score >= 40 ? 'bg-amber-600' : 'bg-rose-600') }}"></span>
-                                    <span>{{ $lic->score }}% AFINIDAD · {{ $lic->nivel }}</span>
-                                </span>
-                            @endif
+                        <!-- Ubicación y Entidad -->
+                        <div class="text-xs font-mono text-[#56686b] flex flex-wrap items-center gap-2">
+                            <strong class="text-[#00232c]">{{ $lic->municipio ? $lic->municipio . ' · ' . $lic->departamento : ($lic->departamento ?: 'Nacional') }}</strong>
+                            <span>{{ $lic->entidad }}</span>
+
+                            <!-- Badge de Afinidad si ya está evaluado -->
+                            <span id="card-affinity-{{ $lic->id }}" class="inline-flex">
+                                @if($lic->score !== null)
+                                    <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200') }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $lic->score >= 70 ? 'bg-emerald-600' : ($lic->score >= 40 ? 'bg-amber-600' : 'bg-rose-600') }}"></span>
+                                        <span>{{ $lic->score }}% AFINIDAD · {{ $lic->nivel }}</span>
+                                    </span>
+                                @endif
+                            </span>
                         </div>
 
-                        <!-- Botones de Acción Operativa -->
-                        <div class="flex flex-wrap items-center gap-2">
+                        <!-- Grupo de Botones de Acción (2 Filas como en la imagen) -->
+                        <div class="flex flex-col items-end gap-2 shrink-0">
                             
-                            @if($lic->url_proceso)
-                                <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer" 
-                                    class="px-3 py-1.5 text-xs font-mono text-[#00232c] bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded transition-colors flex items-center gap-1.5 font-medium">
-                                    <span>Ver en {{ App\Services\MarketService::sourceName() }}</span>
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                        <polyline points="15 3 21 3 21 9"></polyline>
-                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                            <!-- Fila 1 de Botones: Preparar, Compartir, Ver en SECOP II, Descartar -->
+                            <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+                                <!-- Botón Preparar -->
+                                <button type="button" onclick="openFichaModal({{ json_encode($lic) }})"
+                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10 9 9 9 8 9"></polyline>
                                     </svg>
-                                </a>
-                            @endif
-
-                            <!-- Botón Abrir Ficha Técnica -->
-                            <button type="button" onclick="openFichaModal({{ json_encode($lic) }})"
-                                class="px-3 py-1.5 text-xs font-mono text-[#00232c] bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded transition-colors flex items-center gap-1.5 font-medium cursor-pointer">
-                                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                <span>Ficha</span>
-                            </button>
-
-                            <!-- Botón Analizar con Gemini -->
-                            <button type="button" id="btn-analyze-{{ $lic->id }}" onclick="analyzeWithGemini({{ $lic->id }})"
-                                class="px-3.5 py-1.5 text-xs font-mono text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors flex items-center gap-1.5 font-semibold shadow-xs cursor-pointer">
-                                <svg class="w-3.5 h-3.5 text-indigo-200" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
-                                </svg>
-                                <span id="btn-text-{{ $lic->id }}">{{ $lic->score !== null ? 'Re-evaluar Gemini' : 'Analizar con Gemini' }}</span>
-                            </button>
-
-                            <!-- Botón Guardar en Cartera -->
-                            <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline">
-                                @csrf
-                                <button type="submit" 
-                                    class="px-3 py-1.5 rounded text-xs font-mono font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
-                                    <svg class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                    </svg>
-                                    <span>{{ $lic->en_cartera ? 'Guardado' : 'Guardar' }}</span>
+                                    <span>Preparar</span>
                                 </button>
-                            </form>
+
+                                <!-- Botón Compartir -->
+                                <button type="button" onclick="shareLicitacion({{ json_encode($lic) }})"
+                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <circle cx="18" cy="5" r="3"></circle>
+                                        <circle cx="6" cy="12" r="3"></circle>
+                                        <circle cx="18" cy="19" r="3"></circle>
+                                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                    </svg>
+                                    <span>Compartir</span>
+                                </button>
+
+                                <!-- Botón Ver en SECOP II -->
+                                @if($lic->url_proceso)
+                                    <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer"
+                                        class="px-2.5 py-1 bg-white border border-[#00232c] hover:bg-[#00232c] text-[#00232c] hover:text-white rounded font-medium transition-colors flex items-center gap-1">
+                                        <span>Ver en {{ App\Services\MarketService::sourceName() }}</span>
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                                        </svg>
+                                    </a>
+                                @endif
+
+                                <!-- Botón Descartar -->
+                                <button type="button" onclick="dismissCard('lic-card-{{ $lic->id }}')"
+                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 rounded text-[#56686b] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                    <span>✕ DESCARTAR</span>
+                                </button>
+                            </div>
+
+                            <!-- Fila 2 de Botones: Ficha, Analizar con Gemini, Guardar -->
+                            <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+                                <!-- Botón Ficha -->
+                                <button type="button" onclick="openFichaModal({{ json_encode($lic) }})"
+                                    class="px-3 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <span>Ficha</span>
+                                </button>
+
+                                <!-- Botón Analizar con Gemini -->
+                                <button type="button" id="btn-analyze-{{ $lic->id }}" onclick="analyzeWithGemini({{ $lic->id }})"
+                                    class="px-3.5 py-1 text-white bg-[#4338ca] hover:bg-[#3730a3] rounded font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-indigo-200" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                                    </svg>
+                                    <span id="btn-text-{{ $lic->id }}">{{ $lic->score !== null ? 'Re-evaluar Gemini' : 'Analizar con Gemini' }}</span>
+                                </button>
+
+                                <!-- Botón Guardar en Cartera -->
+                                <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                        class="px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
+                                        <svg class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                        </svg>
+                                        <span>{{ $lic->en_cartera ? 'Guardado' : 'Guardar' }}</span>
+                                    </button>
+                                </form>
+                            </div>
+
                         </div>
 
                     </div>
@@ -424,159 +451,159 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL DE FICHA TÉCNICA Y EVALUACIÓN GEMINI (PANTALLAS 2 Y 3)              -->
+<!-- SIDEBAR DERECHO (DRAWER OFF-CANVAS) DE FICHA TÉCNICA Y EVALUACIÓN GEMINI  -->
 <!-- ========================================================================= -->
-<div id="modal-ficha" class="fixed inset-0 z-50 bg-[#00232c]/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden overflow-y-auto">
-    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-xl shadow-2xl max-w-3xl w-full my-auto overflow-hidden flex flex-col max-h-[92vh]">
+<div id="drawer-ficha-backdrop" onclick="closeFichaModal()" class="fixed inset-0 bg-[#00232c]/50 backdrop-blur-xs z-50 hidden transition-opacity duration-300"></div>
+
+<aside id="drawer-ficha" class="fixed inset-y-0 right-0 w-full sm:max-w-xl md:max-w-2xl bg-[#fffdf6] border-l border-[#e3dbc2] shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    
+    <!-- Encabezado Oscuro Institucional Tornus -->
+    <div class="bg-[#00232c] text-[#f7f2df] p-5 sm:p-6 relative shrink-0">
+        <button type="button" onclick="closeFichaModal()" class="absolute top-4 right-4 p-1.5 text-[#9db3b4] hover:text-white rounded transition-colors cursor-pointer" title="Cerrar panel lateral">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+        <div class="flex items-center gap-2 mb-2 font-mono text-[11px]">
+            <span id="ficha-referencia-badge" class="px-2 py-0.5 rounded bg-[#0b4a57] text-[#fbfb75] border border-[#15424d] font-bold"></span>
+            <span id="ficha-categoria-badge" class="text-[#9db3b4]"></span>
+        </div>
+        <h2 id="ficha-objeto-title" class="font-['Instrument_Serif',serif] text-xl sm:text-2xl text-[#fbfb75] font-normal leading-tight tracking-wide pr-8"></h2>
+    </div>
+
+    <!-- Contenido Desplazable del Sidebar -->
+    <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
         
-        <!-- Encabezado Oscuro Institucional Tornus -->
-        <div class="bg-[#00232c] text-[#f7f2df] p-5 sm:p-6 relative shrink-0">
-            <button type="button" onclick="closeFichaModal()" class="absolute top-4 right-4 p-1.5 text-[#9db3b4] hover:text-white rounded transition-colors cursor-pointer">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-            <div class="flex items-center gap-2 mb-2 font-mono text-[11px]">
-                <span id="ficha-referencia-badge" class="px-2 py-0.5 rounded bg-[#0b4a57] text-[#fbfb75] border border-[#15424d] font-bold"></span>
-                <span id="ficha-categoria-badge" class="text-[#9db3b4]"></span>
-            </div>
-            <h2 id="ficha-objeto-title" class="font-['Instrument_Serif',serif] text-xl sm:text-2xl text-[#fbfb75] font-normal leading-tight tracking-wide"></h2>
-        </div>
-
-        <!-- Contenido Desplazable del Modal -->
-        <div class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
-            
-            <!-- TARJETA DE ANÁLISIS GEMINI (Si está evaluado) -->
-            <div id="ficha-gemini-box" class="p-5 rounded-lg border hidden transition-all">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#e3dbc2]">
-                    <div class="flex items-center gap-2">
-                        <span id="ficha-gemini-pill" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold tracking-wider"></span>
-                        <span class="text-xs font-mono text-[#56686b] font-medium">Gemini 2.5 Flash</span>
-                    </div>
-                    <span id="ficha-gemini-status" class="text-xs font-mono font-bold tracking-wider"></span>
+        <!-- TARJETA DE ANÁLISIS GEMINI (Si está evaluado) -->
+        <div id="ficha-gemini-box" class="p-5 rounded-lg border hidden transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#e3dbc2]">
+                <div class="flex items-center gap-2">
+                    <span id="ficha-gemini-pill" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold tracking-wider"></span>
+                    <span class="text-xs font-mono text-[#56686b] font-medium">Gemini 2.5 Flash</span>
                 </div>
-
-                <div class="pt-3 space-y-3 text-xs leading-relaxed">
-                    <div>
-                        <strong class="text-[#00232c] font-bold block mb-1 font-mono text-[11px] uppercase">¿Por qué aplica para Tornus?:</strong>
-                        <p id="ficha-gemini-justificacion" class="text-[#3a4749]"></p>
-                    </div>
-
-                    <div id="ficha-gemini-keypoints-box" class="bg-white border border-[#e3dbc2] rounded p-3 text-xs font-mono">
-                        <strong class="text-[#00232c] font-bold block mb-0.5">Punto clave a revisar:</strong>
-                        <span id="ficha-gemini-puntos" class="text-[#56686b]"></span>
-                    </div>
-
-                    <div class="pt-2 flex justify-end">
-                        <button type="button" id="ficha-re-eval-btn" onclick="reEvaluateCurrentFicha()"
-                            class="px-4 py-2 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
-                            </svg>
-                            <span>RE-EVALUAR CON GEMINI</span>
-                        </button>
-                    </div>
-                </div>
+                <span id="ficha-gemini-status" class="text-xs font-mono font-bold tracking-wider"></span>
             </div>
 
-            <!-- Botón de Análisis si aún no está evaluado -->
-            <div id="ficha-gemini-placeholder" class="bg-indigo-50/50 border border-indigo-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div class="flex items-center gap-2 text-xs font-mono text-indigo-950">
-                    <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
-                    </svg>
-                    <span>Licitación pendiente de evaluación estratégica con IA frente al perfil de Tornus.</span>
-                </div>
-                <button type="button" onclick="reEvaluateCurrentFicha()"
-                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-mono font-semibold whitespace-nowrap shadow-xs transition-colors cursor-pointer">
-                    Analizar con Gemini
-                </button>
-            </div>
-
-            <!-- Grilla de 4 Tarjetas de Detalle Técnico -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                
-                <!-- Tarjeta 1: Presupuesto y Cierre -->
-                <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PRESUPUESTO OFICIAL</span>
-                    <div id="ficha-cuantia" class="font-['Instrument_Serif',serif] text-2xl font-bold text-[#00232c]"></div>
-                    <span id="ficha-cuantia-raw" class="block text-xs font-mono text-[#56686b] mb-3"></span>
-
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">CIERRE DE RECEPCIÓN</span>
-                    <div id="ficha-cierre-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
-                    <span id="ficha-cierre-dias" class="text-xs font-mono font-bold text-amber-700"></span>
+            <div class="pt-3 space-y-3 text-xs leading-relaxed">
+                <div>
+                    <strong class="text-[#00232c] font-bold block mb-1 font-mono text-[11px] uppercase">¿Por qué aplica para Tornus?:</strong>
+                    <p id="ficha-gemini-justificacion" class="text-[#3a4749]"></p>
                 </div>
 
-                <!-- Tarjeta 2: Entidad y Ubicación -->
-                <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ENTIDAD CONTRATANTE</span>
-                    <div id="ficha-entidad" class="text-xs font-bold text-[#00232c] mb-3 leading-snug"></div>
-
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">UBICACIÓN GEOGRÁFICA</span>
-                    <div id="ficha-ubicacion" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                <div id="ficha-gemini-keypoints-box" class="bg-white border border-[#e3dbc2] rounded p-3 text-xs font-mono">
+                    <strong class="text-[#00232c] font-bold block mb-0.5">Punto clave a revisar:</strong>
+                    <span id="ficha-gemini-puntos" class="text-[#56686b]"></span>
                 </div>
 
-                <!-- Tarjeta 3: Modalidad y Estado -->
-                <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">MODALIDAD</span>
-                    <div id="ficha-modalidad" class="text-xs font-mono font-bold text-[#00232c] mb-3"></div>
-
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ESTADO / FASE</span>
-                    <div id="ficha-estado" class="text-xs font-mono font-bold text-emerald-800"></div>
-                </div>
-
-                <!-- Tarjeta 4: Plazo y Competencia -->
-                <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN</span>
-                    <div id="ficha-plazo" class="text-xs font-mono font-bold text-[#00232c] mb-3"></div>
-
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">COMPETENCIA / INTERÉS</span>
-                    <div id="ficha-vistas" class="text-xs font-mono font-bold text-[#00232c]">1 vistas</div>
-                </div>
-
-            </div>
-
-            <!-- Objeto y Descripción Completa -->
-            <div>
-                <span class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#56686b] mb-1.5">
-                    OBJETO Y DESCRIPCIÓN DEL PROCESO
-                </span>
-                <div id="ficha-objeto-full" class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 text-xs font-mono text-[#00232c] leading-relaxed"></div>
-            </div>
-
-        </div>
-
-        <!-- Barra Inferior de Acciones -->
-        <div class="bg-[#f7f2df] border-t border-[#e3dbc2] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <div class="flex items-center gap-2">
-                <form id="ficha-cartera-form" method="POST" class="inline">
-                    @csrf
-                    <button type="submit" id="ficha-cartera-btn" class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold text-[#00232c] hover:bg-[#f2ece0] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                        <span id="ficha-cartera-btn-text">Guardar en Cartera</span>
+                <div class="pt-2 flex justify-end">
+                    <button type="button" id="ficha-re-eval-btn" onclick="reEvaluateCurrentFicha()"
+                        class="px-4 py-2 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+                        </svg>
+                        <span>RE-EVALUAR CON GEMINI</span>
                     </button>
-                </form>
+                </div>
+            </div>
+        </div>
 
-                <button type="button" onclick="shareCurrentFicha()" class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold text-[#00232c] hover:bg-[#f2ece0] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
-                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                    <span>Compartir</span>
-                </button>
+        <!-- Botón de Análisis si aún no está evaluado -->
+        <div id="ficha-gemini-placeholder" class="bg-indigo-50/50 border border-indigo-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs font-mono text-indigo-950">
+                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                </svg>
+                <span>Licitación pendiente de evaluación estratégica con IA frente al perfil de Tornus.</span>
+            </div>
+            <button type="button" onclick="reEvaluateCurrentFicha()"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-mono font-semibold whitespace-nowrap shadow-xs transition-colors cursor-pointer">
+                Analizar con Gemini
+            </button>
+        </div>
+
+        <!-- Grilla de 4 Tarjetas de Detalle Técnico -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            
+            <!-- Tarjeta 1: Presupuesto y Cierre -->
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PRESUPUESTO OFICIAL</span>
+                <div id="ficha-cuantia" class="font-['Instrument_Serif',serif] text-2xl font-bold text-[#00232c]"></div>
+                <span id="ficha-cuantia-raw" class="block text-xs font-mono text-[#56686b] mb-3"></span>
+
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">CIERRE DE RECEPCIÓN</span>
+                <div id="ficha-cierre-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                <span id="ficha-cierre-dias" class="text-xs font-mono font-bold text-amber-700"></span>
             </div>
 
-            <a id="ficha-url-btn" href="#" target="_blank" rel="noopener noreferrer" 
-                class="px-5 py-2 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
-                <span>VER EN {{ strtoupper(App\Services\MarketService::sourceName()) }}</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-            </a>
+            <!-- Tarjeta 2: Entidad y Ubicación -->
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ENTIDAD CONTRATANTE</span>
+                <div id="ficha-entidad" class="text-xs font-bold text-[#00232c] mb-3 leading-snug"></div>
+
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">UBICACIÓN GEOGRÁFICA</span>
+                <div id="ficha-ubicacion" class="text-xs font-mono font-bold text-[#00232c]"></div>
+            </div>
+
+            <!-- Tarjeta 3: Modalidad y Estado -->
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">MODALIDAD</span>
+                <div id="ficha-modalidad" class="text-xs font-mono font-bold text-[#00232c] mb-3"></div>
+
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ESTADO / FASE</span>
+                <div id="ficha-estado" class="text-xs font-mono font-bold text-emerald-800"></div>
+            </div>
+
+            <!-- Tarjeta 4: Plazo y Competencia -->
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN</span>
+                <div id="ficha-plazo" class="text-xs font-mono font-bold text-[#00232c] mb-3"></div>
+
+                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">COMPETENCIA / INTERÉS</span>
+                <div id="ficha-vistas" class="text-xs font-mono font-bold text-[#00232c]">1 vistas</div>
+            </div>
+
+        </div>
+
+        <!-- Objeto y Descripción Completa -->
+        <div>
+            <span class="block text-[11px] font-mono font-bold uppercase tracking-wider text-[#56686b] mb-1.5">
+                OBJETO Y DESCRIPCIÓN DEL PROCESO
+            </span>
+            <div id="ficha-objeto-full" class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 text-xs font-mono text-[#00232c] leading-relaxed"></div>
         </div>
 
     </div>
-</div>
+
+    <!-- Barra Inferior de Acciones Fija en el Sidebar -->
+    <div class="bg-[#f7f2df] border-t border-[#e3dbc2] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div class="flex items-center gap-2">
+            <form id="ficha-cartera-form" method="POST" class="inline">
+                @csrf
+                <button type="submit" id="ficha-cartera-btn" class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold text-[#00232c] hover:bg-[#f2ece0] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span id="ficha-cartera-btn-text">Guardar en Cartera</span>
+                </button>
+            </form>
+
+            <button type="button" onclick="shareCurrentFicha()" class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold text-[#00232c] hover:bg-[#f2ece0] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                <span>Compartir</span>
+            </button>
+        </div>
+
+        <a id="ficha-url-btn" href="#" target="_blank" rel="noopener noreferrer" 
+            class="px-5 py-2 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
+            <span>VER EN {{ strtoupper(App\Services\MarketService::sourceName()) }}</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+        </a>
+    </div>
+
+</aside>
 
 <!-- Modal para Editar Palabra Clave -->
 <div id="modal-edit-keyword" class="fixed inset-0 z-50 bg-[#00232c]/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
@@ -689,13 +716,43 @@ function openFichaModal(lic) {
     // Gemini Affinity
     renderFichaGeminiBox(lic);
     
-    document.getElementById('modal-ficha').classList.remove('hidden');
+    // Mostrar Drawer Derecho y Fondo
+    document.getElementById('drawer-ficha-backdrop').classList.remove('hidden');
+    const drawer = document.getElementById('drawer-ficha');
+    drawer.classList.remove('translate-x-full');
+    drawer.classList.add('translate-x-0');
     document.body.style.overflow = 'hidden';
 }
 
 function closeFichaModal() {
-    document.getElementById('modal-ficha').classList.add('hidden');
+    const drawer = document.getElementById('drawer-ficha');
+    if (drawer) {
+        drawer.classList.remove('translate-x-0');
+        drawer.classList.add('translate-x-full');
+    }
+    const backdrop = document.getElementById('drawer-ficha-backdrop');
+    if (backdrop) backdrop.classList.add('hidden');
     document.body.style.overflow = 'auto';
+}
+
+function dismissCard(cardId) {
+    const card = document.getElementById(cardId);
+    if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.98)';
+        setTimeout(() => card.remove(), 250);
+    }
+}
+
+function shareLicitacion(lic) {
+    const shareText = `Licitación: ${lic.referencia || lic.external_id}\nObjeto: ${lic.objeto}\nPresupuesto: ${lic.formatted_cuantia || ''}\nVer en SECOP II: ${lic.url_proceso || window.location.href}`;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Detalles de la licitación copiados al portapapeles.');
+        });
+    } else {
+        alert(shareText);
+    }
 }
 
 function renderFichaGeminiBox(lic) {

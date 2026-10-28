@@ -44,3 +44,4 @@ class PerfilTornusController extends Controller
         return back()->with('status', 'Perfil base y criterios de Tornus Agency guardados exitosamente. Las futuras evaluaciones de Gemini se contrastarán con estos datos.');
     }
 }
+
