@@ -80,16 +80,16 @@
                     <span>Esta semana: 3 a 7 días</span>
                 </a>
 
-                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'ideal'])) }}"
-                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'ideal' ? 'border-emerald-400 bg-emerald-100 text-emerald-900 font-bold' : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' }}">
+                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'month'])) }}"
+                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'month' ? 'border-emerald-400 bg-emerald-100 text-emerald-900 font-bold' : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' }}">
                     <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    <span>Con tiempo: &gt; 7 días</span>
+                    <span>Con tiempo: 15 a 30 días</span>
                 </a>
 
-                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'recent'])) }}"
-                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'recent' ? 'border-blue-400 bg-blue-100 text-blue-900 font-bold' : 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100' }}">
+                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'quarter'])) }}"
+                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'quarter' ? 'border-blue-400 bg-blue-100 text-blue-900 font-bold' : 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100' }}">
                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span>Recién convocada: &lt; 24h</span>
+                    <span>Con tiempo: 1 a 3 meses</span>
                 </a>
             </div>
         </form>
@@ -274,32 +274,34 @@
                 <div id="lic-card-{{ $lic->id }}" class="licitacion-card bg-[#fffdf6] border border-[#e3dbc2] border-l-4 border-l-[#8a252c] rounded p-4 sm:p-5 shadow-xs hover:border-[#0b4a57] transition-all">
                     
                     <!-- Fila Superior: Badges a la izquierda y Presupuesto a la derecha -->
-                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-2">
-                        <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                        
+                        <!-- Badges con ancho seguro y whitespace-nowrap para evitar desbordes -->
+                        <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-w-0 flex-1">
                             <!-- Badge de Vencimiento: Cierra hoy / Cierra en X días -->
-                            <span class="px-2 py-0.5 rounded bg-[#fcedeb] text-[#8a252c] font-medium">
-                                {{ $urgency['is_critical'] ? 'Cierra hoy' : $urgency['badge'] }}
+                            <span class="px-2 py-0.5 rounded {{ $urgency['class'] }} font-medium whitespace-nowrap shrink-0">
+                                {{ $urgency['badge'] }}
                             </span>
 
                             <!-- Departamento / Resto del país -->
-                            <span class="px-2 py-0.5 rounded bg-[#00232c] text-[#fbfb75] font-bold">
+                            <span class="px-2 py-0.5 rounded bg-[#00232c] text-[#fbfb75] font-bold whitespace-nowrap shrink-0">
                                 {{ $lic->departamento ?: 'Resto del país' }}
                             </span>
 
                             <!-- Categoría -->
-                            <span class="px-2 py-0.5 rounded bg-[#ece6d5] text-[#56686b]">
+                            <span class="px-2 py-0.5 rounded bg-[#ece6d5] text-[#56686b] whitespace-nowrap shrink-0">
                                 {{ $lic->categoria ?: 'Servicios Generales' }}
                             </span>
 
                             <!-- Estado / Fase -->
-                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 whitespace-nowrap shrink-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                                 <span>{{ $lic->fase ?: 'Convocado · Recibiendo ofertas' }}</span>
                             </span>
 
                             <!-- Plazo en días -->
-                            <span class="px-1.5 py-0.5 text-[#56686b] flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <span class="px-1.5 py-0.5 text-[#56686b] flex items-center gap-1 whitespace-nowrap shrink-0">
+                                <svg class="w-3.5 h-3.5 text-[#56686b] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
@@ -307,42 +309,47 @@
                             </span>
 
                             <!-- Modalidad -->
-                            <span class="px-2 py-0.5 rounded bg-[#dce6e7] text-[#0b4a57] font-medium">
+                            <span class="px-2 py-0.5 rounded bg-[#dce6e7] text-[#0b4a57] font-medium whitespace-nowrap shrink-0">
                                 {{ $lic->tipo_proceso ?: 'Mínima cuantía' }}
                             </span>
                         </div>
 
-                        <!-- Presupuesto Oficial & Cierre -->
+                        <!-- Presupuesto Oficial & Fechas Clave -->
                         <div class="text-right shrink-0">
                             <div class="font-bold text-xl sm:text-2xl text-[#00232c] tracking-tight">
                                 {{ $lic->formatted_cuantia }}
                             </div>
                             <div class="text-[11px] font-mono text-[#56686b]">
-                                Recepción de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? date('d M', strtotime($lic->fecha_cierre)) : '28 oct' }}</strong>
+                                Cierre de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? date('d M', strtotime($lic->fecha_cierre)) : 'Pendiente' }}</strong>
                             </div>
+                            @if($lic->fecha_publicacion)
+                                <div class="text-[10px] font-mono text-[#56686b]">
+                                    Apertura / Salida: <strong>{{ date('d M', strtotime($lic->fecha_publicacion)) }}</strong>
+                                </div>
+                            @endif
                             <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5">
                                 {{ $lic->referencia ?: $lic->external_id }}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Objeto / Título -->
-                    <h3 class="text-sm sm:text-[15px] font-bold text-[#00232c] leading-snug line-clamp-2 mb-2">
+                    <!-- Objeto / Título Completo sin desborde -->
+                    <h3 class="w-full block text-sm sm:text-[15px] font-bold text-[#00232c] leading-snug line-clamp-2 my-2.5 break-words">
                         {{ $lic->objeto }}
                     </h3>
 
                     <!-- Fila Inferior: Ubicación a la izquierda y 2 Filas de Botones a la derecha -->
-                    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pt-1">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-[#f2ece0]">
                         
                         <!-- Ubicación y Entidad -->
-                        <div class="text-xs font-mono text-[#56686b] flex flex-wrap items-center gap-2">
-                            <strong class="text-[#00232c]">{{ $lic->municipio ? $lic->municipio . ' · ' . $lic->departamento : ($lic->departamento ?: 'Nacional') }}</strong>
-                            <span>{{ $lic->entidad }}</span>
+                        <div class="text-xs font-mono text-[#56686b] flex flex-wrap items-center gap-2 min-w-0 flex-1">
+                            <strong class="text-[#00232c] whitespace-nowrap">{{ $lic->municipio ? $lic->municipio . ' · ' . $lic->departamento : ($lic->departamento ?: 'Nacional') }}</strong>
+                            <span class="truncate max-w-xs sm:max-w-md">{{ $lic->entidad }}</span>
 
                             <!-- Badge de Afinidad si ya está evaluado -->
                             <span id="card-affinity-{{ $lic->id }}" class="inline-flex">
                                 @if($lic->score !== null)
-                                    <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200') }}">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200') }}">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $lic->score >= 70 ? 'bg-emerald-600' : ($lic->score >= 40 ? 'bg-amber-600' : 'bg-rose-600') }}"></span>
                                         <span>{{ $lic->score }}% AFINIDAD · {{ $lic->nivel }}</span>
                                     </span>
@@ -351,13 +358,13 @@
                         </div>
 
                         <!-- Grupo de Botones de Acción (2 Filas como en la imagen) -->
-                        <div class="flex flex-col items-end gap-2 shrink-0">
+                        <div class="flex flex-col items-end gap-1.5 shrink-0">
                             
                             <!-- Fila 1 de Botones: Preparar, Compartir, Ver en SECOP II, Descartar -->
                             <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
                                 <!-- Botón Preparar -->
-                                <button type="button" onclick="openFichaModal({{ json_encode($lic) }})"
-                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                <button type="button" onclick="openFichaModal({{ $lic->id }})"
+                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
                                     <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                         <polyline points="14 2 14 8 20 8"></polyline>
@@ -369,8 +376,8 @@
                                 </button>
 
                                 <!-- Botón Compartir -->
-                                <button type="button" onclick="shareLicitacion({{ json_encode($lic) }})"
-                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                <button type="button" onclick="shareLicitacion({{ $lic->id }})"
+                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
                                     <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <circle cx="18" cy="5" r="3"></circle>
                                         <circle cx="6" cy="12" r="3"></circle>
@@ -384,7 +391,7 @@
                                 <!-- Botón Ver en SECOP II -->
                                 @if($lic->url_proceso)
                                     <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer"
-                                        class="px-2.5 py-1 bg-white border border-[#00232c] hover:bg-[#00232c] text-[#00232c] hover:text-white rounded font-medium transition-colors flex items-center gap-1">
+                                        class="px-2.5 py-1 bg-white border border-[#00232c] hover:bg-[#00232c] text-[#00232c] hover:text-white rounded font-medium transition-colors flex items-center gap-1 whitespace-nowrap">
                                         <span>Ver en {{ App\Services\MarketService::sourceName() }}</span>
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -396,7 +403,7 @@
 
                                 <!-- Botón Descartar -->
                                 <button type="button" onclick="dismissCard('lic-card-{{ $lic->id }}')"
-                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 rounded text-[#56686b] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 rounded text-[#56686b] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
                                     <span>✕ DESCARTAR</span>
                                 </button>
                             </div>
@@ -404,8 +411,8 @@
                             <!-- Fila 2 de Botones: Ficha, Analizar con Gemini, Guardar -->
                             <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
                                 <!-- Botón Ficha -->
-                                <button type="button" onclick="openFichaModal({{ json_encode($lic) }})"
-                                    class="px-3 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer">
+                                <button type="button" onclick="openFichaModal({{ $lic->id }})"
+                                    class="px-3 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
                                     <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -416,7 +423,7 @@
 
                                 <!-- Botón Analizar con Gemini -->
                                 <button type="button" id="btn-analyze-{{ $lic->id }}" onclick="analyzeWithGemini({{ $lic->id }})"
-                                    class="px-3.5 py-1 text-white bg-[#4338ca] hover:bg-[#3730a3] rounded font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
+                                    class="px-3.5 py-1 text-white bg-[#4338ca] hover:bg-[#3730a3] rounded font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap">
                                     <svg class="w-3.5 h-3.5 text-indigo-200" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
                                     </svg>
@@ -427,7 +434,7 @@
                                 <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit"
-                                        class="px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
+                                        class="px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
                                         <svg class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                         </svg>
@@ -522,45 +529,77 @@
             </button>
         </div>
 
-        <!-- Grilla de 4 Tarjetas de Detalle Técnico -->
+        <!-- Grilla de 4 Tarjetas de Detalle Técnico Completo -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             
-            <!-- Tarjeta 1: Presupuesto y Cierre -->
-            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PRESUPUESTO OFICIAL</span>
-                <div id="ficha-cuantia" class="font-['Instrument_Serif',serif] text-2xl font-bold text-[#00232c]"></div>
-                <span id="ficha-cuantia-raw" class="block text-xs font-mono text-[#56686b] mb-3"></span>
+            <!-- Tarjeta 1: Presupuesto y Fechas (Apertura y Cierre) -->
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
+                <div>
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PRESUPUESTO OFICIAL</span>
+                    <div id="ficha-cuantia" class="font-['Instrument_Serif',serif] text-2xl font-bold text-[#00232c]"></div>
+                    <span id="ficha-cuantia-raw" class="block text-xs font-mono text-[#56686b]"></span>
+                </div>
 
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">CIERRE DE RECEPCIÓN</span>
-                <div id="ficha-cierre-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
-                <span id="ficha-cierre-dias" class="text-xs font-mono font-bold text-amber-700"></span>
+                <div class="pt-2 border-t border-[#e3dbc2]/60 space-y-2">
+                    <div>
+                        <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">APERTURA / PUBLICACIÓN (DÍA QUE SALE)</span>
+                        <div id="ficha-apertura-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                    </div>
+
+                    <div>
+                        <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">RECEPCIÓN DE OFERTAS (DÍA QUE TERMINA)</span>
+                        <div id="ficha-cierre-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                        <span id="ficha-cierre-dias" class="text-xs font-mono font-bold text-amber-700"></span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Tarjeta 2: Entidad y Ubicación -->
-            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ENTIDAD CONTRATANTE</span>
-                <div id="ficha-entidad" class="text-xs font-bold text-[#00232c] mb-3 leading-snug"></div>
+            <!-- Tarjeta 2: Entidad, Adjudicador y Ubicación -->
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
+                <div>
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ENTIDAD CONTRATANTE</span>
+                    <div id="ficha-entidad" class="text-xs font-bold text-[#00232c] leading-snug"></div>
+                    <div id="ficha-adjudicador-box" class="mt-1 hidden">
+                        <span class="text-[10px] font-mono text-[#56686b] uppercase">Adjudicador:</span>
+                        <span id="ficha-adjudicador" class="text-xs font-mono text-[#00232c] font-medium"></span>
+                    </div>
+                </div>
 
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">UBICACIÓN GEOGRÁFICA</span>
-                <div id="ficha-ubicacion" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                <div class="pt-2 border-t border-[#e3dbc2]/60">
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">UBICACIÓN GEOGRÁFICA</span>
+                    <div id="ficha-ubicacion" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                </div>
             </div>
 
             <!-- Tarjeta 3: Modalidad y Estado -->
-            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">MODALIDAD</span>
-                <div id="ficha-modalidad" class="text-xs font-mono font-bold text-[#00232c] mb-3"></div>
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
+                <div>
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">MODALIDAD DE CONTRATACIÓN</span>
+                    <div id="ficha-modalidad" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                </div>
 
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ESTADO / FASE</span>
-                <div id="ficha-estado" class="text-xs font-mono font-bold text-emerald-800"></div>
+                <div class="pt-2 border-t border-[#e3dbc2]/60">
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ESTADO / FASE ACTUAL</span>
+                    <div id="ficha-estado" class="text-xs font-mono font-bold text-emerald-800"></div>
+                </div>
             </div>
 
-            <!-- Tarjeta 4: Plazo y Competencia -->
-            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4">
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN</span>
-                <div id="ficha-plazo" class="text-xs font-mono font-bold text-[#00232c] mb-3"></div>
+            <!-- Tarjeta 4: Plazo, Interés y Adendas -->
+            <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
+                <div>
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN</span>
+                    <div id="ficha-plazo" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                </div>
 
-                <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">COMPETENCIA / INTERÉS</span>
-                <div id="ficha-vistas" class="text-xs font-mono font-bold text-[#00232c]">1 vistas</div>
+                <div class="pt-2 border-t border-[#e3dbc2]/60">
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">COMPETENCIA / INTERÉS REGISTRADO</span>
+                    <div id="ficha-vistas" class="text-xs font-mono font-bold text-[#00232c]">1 vistas</div>
+                </div>
+
+                <div id="ficha-adenda-box" class="pt-2 border-t border-[#e3dbc2]/60 hidden">
+                    <span class="block text-[10px] font-mono font-bold uppercase text-amber-800 tracking-wider">ÚLTIMA ADENDA REGISTRADA</span>
+                    <div id="ficha-adenda-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                </div>
             </div>
 
         </div>
@@ -633,6 +672,7 @@
 </div>
 
 <script>
+window.licitacionesStore = @json($licitaciones->keyBy('id'));
 let currentFichaLicitacion = null;
 
 function toggleAccordion(contentId, chevronId) {
@@ -660,42 +700,100 @@ function closeEditKeywordModal() {
     document.getElementById('modal-edit-keyword').classList.add('hidden');
 }
 
-function openFichaModal(lic) {
+function openFichaModal(licOrId) {
+    let lic = null;
+    if (typeof licOrId === 'object' && licOrId !== null) {
+        lic = licOrId;
+        if (lic.id && window.licitacionesStore && window.licitacionesStore[lic.id]) {
+            lic = Object.assign({}, lic, window.licitacionesStore[lic.id]);
+        }
+    } else if (window.licitacionesStore && window.licitacionesStore[licOrId]) {
+        lic = window.licitacionesStore[licOrId];
+    }
+    if (!lic) return;
     currentFichaLicitacion = lic;
     
     document.getElementById('ficha-referencia-badge').textContent = lic.referencia || lic.external_id || 'SIN REF';
     document.getElementById('ficha-categoria-badge').textContent = lic.categoria || 'Servicios Generales';
     document.getElementById('ficha-objeto-title').textContent = lic.objeto;
     
-    // Tarjeta 1
+    // Tarjeta 1: Presupuesto y Fechas (Apertura y Cierre)
     const cuantiaVal = Number(lic.cuantia || 0);
     const symbol = lic.moneda === 'PEN' ? 'S/' : '$';
     document.getElementById('ficha-cuantia').textContent = symbol + ' ' + (cuantiaVal > 1000000 ? (cuantiaVal / 1000000).toFixed(0) + ' M' : cuantiaVal.toLocaleString());
     document.getElementById('ficha-cuantia-raw').textContent = symbol + ' ' + cuantiaVal.toLocaleString() + ' ' + (lic.moneda || 'COP');
     
-    if (lic.fecha_cierre) {
-        document.getElementById('ficha-cierre-fecha').textContent = lic.fecha_cierre.substring(0, 10);
-        document.getElementById('ficha-cierre-dias').textContent = 'Fecha de recepción activa';
+    // Fecha Apertura / Salida
+    const aperturaEl = document.getElementById('ficha-apertura-fecha');
+    if (lic.fecha_publicacion) {
+        aperturaEl.textContent = lic.fecha_publicacion.substring(0, 10);
     } else {
-        document.getElementById('ficha-cierre-fecha').textContent = 'Pendiente por definir';
-        document.getElementById('ficha-cierre-dias').textContent = '';
+        aperturaEl.textContent = 'No registrada en SECOP II';
+    }
+
+    // Fecha Cierre / Recepción
+    const cierreEl = document.getElementById('ficha-cierre-fecha');
+    const cierreDiasEl = document.getElementById('ficha-cierre-dias');
+    if (lic.fecha_cierre) {
+        const cierreStr = lic.fecha_cierre.substring(0, 10);
+        cierreEl.textContent = cierreStr;
+        
+        // Calcular días restantes
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const cierreDate = new Date(cierreStr + 'T00:00:00');
+        const diffTime = cierreDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) {
+            cierreDiasEl.textContent = 'Proceso cerrado';
+            cierreDiasEl.className = 'text-xs font-mono font-bold text-rose-700';
+        } else if (diffDays === 0) {
+            cierreDiasEl.textContent = '¡Cierra hoy!';
+            cierreDiasEl.className = 'text-xs font-mono font-bold text-rose-700 animate-pulse';
+        } else if (diffDays === 1) {
+            cierreDiasEl.textContent = 'Queda 1 día (Vence mañana)';
+            cierreDiasEl.className = 'text-xs font-mono font-bold text-rose-700';
+        } else {
+            cierreDiasEl.textContent = `Quedan ${diffDays} días`;
+            cierreDiasEl.className = diffDays <= 7 ? 'text-xs font-mono font-bold text-amber-700' : 'text-xs font-mono font-bold text-emerald-700';
+        }
+    } else {
+        cierreEl.textContent = 'Pendiente por definir';
+        cierreDiasEl.textContent = '';
     }
     
-    // Tarjeta 2
+    // Tarjeta 2: Entidad, Adjudicador y Ubicación
     document.getElementById('ficha-entidad').textContent = lic.entidad || 'Entidad no especificada';
+    const adjBox = document.getElementById('ficha-adjudicador-box');
+    const adjEl = document.getElementById('ficha-adjudicador');
+    if (lic.adjudicador) {
+        adjEl.textContent = lic.adjudicador;
+        adjBox.classList.remove('hidden');
+    } else {
+        adjBox.classList.add('hidden');
+    }
     document.getElementById('ficha-ubicacion').textContent = (lic.municipio ? lic.municipio + ', ' : '') + (lic.departamento || 'Colombia');
     
-    // Tarjeta 3
+    // Tarjeta 3: Modalidad y Estado
     document.getElementById('ficha-modalidad').textContent = lic.tipo_proceso || 'Convocatoria Pública';
     document.getElementById('ficha-estado').textContent = (lic.fase || lic.estado || 'Publicado') + ' · abierto';
     
-    // Tarjeta 4
+    // Tarjeta 4: Plazo, Competencia y Adendas
     document.getElementById('ficha-plazo').textContent = (lic.prov_unicos ? lic.prov_unicos + ' día(s)' : '60 día(s)');
+    const adendaBox = document.getElementById('ficha-adenda-box');
+    const adendaEl = document.getElementById('ficha-adenda-fecha');
+    if (lic.adenda_fecha) {
+        adendaEl.textContent = lic.adenda_fecha.substring(0, 10);
+        adendaBox.classList.remove('hidden');
+    } else {
+        adendaBox.classList.add('hidden');
+    }
     
     // Objeto Full
     document.getElementById('ficha-objeto-full').textContent = lic.objeto;
     
-    // URL
+    // URL SECOP II
     const urlBtn = document.getElementById('ficha-url-btn');
     if (lic.url_proceso) {
         urlBtn.href = lic.url_proceso;
@@ -713,7 +811,7 @@ function openFichaModal(lic) {
         carteraText.textContent = 'Guardar en Cartera';
     }
     
-    // Gemini Affinity
+    // Gemini Affinity (Persistencia en vivo)
     renderFichaGeminiBox(lic);
     
     // Mostrar Drawer Derecho y Fondo
@@ -744,7 +842,8 @@ function dismissCard(cardId) {
     }
 }
 
-function shareLicitacion(lic) {
+function shareLicitacion(licOrId) {
+    const lic = typeof licOrId === 'object' ? licOrId : (window.licitacionesStore[licOrId] || {});
     const shareText = `Licitación: ${lic.referencia || lic.external_id}\nObjeto: ${lic.objeto}\nPresupuesto: ${lic.formatted_cuantia || ''}\nVer en SECOP II: ${lic.url_proceso || window.location.href}`;
     if (navigator.clipboard) {
         navigator.clipboard.writeText(shareText).then(() => {
@@ -766,7 +865,7 @@ function renderFichaGeminiBox(lic) {
         const pill = document.getElementById('ficha-gemini-pill');
         const status = document.getElementById('ficha-gemini-status');
         
-        pill.textContent = lic.score + '% AFINIDAD · ' + lic.nivel;
+        pill.textContent = lic.score + '% AFINIDAD · ' + (lic.nivel || 'EVALUADO');
         
         if (lic.score >= 70) {
             box.className = 'p-5 rounded-lg border border-emerald-200 bg-emerald-50/50 border-l-4 border-l-emerald-600 space-y-3';
@@ -785,8 +884,8 @@ function renderFichaGeminiBox(lic) {
             status.className = 'text-xs font-mono font-bold text-rose-800 tracking-wider';
         }
         
-        document.getElementById('ficha-gemini-justificacion').textContent = lic.justificacion || 'Evaluación generada con el modelo Gemini contrastando el perfil de Tornus Agency.';
-        document.getElementById('ficha-gemini-puntos').textContent = lic.puntos_clave || 'Revisar términos de referencia y habilitantes jurídicos.';
+        document.getElementById('ficha-gemini-justificacion').textContent = lic.justificacion || 'Evaluación estratégica generada por IA contrastando con el perfil de Tornus Agency.';
+        document.getElementById('ficha-gemini-puntos').textContent = lic.puntos_clave || 'Revisar términos de referencia y habilitantes jurídicos antes de postulación.';
     } else {
         box.classList.add('hidden');
         placeholder.classList.remove('hidden');
@@ -813,6 +912,11 @@ async function analyzeWithGemini(id) {
         if (data.success && data.data) {
             const evalData = data.data;
             
+            // Persistir en el almacén local del cliente
+            if (window.licitacionesStore && window.licitacionesStore[id]) {
+                Object.assign(window.licitacionesStore[id], evalData);
+            }
+            
             // Actualizar tarjeta en radar
             const cardAffinity = document.getElementById('card-affinity-' + id);
             if (cardAffinity) {
@@ -820,7 +924,7 @@ async function analyzeWithGemini(id) {
                 const dotColor = evalData.score >= 70 ? 'bg-emerald-600' : (evalData.score >= 40 ? 'bg-amber-600' : 'bg-rose-600');
                 
                 cardAffinity.innerHTML = `
-                    <span class="px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center gap-1.5 ${colorClass} border">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${colorClass} border">
                         <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
                         <span>${evalData.score}% AFINIDAD · ${evalData.nivel}</span>
                     </span>
@@ -829,12 +933,9 @@ async function analyzeWithGemini(id) {
             
             if (btnText) btnText.textContent = 'Re-evaluar Gemini';
             
-            // Si está abierta la ficha de esta licitación, actualizarla
-            if (currentFichaLicitacion && currentFichaLicitacion.id === id) {
-                currentFichaLicitacion.score = evalData.score;
-                currentFichaLicitacion.nivel = evalData.nivel;
-                currentFichaLicitacion.justificacion = evalData.justificacion;
-                currentFichaLicitacion.puntos_clave = evalData.puntos_clave;
+            // Si está abierta la ficha de esta licitación, actualizarla en tiempo real
+            if (currentFichaLicitacion && currentFichaLicitacion.id == id) {
+                Object.assign(currentFichaLicitacion, evalData);
                 renderFichaGeminiBox(currentFichaLicitacion);
             }
         }
@@ -848,6 +949,37 @@ async function reEvaluateCurrentFicha() {
     if (!currentFichaLicitacion) return;
     const reEvalBtn = document.getElementById('ficha-re-eval-btn');
     if (reEvalBtn) {
+        reEvalBtn.disabled = true;
+        reEvalBtn.innerHTML = `
+            <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            <span>ANALIZANDO CON IA...</span>
+        `;
+    }
+    
+    await analyzeWithGemini(currentFichaLicitacion.id);
+    
+    if (reEvalBtn) {
+        reEvalBtn.disabled = false;
+        reEvalBtn.innerHTML = `
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+            <span>RE-EVALUAR CON GEMINI</span>
+        `;
+    }
+}
+
+function shareCurrentFicha() {
+    if (!currentFichaLicitacion) return;
+    const shareText = `Licitación: ${currentFichaLicitacion.referencia || currentFichaLicitacion.external_id}\nObjeto: ${currentFichaLicitacion.objeto}\nPresupuesto: ${currentFichaLicitacion.formatted_cuantia || ''}\nVer en SECOP II: ${currentFichaLicitacion.url_proceso || window.location.href}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Enlace y detalles de la ficha copiados al portapapeles.');
+        });
+    } else {
+        alert(shareText);
+    }
+}
+</script>
         reEvalBtn.disabled = true;
         reEvalBtn.innerHTML = `
             <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>

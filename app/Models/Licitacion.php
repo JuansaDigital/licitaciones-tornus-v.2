@@ -43,18 +43,29 @@ class Licitacion extends Model
     {
         if (empty($this->fecha_cierre)) {
             return [
-                'badge' => 'Sin fecha',
-                'class' => 'bg-slate-100 text-slate-600 border-slate-200',
+                'badge' => 'Sin fecha fijada',
+                'class' => 'bg-slate-100 text-slate-700 border-slate-200',
                 'is_critical' => false,
                 'hours_left' => null
             ];
         }
 
         try {
-            $cierre = new \DateTime($this->fecha_cierre);
-            $now = new \DateTime();
-            
-            if ($now > $cierre) {
+            $todayStr = now()->format('Y-m-d');
+            $cierreDateStr = substr($this->fecha_cierre, 0, 10);
+
+            // Si cierra hoy exactamente
+            if ($cierreDateStr === $todayStr) {
+                return [
+                    'badge' => 'Cierra hoy',
+                    'class' => 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
+                    'is_critical' => true,
+                    'hours_left' => 12
+                ];
+            }
+
+            // Si es anterior a hoy
+            if ($cierreDateStr < $todayStr) {
                 return [
                     'badge' => 'Cerrada',
                     'class' => 'bg-slate-200 text-slate-700 border-slate-300',
@@ -63,29 +74,39 @@ class Licitacion extends Model
                 ];
             }
 
+            $cierre = new \DateTime($cierreDateStr . ' 23:59:59');
+            $now = new \DateTime(now()->format('Y-m-d H:i:s'));
             $diff = $now->diff($cierre);
-            $hours = ($diff->days * 24) + $diff->h;
+            $days = $diff->days;
 
-            if ($hours < 48) {
+            if ($days <= 2) {
                 return [
-                    'badge' => '< 48h (' . $hours . 'h)',
-                    'class' => 'bg-rose-50 text-rose-700 border-rose-200 font-semibold',
+                    'badge' => 'Cierra en ' . ($days == 1 ? '1 día' : $days . ' días'),
+                    'class' => 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
                     'is_critical' => true,
-                    'hours_left' => $hours
+                    'hours_left' => $days * 24
                 ];
-            } elseif ($hours <= 168) { // 7 dias
+            } elseif ($days <= 7) {
                 return [
-                    'badge' => $diff->days . 'd restantes',
-                    'class' => 'bg-amber-50 text-amber-700 border-amber-200',
+                    'badge' => 'Cierra en ' . $days . ' días',
+                    'class' => 'bg-amber-100 text-amber-900 border-amber-300 font-semibold',
                     'is_critical' => false,
-                    'hours_left' => $hours
+                    'hours_left' => $days * 24
+                ];
+            } elseif ($days <= 30) {
+                return [
+                    'badge' => 'Cierra en ' . $days . ' días',
+                    'class' => 'bg-emerald-50 text-emerald-800 border-emerald-200 font-medium',
+                    'is_critical' => false,
+                    'hours_left' => $days * 24
                 ];
             } else {
+                $months = round($days / 30, 1);
                 return [
-                    'badge' => $diff->days . 'd restantes',
-                    'class' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    'badge' => 'Con tiempo: ' . $days . 'd (~' . $months . ' m)',
+                    'class' => 'bg-blue-50 text-blue-800 border-blue-200 font-medium',
                     'is_critical' => false,
-                    'hours_left' => $hours
+                    'hours_left' => $days * 24
                 ];
             }
         } catch (\Exception $e) {

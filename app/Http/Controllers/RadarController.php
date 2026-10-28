@@ -81,10 +81,13 @@ class RadarController extends Controller
             ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
             ->count();
 
-        // 7. Filtro de Urgencia / Vencimiento
+        // 7. Filtro de Plazo de Cierre (Vencimiento)
         $selectedUrgency = $request->input('urgency', 'all');
         $dateCritical = now()->addDays(2)->toDateString();
         $dateWeek = now()->addDays(7)->toDateString();
+        $dateMonthStart = now()->addDays(15)->toDateString();
+        $dateMonthEnd = now()->addDays(30)->toDateString();
+        $dateQuarterEnd = now()->addDays(90)->toDateString();
 
         if ($selectedUrgency === 'critical') {
             $query->whereNotNull('fecha_cierre')
@@ -94,13 +97,14 @@ class RadarController extends Controller
             $query->whereNotNull('fecha_cierre')
                   ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateCritical])
                   ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateWeek]);
-        } elseif ($selectedUrgency === 'ideal') {
+        } elseif ($selectedUrgency === 'month') {
             $query->whereNotNull('fecha_cierre')
-                  ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateWeek]);
-        } elseif ($selectedUrgency === 'recent') {
-            $dateRecent = now()->subHours(24)->toDateString();
-            $query->whereNotNull('fecha_publicacion')
-                  ->whereRaw("substr(fecha_publicacion, 1, 10) >= ?", [$dateRecent]);
+                  ->whereRaw("substr(fecha_cierre, 1, 10) >= ?", [$dateMonthStart])
+                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateMonthEnd]);
+        } elseif ($selectedUrgency === 'quarter') {
+            $query->whereNotNull('fecha_cierre')
+                  ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateMonthEnd])
+                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateQuarterEnd]);
         }
 
         $licitaciones = $query
