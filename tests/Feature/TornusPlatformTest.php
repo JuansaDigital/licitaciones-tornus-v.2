@@ -218,4 +218,26 @@ class TornusPlatformTest extends TestCase
             'exclusion' => 'FERRETERIA'
         ])->assertSessionHas('status');
     }
+
+    public function test_authenticated_user_can_access_and_update_perfil_tornus(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('perfil'));
+        $response->assertStatus(200);
+        $response->assertSee('Base de Conocimiento de Tornus Agency (Contexto para Gemini)');
+        $response->assertSee('GUARDAR PERFIL DE TORNUS');
+
+        $updateResponse = $this->actingAs($user)->post(route('perfil.update'), [
+            'nombre_agencia' => 'Tornus Agency Test',
+            'sitio_web' => 'https://tornus.agency',
+            'propuesta_valor' => 'Especialistas en turismo y marketing de territorio.',
+            'servicios_principales' => "Branding territorial\nPauta digital",
+            'entidades_objetivo' => "FONTUR\nMinCIT",
+            'criterios_exclusion' => "Obras civiles\nVigilancia",
+            'rango_presupuesto_ideal' => 'Proyectos desde $50,000,000 COP',
+        ]);
+
+        $updateResponse->assertSessionHas('status');
+    }
 }

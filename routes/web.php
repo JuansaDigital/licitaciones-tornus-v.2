@@ -6,6 +6,7 @@ use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CarteraController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\MarketController;
+use App\Http\Controllers\PerfilTornusController;
 use App\Http\Controllers\RadarController;
 use App\Services\MarketService;
 use Illuminate\Support\Facades\Auth;
@@ -64,4 +65,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/afinidad', [AfinidadController::class, 'index'])->name('afinidad');
     Route::post('/afinidad/{id}/evaluar', [AfinidadController::class, 'evaluate'])->name('afinidad.evaluate');
     Route::post('/afinidad/batch', [AfinidadController::class, 'evaluateBatch'])->name('afinidad.batch');
+
+    // Base de Conocimiento / Perfil de Tornus Agency (Contexto para Gemini)
+    Route::get('/perfil-tornus', [PerfilTornusController::class, 'index'])->name('perfil');
+    Route::post('/perfil-tornus', [PerfilTornusController::class, 'update'])->name('perfil.update');
 });
