@@ -28,10 +28,6 @@
 
                     <!-- Enlaces Principales -->
                     <nav class="hidden md:flex items-center gap-1 font-mono text-xs">
-                        <a href="{{ route('market.select') }}" 
-                            class="px-3 py-2 rounded transition-colors {{ request()->routeIs('market.select') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
-                            SELECCIONAR PAÍS
-                        </a>
                         <a href="{{ route('radar') }}" 
                             class="px-3 py-2 rounded transition-colors {{ request()->routeIs('radar') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
                             RADAR EN VIVO
@@ -47,22 +43,24 @@
                     </nav>
                 </div>
 
-                <!-- Lado Derecho: Switcher de País y Usuario -->
+                <!-- Lado Derecho: Indicador de País Activo, Usuario, Configuración y Logout -->
                 <div class="flex items-center gap-4">
                     
-                    <!-- SELECTOR DE MERCADO / PAÍS ACTIVO -->
-                    <div class="flex items-center bg-[#0b4a57] border border-[#15424d] rounded p-0.5 font-mono text-xs">
-                        <a href="{{ route('market.switch', 'CO') }}" 
-                            class="px-2.5 py-1 rounded transition-all flex items-center gap-1.5 {{ App\Services\MarketService::isColombia() ? 'bg-[#fbfb75] text-[#00232c] font-bold shadow-xs' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}"
-                            title="Cambiar a Colombia">
-                            <span>CO</span>
-                            <span class="hidden sm:inline text-[10px] tracking-tight">Colombia</span>
-                        </a>
-                        <a href="{{ route('market.switch', 'PE') }}" 
-                            class="px-2.5 py-1 rounded transition-all flex items-center gap-1.5 {{ App\Services\MarketService::isPeru() ? 'bg-[#fbfb75] text-[#00232c] font-bold shadow-xs' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}"
-                            title="Cambiar a Perú">
-                            <span>PE</span>
-                            <span class="hidden sm:inline text-[10px] tracking-tight">Perú</span>
+                    <!-- INDICADOR DE MERCADO / PAÍS ACTIVO (Sin switch directo) -->
+                    <div class="flex items-center gap-2 font-mono text-xs">
+                        <span class="px-2.5 py-1 rounded bg-[#0b4a57] border border-[#15424d] font-bold text-[#fbfb75] flex items-center gap-1.5 shadow-xs">
+                            <span class="w-1.5 h-1.5 rounded-full {{ App\Services\MarketService::isColombia() ? 'bg-amber-400' : 'bg-rose-400' }}"></span>
+                            <span>{{ App\Services\MarketService::current() }} · {{ App\Services\MarketService::marketName() }}</span>
+                        </span>
+
+                        <a href="{{ route('market.select') }}" 
+                            class="px-2.5 py-1 rounded border border-[#15424d] hover:border-[#fbfb75] text-[#9db3b4] hover:text-[#fbfb75] hover:bg-[#0b4a57]/60 transition-colors flex items-center gap-1"
+                            title="Regresar a seleccionar país">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M8 3L4 7l4 4"></path>
+                                <path d="M4 7h16"></path>
+                            </svg>
+                            <span class="hidden sm:inline">Cambiar País</span>
                         </a>
                     </div>
 
@@ -108,12 +106,13 @@
             <span>Fuente: {{ App\Services\MarketService::sourceName() }}</span>
             <span class="text-[#9db3b4]">|</span>
             <span>Moneda: {{ App\Services\MarketService::currency() }} ({{ App\Services\MarketService::currencySymbol() }})</span>
-            <a href="{{ route('market.select') }}" class="ml-2 px-2 py-0.5 rounded border border-[#e3dbc2] bg-[#fffdf6] hover:bg-[#e3dbc2] text-[#00232c] text-[11px] font-semibold transition-colors">
-                Cambiar País
-            </a>
         </div>
-        <div class="text-[11px] text-[#56686b]">
-            Base de datos aislada: <code class="bg-[#fffdf6] px-1 py-0.5 rounded border border-[#e3dbc2]">licitaciones_{{ strtolower(App\Services\MarketService::current()) }}.sqlite</code>
+        <div class="flex items-center gap-3 text-[11px] text-[#56686b]">
+            <span>Base aislada: <code class="bg-[#fffdf6] px-1 py-0.5 rounded border border-[#e3dbc2]">licitaciones_{{ strtolower(App\Services\MarketService::current()) }}.sqlite</code></span>
+            <span class="text-[#e3dbc2]">·</span>
+            <a href="{{ route('market.select') }}" class="underline hover:text-[#00232c] font-semibold">
+                Seleccionar otro país
+            </a>
         </div>
     </div>
 
