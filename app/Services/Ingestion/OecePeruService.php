@@ -180,12 +180,11 @@ class OecePeruService
                 $municipio = $provincia;
             }
 
-            // 2. Nivel de Gobierno y Fuente de Financiamiento (planning.budget.description)
-            $entidadNombre = $buyer['name'] ?? ($tender['procuringEntity']['name'] ?? 'Entidad Pública Perú');
-            $fuenteFinanciamiento = $planning['budget']['description'] ?? 'Fondos Públicos';
-            $ordenEntidad = $this->detectarOrdenEntidadPeru($entidadNombre, $fuenteFinanciamiento);
+            // 2. Presupuesto / Fuente de Financiamiento real del JSON (planning.budget.description)
+            $entidadNombre = $buyer['name'] ?? ($tender['procuringEntity']['name'] ?? null);
+            $ordenEntidad = $planning['budget']['description'] ?? null;
 
-            // 3. Dirección, Teléfono y OCID para detalle de la entidad
+            // 3. Dirección, Teléfono, CONSUCODE y OCID literales del JSON
             $detallesEntidad = [];
             if (!empty($direccion)) {
                 $detallesEntidad[] = $direccion;
@@ -193,12 +192,16 @@ class OecePeruService
             if (!empty($telefono)) {
                 $detallesEntidad[] = "Tel: {$telefono}";
             }
+            $consucodeId = $parties[0]['identifier']['id'] ?? ($buyer['id'] ?? null);
+            if (!empty($consucodeId)) {
+                $detallesEntidad[] = "ID Entidad: {$consucodeId}";
+            }
             if (!empty($release['ocid'])) {
                 $detallesEntidad[] = "OCID: {$release['ocid']}";
             }
             $adjudicadorInfo = !empty($detallesEntidad) ? implode(' · ', $detallesEntidad) : null;
 
-            // 4. Clasificación de Ítems (CUBSO + UNSPSC + Unidad/Cantidad + Estado)
+            // 4. Clasificación literal de Ítems del JSON (CUBSO + UNSPSC + Unidad/Cantidad + Estado)
             $items = $tender['items'] ?? [];
             $firstItem = $items[0] ?? [];
             $cubsoId = $firstItem['classification']['id'] ?? '';
@@ -208,23 +211,33 @@ class OecePeruService
 
             $codigosArray = [];
             if (!empty($unspscId)) {
-                $codigosArray[] = $unspscId . (!empty($unspscDesc) ? " ({$unspscDesc})" : '');
+                $codigosArray[] = "UNSPSC {$unspscId}" . (!empty($unspscDesc) ? ": {$unspscDesc}" : '');
             }
             if (!empty($cubsoId)) {
-                $codigosArray[] = "CUBSO {$cubsoId}" . (!empty($cubsoDesc) ? " ({$cubsoDesc})" : '');
+                $codigosArray[] = "CUBSO {$cubsoId}" . (!empty($cubsoDesc) ? ": {$cubsoDesc}" : '');
             }
             $codigoUnspsc = !empty($codigosArray) ? implode(' · ', $codigosArray) : null;
 
             $unitName = $firstItem['unit']['name'] ?? '';
             $quantity = $firstItem['quantity'] ?? null;
-            $baseMainCat = $tender['mainProcurementCategory'] ?? 'services';
-            $tipoContrato = $this->traducirTipoContratoPeru($baseMainCat, $quantity, $unitName);
+            $baseMainCat = $tender['mainProcurementCategory'] ?? null;
 
-            // 5. Categoría inteligente para filtros de línea de negocio
+            $tipoContratoParts = [];
+            if (!empty($cubsoDesc)) {
+                $tipoContratoParts[] = $cubsoDesc;
+            } elseif (!empty($baseMainCat)) {
+                $tipoContratoParts[] = $baseMainCat;
+            }
+            if (!empty($quantity) && !empty($unitName)) {
+                $tipoContratoParts[] = "{$quantity} {$unitName}";
+            }
+            $tipoContrato = !empty($tipoContratoParts) ? implode(' · ', $tipoContratoParts) : null;
+
+            // 5. Categoría del JSON (mainProcurementCategory o línea detectada para filtro)
             $objetoTxt = $tender['description'] ?? ($firstItem['description'] ?? '');
-            $categoria = $this->detectarCategoriaPeru($objetoTxt, "{$cubsoDesc} {$unspscDesc}", $baseMainCat);
+            $categoria = $this->detectarCategoriaPeru($objetoTxt, "{$cubsoDesc} {$unspscDesc}", $baseMainCat ?? 'services');
 
-            // 6. Cronograma, Duración, Competencia y Documentos (Bases Administrativas)
+            // 6. Cronograma, Duración, Competencia y Documentos literales del JSON
             $valor = $tender['value'] ?? [];
             $monto = (float)($valor['amount'] ?? 0.0);
             if ($monto <= 0 && !empty($firstItem['totalValue']['amount'])) {
@@ -243,17 +256,18 @@ class OecePeruService
             $unidadDuracion = null;
             if (!empty($contractPeriod['durationInDays'])) {
                 $duracion = (string)$contractPeriod['durationInDays'];
-                $unidadDuracion = 'día(s) calendario';
+                $unidadDuracion = 'día(s)';
             } elseif (!empty($enquiry['durationInDays'])) {
                 $duracion = (string)$enquiry['durationInDays'];
-                $unidadDuracion = 'día(s) etapa consultas (plazo contractual en Bases)';
+                $unidadDuracion = 'día(s) (enquiryPeriod)';
             }
 
             $provUnicos = (int)($tender['numberOfTenderers'] ?? count($tender['tenderers'] ?? []));
-            $itemStatus = !empty($firstItem['statusDetails']) ? ucfirst(strtolower(trim($firstItem['statusDetails']))) : 'Convocado';
-            $faseProceso = !empty($enquiry['endDate']) ? 'Formulación de Consultas / Ofertas' : 'Convocatoria SEACE v3';
+            $itemStatus = !empty($firstItem['statusDetails']) ? trim($firstItem['statusDetails']) : 'CONVOCADO';
+            $tags = $release['tag'] ?? [];
+            $faseProceso = !empty($tags) ? implode(' / ', $tags) : null;
 
-            // Enlace directo de descarga de Bases Administrativas (SEACE Alfresco)
+            // Enlace directo de descarga de Bases Administrativas del JSON (tender.documents[0].url)
             $docs = $tender['documents'] ?? [];
             $docUrl = $docs[0]['url'] ?? null;
 
@@ -269,8 +283,8 @@ class OecePeruService
                     'departamento' => $departamento,
                     'municipio' => $municipio,
                     'cuantia' => $monto,
-                    'moneda' => 'PEN',
-                    'tipo_proceso' => $tender['procurementMethodDetails'] ?? 'Concurso Público',
+                    'moneda' => $valor['currency'] ?? 'PEN',
+                    'tipo_proceso' => $tender['procurementMethodDetails'] ?? null,
                     'tipo_contrato' => $tipoContrato,
                     'codigo_unspsc' => $codigoUnspsc,
                     'categoria' => $categoria,

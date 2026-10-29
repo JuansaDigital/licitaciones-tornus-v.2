@@ -37,18 +37,11 @@ class SyncLicitacionesCommand extends Command
 
         if ($market === 'PE' || $market === 'ALL') {
             $this->line("Procesando Perú (SEACE / OECE)...");
-            
-            // 1. Importar CSV local si existe
-            $csv = base_path('informacion extra/Tornus_Licitaciones_Peru.csv');
-            if (file_exists($csv)) {
-                $importedCsv = $oece->importFromCsv($csv);
-                $this->info("  Importados {$importedCsv} registros desde CSV de Perú.");
-            }
 
-            // 2. Consultar API en vivo
-            $live = $oece->syncFromApi(3);
+            // Consultar API OCDS en vivo (sin archivos estáticos/CSV)
+            $live = $oece->syncFromApi(5);
             $purgedPe = $oece->purgeExpired('peru');
-            $this->info("  Sincronizados {$live} registros desde API OCDS Perú.");
+            $this->info("  Sincronizados {$live} registros reales desde API OCDS Perú.");
             $this->info("  Depuradas {$purgedPe} propuestas vencidas en Perú.");
         }
 
