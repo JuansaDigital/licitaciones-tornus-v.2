@@ -22,7 +22,16 @@ class CarteraController extends Controller
         $connection = MarketService::connection();
         $licitaciones = Licitacion::on($connection)
             ->where('en_cartera', true)
+            ->orderBy('updated_at', 'desc')
             ->get();
+
+        // Garantizar que toda licitación en cartera tenga un estado válido del Kanban
+        foreach ($licitaciones as $lic) {
+            if (empty($lic->cartera_estado) || !in_array($lic->cartera_estado, self::ESTADOS)) {
+                $lic->cartera_estado = 'Identificada';
+                $lic->save();
+            }
+        }
 
         // Agrupar por columna del tablero Kanban
         $kanban = [];

@@ -41,7 +41,7 @@ return new class extends Migration
 
             // Cartera / Pipeline
             $table->boolean('en_cartera')->default(false)->index();
-            $table->string('cartera_estado', 50)->default('Por Analizar');
+            $table->string('cartera_estado', 50)->default('Identificada');
             $table->text('notas')->nullable();
 
             $table->timestamps();

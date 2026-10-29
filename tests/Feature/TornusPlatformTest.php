@@ -113,6 +113,33 @@ class TornusPlatformTest extends TestCase
         $response->assertSee('Mi Cartera Comercial');
     }
 
+    public function test_saving_licitacion_to_cartera_displays_in_kanban_board(): void
+    {
+        $user = User::factory()->create();
+        $lic = Licitacion::on('colombia')->create([
+            'external_id' => 'TEST.CARTERA.KANBAN',
+            'referencia' => 'REF-KANBAN-99',
+            'entidad' => 'FONTUR TEST KANBAN',
+            'objeto' => 'Promoción turística del destino Caribe',
+            'departamento' => 'Bolívar',
+            'cuantia' => 120000000,
+            'moneda' => 'COP',
+            'en_cartera' => false,
+            'cartera_estado' => 'Por Analizar',
+        ]);
+
+        // Guardar en cartera vía endpoint
+        $this->actingAs($user)->post(route('radar.cartera', $lic->id))->assertRedirect();
+
+        // Verificar que aparece visible en el Kanban de /cartera bajo 'Identificada'
+        $response = $this->actingAs($user)->get('/cartera');
+        $response->assertStatus(200);
+        $response->assertSee('REF-KANBAN-99');
+        $response->assertSee('Promoción turística del destino Caribe');
+
+        $lic->delete();
+    }
+
     public function test_authenticated_user_can_access_afinidad(): void
     {
         $user = User::factory()->create();

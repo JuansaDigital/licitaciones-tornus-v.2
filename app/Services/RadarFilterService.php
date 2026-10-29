@@ -75,7 +75,8 @@ class RadarFilterService
     protected static function getFilePath(string $market): string
     {
         $marketKey = strtolower($market) === 'pe' ? 'pe' : 'co';
-        return storage_path("app/radar_filters_{$marketKey}.json");
+        $suffix = app()->environment('testing') ? '_testing' : '';
+        return storage_path("app/radar_filters_{$marketKey}{$suffix}.json");
     }
 
     public static function getData(string $market = 'CO'): array

@@ -459,14 +459,14 @@
                                 </button>
 
                                 <!-- Botón Guardar en Cartera -->
-                                <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline">
+                                <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline" onsubmit="return toggleCarteraAjax(event, {{ $lic->id }})">
                                     @csrf
-                                    <button type="submit"
+                                    <button type="submit" id="btn-cartera-{{ $lic->id }}"
                                         class="px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
-                                        <svg class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <svg id="icon-cartera-{{ $lic->id }}" class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                         </svg>
-                                        <span>{{ $lic->en_cartera ? 'Guardado' : 'Guardar' }}</span>
+                                        <span id="text-cartera-{{ $lic->id }}">{{ $lic->en_cartera ? 'Guardado' : 'Guardar' }}</span>
                                     </button>
                                 </form>
                             </div>
@@ -668,10 +668,10 @@
     <!-- Barra Inferior de Acciones Fija en el Sidebar -->
     <div class="bg-[#f7f2df] border-t border-[#e3dbc2] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div class="flex items-center gap-2">
-            <form id="ficha-cartera-form" method="POST" class="inline">
+            <form id="ficha-cartera-form" method="POST" class="inline" onsubmit="return toggleCarteraAjax(event, currentFichaLicitacion ? currentFichaLicitacion.id : null)">
                 @csrf
                 <button type="submit" id="ficha-cartera-btn" class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold text-[#00232c] hover:bg-[#f2ece0] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <svg id="ficha-cartera-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     <span id="ficha-cartera-btn-text">Guardar en Cartera</span>
                 </button>
             </form>
@@ -909,12 +909,7 @@ function openFichaModal(licOrId) {
     
     // Form Cartera
     document.getElementById('ficha-cartera-form').action = '/radar/' + lic.id + '/cartera';
-    const carteraText = document.getElementById('ficha-cartera-btn-text');
-    if (lic.en_cartera) {
-        carteraText.textContent = 'En Mi Cartera';
-    } else {
-        carteraText.textContent = 'Guardar en Cartera';
-    }
+    renderFichaCarteraBtn(lic.en_cartera);
     
     // Gemini Affinity (Persistencia en vivo)
     renderFichaGeminiBox(lic);
@@ -925,6 +920,76 @@ function openFichaModal(licOrId) {
     drawer.classList.remove('translate-x-full');
     drawer.classList.add('translate-x-0');
     document.body.style.overflow = 'hidden';
+}
+
+function renderFichaCarteraBtn(enCartera) {
+    const btn = document.getElementById('ficha-cartera-btn');
+    const text = document.getElementById('ficha-cartera-btn-text');
+    const icon = document.getElementById('ficha-cartera-icon');
+    if (!btn || !text) return;
+
+    if (enCartera) {
+        text.textContent = 'En Mi Cartera';
+        btn.className = 'px-3.5 py-2 border border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800 rounded text-xs font-mono font-bold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer';
+        if (icon) icon.setAttribute('fill', 'currentColor');
+    } else {
+        text.textContent = 'Guardar en Cartera';
+        btn.className = 'px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold text-[#00232c] hover:bg-[#f2ece0] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer';
+        if (icon) icon.setAttribute('fill', 'none');
+    }
+}
+
+async function toggleCarteraAjax(event, id) {
+    if (!id) return true;
+    event.preventDefault();
+
+    try {
+        const token = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '{{ csrf_token() }}';
+        const res = await fetch('/radar/' + id + '/cartera', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            const enCartera = !!data.en_cartera;
+            if (window.licitacionesStore && window.licitacionesStore[id]) {
+                window.licitacionesStore[id].en_cartera = enCartera;
+                window.licitacionesStore[id].cartera_estado = data.cartera_estado || 'Identificada';
+            }
+            if (currentFichaLicitacion && currentFichaLicitacion.id == id) {
+                currentFichaLicitacion.en_cartera = enCartera;
+                renderFichaCarteraBtn(enCartera);
+            }
+
+            const cardBtn = document.getElementById('btn-cartera-' + id);
+            const cardIcon = document.getElementById('icon-cartera-' + id);
+            const cardText = document.getElementById('text-cartera-' + id);
+            if (cardBtn && cardText) {
+                if (enCartera) {
+                    cardBtn.className = 'px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap bg-emerald-700 text-white hover:bg-emerald-800';
+                    cardText.textContent = 'Guardado';
+                    if (cardIcon) {
+                        cardIcon.className = 'w-3.5 h-3.5 text-white';
+                        cardIcon.setAttribute('fill', 'currentColor');
+                    }
+                } else {
+                    cardBtn.className = 'px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]';
+                    cardText.textContent = 'Guardar';
+                    if (cardIcon) {
+                        cardIcon.className = 'w-3.5 h-3.5 text-[#56686b]';
+                        cardIcon.setAttribute('fill', 'none');
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        event.target.submit();
+    }
+    return false;
 }
 
 function closeFichaModal() {

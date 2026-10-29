@@ -99,25 +99,35 @@
 
                 <div class="space-y-3 flex-1">
                     @forelse($cards as $lic)
+                        @php
+                            $urgency = $lic->urgency_info;
+                        @endphp
                         <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded p-3 shadow-xs hover:border-[#00232c] transition-all">
                             <div class="flex items-center justify-between gap-2 text-[10px] font-mono text-[#56686b] mb-1.5">
                                 <span class="font-bold text-[#00232c] truncate" title="{{ $lic->codigo_proceso }}">{{ $lic->codigo_proceso }}</span>
-                                <span class="text-emerald-700 font-semibold shrink-0">{{ $lic->formatted_cuantia }}</span>
+                                <span class="px-1.5 py-0.5 rounded {{ $urgency['class'] }} font-medium whitespace-nowrap shrink-0">
+                                    {{ $urgency['badge'] }}
+                                </span>
                             </div>
 
-                            <p class="text-xs text-[#00232c] font-medium leading-snug line-clamp-3 mb-2">
+                            <div class="text-xs font-bold text-emerald-800 font-mono mb-1.5">
+                                {{ $lic->formatted_cuantia }}
+                            </div>
+
+                            <p class="text-xs text-[#00232c] font-medium leading-snug line-clamp-3 mb-2 break-words">
                                 {{ $lic->objeto }}
                             </p>
 
                             <div class="text-[10px] font-mono text-[#56686b] mb-2 space-y-0.5">
-                                <div><span class="text-[#9db3b4]">Entidad:</span> {{ Str::limit($lic->entidad, 30) }}</div>
-                                <div><span class="text-[#9db3b4]">Cierre:</span> {{ $lic->fecha_cierre ? substr($lic->fecha_cierre, 0, 10) : 'N/A' }}</div>
+                                <div><span class="text-[#9db3b4]">Entidad:</span> {{ Str::limit($lic->entidad, 32) }}</div>
+                                <div><span class="text-[#9db3b4]">Ubicación:</span> {{ $lic->municipio ? $lic->municipio . ', ' : '' }}{{ $lic->departamento ?: 'Nacional' }}</div>
+                                <div><span class="text-[#9db3b4]">Cierre:</span> <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? substr($lic->fecha_cierre, 0, 10) : 'Pendiente' }}</strong></div>
                             </div>
 
                             @if($lic->score !== null)
                                 <div class="mb-2">
-                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono {{ $lic->nivel === 'ALTA' ? 'bg-purple-50 text-purple-700 border border-purple-200 font-semibold' : 'bg-slate-100 text-slate-600' }}">
-                                        Afinidad: {{ $lic->nivel }} ({{ $lic->score }} pts)
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-mono inline-block {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border border-amber-200 font-semibold' : 'bg-rose-50 text-rose-800 border border-rose-200 font-semibold') }}">
+                                        Afinidad IA: {{ $lic->nivel }} ({{ $lic->score }}%)
                                     </span>
                                 </div>
                             @endif
@@ -126,7 +136,7 @@
                             <form action="{{ route('cartera.status', $lic->id) }}" method="POST" class="pt-2 border-t border-[#f2ece0] space-y-2">
                                 @csrf
                                 <div class="flex items-center gap-1.5">
-                                    <select name="cartera_estado" onchange="this.form.submit()" class="w-full text-[10px] font-mono bg-white border border-[#e3dbc2] rounded px-1.5 py-1 text-[#00232c]">
+                                    <select name="cartera_estado" onchange="this.form.submit()" class="w-full text-[10px] font-mono bg-white border border-[#e3dbc2] rounded px-1.5 py-1 text-[#00232c] cursor-pointer">
                                         @foreach(App\Http\Controllers\CarteraController::ESTADOS as $opt)
                                             <option value="{{ $opt }}" {{ $lic->cartera_estado === $opt ? 'selected' : '' }}>
                                                 Mover a: {{ $opt }}
@@ -134,10 +144,34 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <input type="text" name="notas" value="{{ $lic->notas }}" placeholder="Nota interna..." 
+                                <input type="text" name="notas" value="{{ $lic->notas }}" placeholder="Agregar nota interna y Enter..." 
                                     onchange="this.form.submit()"
                                     class="w-full text-[10px] font-sans bg-white border border-[#e3dbc2] rounded px-2 py-1 placeholder-[#9db3b4] text-[#00232c]">
                             </form>
+
+                            <!-- Acciones Rápidas: Ver en Portal y Retirar de Cartera -->
+                            <div class="flex items-center justify-between gap-2 pt-2 mt-2 border-t border-[#f2ece0] text-[10px] font-mono">
+                                @if($lic->url_proceso)
+                                    <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer"
+                                        class="text-[#00232c] hover:text-[#0b4a57] font-semibold underline flex items-center gap-1">
+                                        <span>Ver en {{ App\Services\MarketService::sourceName() }}</span>
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                                        </svg>
+                                    </a>
+                                @else
+                                    <span></span>
+                                @endif
+
+                                <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Retirar esta licitación de Mi Cartera?');">
+                                    @csrf
+                                    <button type="submit" class="text-rose-700 hover:text-rose-900 font-medium cursor-pointer">
+                                        × Retirar
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     @empty
                         <div class="h-32 flex items-center justify-center text-[11px] font-mono text-[#9db3b4] border border-dashed border-[#e3dbc2] rounded">

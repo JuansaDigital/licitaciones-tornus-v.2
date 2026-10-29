@@ -21,14 +21,7 @@ class GeminiAffinityService
 
     protected function loadAgencyProfile(): void
     {
-        $profilePath = storage_path('app/tornus_profile.json');
-        if (!file_exists($profilePath)) {
-            $profilePath = base_path('informacion extra/LICITACIONES TORNUS COLOMBIA/data/tornus_profile.json');
-        }
-
-        if (file_exists($profilePath)) {
-            $this->agencyProfile = json_decode(file_get_contents($profilePath), true) ?: [];
-        }
+        $this->agencyProfile = \App\Http\Controllers\PerfilTornusController::getActiveProfile();
     }
 
     /**

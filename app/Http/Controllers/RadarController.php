@@ -195,7 +195,7 @@ class RadarController extends Controller
         $licitacion = Licitacion::on($connection)->findOrFail($id);
 
         $licitacion->en_cartera = !$licitacion->en_cartera;
-        if ($licitacion->en_cartera && empty($licitacion->cartera_estado)) {
+        if ($licitacion->en_cartera && (empty($licitacion->cartera_estado) || !in_array($licitacion->cartera_estado, CarteraController::ESTADOS))) {
             $licitacion->cartera_estado = 'Identificada';
         }
         $licitacion->save();
