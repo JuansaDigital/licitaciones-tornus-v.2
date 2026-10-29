@@ -28,19 +28,26 @@
                     </a>
 
                     <!-- Enlaces Principales -->
+                    @php
+                        $navConn = App\Services\MarketService::connection();
+                        $navCarteraCount = App\Models\Licitacion::on($navConn)->where('en_cartera', true)->count();
+                        $navAfinidadCount = App\Models\Licitacion::on($navConn)->whereNotNull('score')->count();
+                    @endphp
                     <nav class="hidden md:flex items-center gap-1 font-mono text-xs">
                         <a href="{{ route('radar') }}" 
                             class="px-3 py-2 rounded transition-colors {{ request()->routeIs('radar') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
                             RADAR EN VIVO
                         </a>
                         <a href="{{ route('cartera') }}" 
-                            class="px-3 py-2 rounded transition-colors {{ request()->routeIs('cartera') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
-                            MI CARTERA
+                            class="px-3 py-2 rounded transition-colors flex items-center gap-1.5 {{ request()->routeIs('cartera') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
+                            <span>MI CARTERA</span>
+                            <span class="nav-cartera-badge px-1.5 py-0.2 rounded-full text-[10px] {{ request()->routeIs('cartera') ? 'bg-[#fbfb75] text-[#00232c]' : 'bg-[#0b4a57] text-[#fbfb75]' }} font-bold">{{ $navCarteraCount }}</span>
                         </a>
                         <a href="{{ route('afinidad') }}" 
                             title="Propuestas analizadas con IA"
-                            class="px-3 py-2 rounded transition-colors whitespace-nowrap {{ request()->routeIs('afinidad') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
-                            ANALIZADAS CON IA
+                            class="px-3 py-2 rounded transition-colors whitespace-nowrap flex items-center gap-1.5 {{ request()->routeIs('afinidad') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
+                            <span>ANALIZADAS CON IA</span>
+                            <span class="nav-afinidad-badge px-1.5 py-0.2 rounded-full text-[10px] {{ request()->routeIs('afinidad') ? 'bg-[#fbfb75] text-[#00232c]' : 'bg-[#0b4a57] text-[#fbfb75]' }} font-bold">{{ $navAfinidadCount }}</span>
                         </a>
                         <a href="{{ route('perfil') }}" 
                             class="px-3 py-2 rounded transition-colors {{ request()->routeIs('perfil') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
@@ -108,12 +115,14 @@
                     RADAR EN VIVO
                 </a>
                 <a href="{{ route('cartera') }}" 
-                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors {{ request()->routeIs('cartera') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
-                    MI CARTERA
+                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors flex items-center gap-1 {{ request()->routeIs('cartera') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
+                    <span>MI CARTERA</span>
+                    <span class="nav-cartera-badge px-1.5 py-0.2 rounded-full text-[10px] bg-[#0b4a57] text-[#fbfb75] font-bold">{{ $navCarteraCount }}</span>
                 </a>
                 <a href="{{ route('afinidad') }}" 
-                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors {{ request()->routeIs('afinidad') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
-                    ANALIZADAS IA
+                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors flex items-center gap-1 {{ request()->routeIs('afinidad') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
+                    <span>ANALIZADAS IA</span>
+                    <span class="nav-afinidad-badge px-1.5 py-0.2 rounded-full text-[10px] bg-[#0b4a57] text-[#fbfb75] font-bold">{{ $navAfinidadCount }}</span>
                 </a>
                 <a href="{{ route('perfil') }}" 
                     class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors {{ request()->routeIs('perfil') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">

@@ -275,9 +275,20 @@
                             @endif
                         </div>
 
-                        <!-- Botones de Acción: Eliminar Uno a Uno, Cartera y Ver en SECOP -->
+                        <!-- Botones de Acción: Ficha 360, Eliminar Uno a Uno, Cartera y Ver en SECOP -->
                         <div class="flex flex-wrap items-center gap-1.5 shrink-0">
                             
+                            <!-- Botón Ficha 360 -->
+                            <button type="button" onclick="openFichaModal({{ $lic->id }})"
+                                class="px-3 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <span>Ficha 360</span>
+                            </button>
+
                             <!-- Botón Eliminar Una a Una -->
                             <form action="{{ route('afinidad.destroy', $lic->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Deseas eliminar esta propuesta analizada con IA?');">
                                 @csrf
@@ -296,13 +307,13 @@
                             </form>
 
                             <!-- Botón Guardar en Cartera -->
-                            <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline">
+                            <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline" onsubmit="return toggleCarteraAjax(event, {{ $lic->id }})">
                                 @csrf
-                                <button type="submit" class="px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
-                                    <svg class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <button type="submit" id="btn-cartera-{{ $lic->id }}" class="px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
+                                    <svg id="icon-cartera-{{ $lic->id }}" class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                     </svg>
-                                    <span>{{ $lic->en_cartera ? 'En Cartera' : 'Guardar' }}</span>
+                                    <span id="text-cartera-{{ $lic->id }}">{{ $lic->en_cartera ? 'Guardado' : 'Guardar' }}</span>
                                 </button>
                             </form>
 
@@ -392,5 +403,8 @@ function confirmBulkDelete() {
 
     form.submit();
 }
+
+window.licitacionesStore = @json($licitaciones->keyBy('id'));
 </script>
+@include('partials.ficha-drawer')
 @endsection

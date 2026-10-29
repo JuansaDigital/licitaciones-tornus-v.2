@@ -42,7 +42,7 @@ class CarteraController extends Controller
         $totalEnCartera = $licitaciones->count();
         $valorTotal = $licitaciones->sum('cuantia');
 
-        return view('cartera', compact('kanban', 'totalEnCartera', 'valorTotal'));
+        return view('cartera', compact('kanban', 'totalEnCartera', 'valorTotal', 'licitaciones'));
     }
 
     public function updateStatus(Request $request, $id)

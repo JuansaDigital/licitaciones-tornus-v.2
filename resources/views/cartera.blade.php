@@ -149,21 +149,25 @@
                                     class="w-full text-[10px] font-sans bg-white border border-[#e3dbc2] rounded px-2 py-1 placeholder-[#9db3b4] text-[#00232c]">
                             </form>
 
-                            <!-- Acciones Rápidas: Ver en Portal y Retirar de Cartera -->
+                            <!-- Acciones Rápidas: Ficha 360, Ver en Portal y Retirar de Cartera -->
                             <div class="flex items-center justify-between gap-2 pt-2 mt-2 border-t border-[#f2ece0] text-[10px] font-mono">
-                                @if($lic->url_proceso)
-                                    <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer"
-                                        class="text-[#00232c] hover:text-[#0b4a57] font-semibold underline flex items-center gap-1">
-                                        <span>Ver en {{ App\Services\MarketService::sourceName() }}</span>
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                            <polyline points="15 3 21 3 21 9"></polyline>
-                                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                                        </svg>
-                                    </a>
-                                @else
-                                    <span></span>
-                                @endif
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="openFichaModal({{ $lic->id }})"
+                                        class="px-2 py-0.5 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded font-semibold transition-colors cursor-pointer">
+                                        Ficha 360
+                                    </button>
+                                    @if($lic->url_proceso)
+                                        <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer"
+                                            class="text-[#00232c] hover:text-[#0b4a57] font-semibold underline flex items-center gap-0.5">
+                                            <span>{{ App\Services\MarketService::sourceName() }}</span>
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                <polyline points="15 3 21 3 21 9"></polyline>
+                                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                                            </svg>
+                                        </a>
+                                    @endif
+                                </div>
 
                                 <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline" onsubmit="return confirm('¿Retirar esta licitación de Mi Cartera?');">
                                     @csrf
@@ -184,5 +188,10 @@
     </div>
 
 </div>
+
+<script>
+window.licitacionesStore = @json($licitaciones->keyBy('id'));
+</script>
+@include('partials.ficha-drawer')
 @endsection
 

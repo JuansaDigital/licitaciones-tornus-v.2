@@ -67,6 +67,60 @@ class RadarController extends Controller
             $query->where('departamento', 'like', "%{$selectedRegion}%");
         }
 
+        // 4b. Filtro por Categoría / Línea de Negocio (Enfoque Turismo, Eventos, Publicidad, etc.)
+        $selectedCategory = trim($request->input('category', 'all'));
+        if ($selectedCategory === 'turismo') {
+            $query->where(function ($q) {
+                $q->where('categoria', 'plan')
+                  ->orWhere('objeto', 'like', '%turis%')
+                  ->orWhere('objeto', 'like', '%fontur%')
+                  ->orWhere('objeto', 'like', '%famtrip%')
+                  ->orWhere('objeto', 'like', '%destino%')
+                  ->orWhere('entidad', 'like', '%turis%')
+                  ->orWhere('entidad', 'like', '%fontur%');
+            });
+        } elseif ($selectedCategory === 'eventos') {
+            $query->where(function ($q) {
+                $q->where('categoria', 'evt')
+                  ->orWhere('objeto', 'like', '%evento%')
+                  ->orWhere('objeto', 'like', '%logístic%')
+                  ->orWhere('objeto', 'like', '%logistic%')
+                  ->orWhere('objeto', 'like', '%feria%')
+                  ->orWhere('objeto', 'like', '%congreso%');
+            });
+        } elseif ($selectedCategory === 'publicidad') {
+            $query->where(function ($q) {
+                $q->where('categoria', 'pub')
+                  ->orWhere('objeto', 'like', '%publicidad%')
+                  ->orWhere('objeto', 'like', '%campaña%')
+                  ->orWhere('objeto', 'like', '%pauta%')
+                  ->orWhere('objeto', 'like', '%medios%')
+                  ->orWhere('objeto', 'like', '%marca%');
+            });
+        } elseif ($selectedCategory === 'audiovisual') {
+            $query->where(function ($q) {
+                $q->where('categoria', 'audio')
+                  ->orWhere('objeto', 'like', '%audiovisual%')
+                  ->orWhere('objeto', 'like', '%producción%')
+                  ->orWhere('objeto', 'like', '%fotograf%');
+            });
+        } elseif ($selectedCategory === 'estrategia') {
+            $query->where(function ($q) {
+                $q->where('categoria', 'estrat')
+                  ->orWhere('objeto', 'like', '%estrategia%')
+                  ->orWhere('objeto', 'like', '%consultor%')
+                  ->orWhere('objeto', 'like', '%estudio de mercado%');
+            });
+        } elseif ($selectedCategory === 'digital') {
+            $query->where(function ($q) {
+                $q->where('categoria', 'tech')
+                  ->orWhere('objeto', 'like', '%portal web%')
+                  ->orWhere('objeto', 'like', '%página web%')
+                  ->orWhere('objeto', 'like', '%pagina web%')
+                  ->orWhere('objeto', 'like', '%plataforma%');
+            });
+        }
+
         // 5. Regiones disponibles para el filtro
         $regions = Licitacion::on($connection)
             ->whereNotNull('departamento')
@@ -131,6 +185,7 @@ class RadarController extends Controller
             'licitaciones',
             'regions',
             'selectedRegion',
+            'selectedCategory',
             'selectedUrgency',
             'search',
             'totalCount',
