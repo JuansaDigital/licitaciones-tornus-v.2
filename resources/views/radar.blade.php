@@ -315,7 +315,7 @@
                         </div>
 
                         <!-- Presupuesto Oficial & Fechas Clave -->
-                        <div class="text-right shrink-0 max-w-[220px] sm:max-w-[260px]">
+                        <div class="text-right shrink-0">
                             @if(empty($lic->cuantia) || (float)$lic->cuantia <= 0)
                                 <div class="font-bold text-xs sm:text-[13px] text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded inline-block tracking-tight mb-1 whitespace-nowrap">
                                     A definir (RFI / Cotización)
@@ -334,7 +334,7 @@
                                     Apertura / Salida: <strong>{{ date('d M', strtotime($lic->fecha_publicacion)) }}</strong>
                                 </div>
                             @endif
-                            <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5 truncate ml-auto" title="{{ $lic->codigo_proceso }}">
+                            <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5 max-w-[220px] truncate ml-auto" title="{{ $lic->codigo_proceso }}">
                                 {{ $lic->codigo_proceso }}
                             </div>
                         </div>
@@ -342,7 +342,7 @@
 
                     <!-- Objeto / Título Completo sin desborde -->
                     <h3 class="w-full block text-sm sm:text-[15px] font-bold text-[#00232c] leading-snug line-clamp-2 my-2.5 break-words">
-                        {{ $lic->objeto }}
+                        {{ (!empty($lic->objeto) && $lic->objeto !== 'No definido') ? $lic->objeto : ($lic->referencia ?: 'Licitación pública en ' . App\Services\MarketService::sourceName()) }}
                     </h3>
 
                     <!-- Dictamen Estratégico de Gemini en la Tarjeta (Visible si está evaluado o al presionar Analizar) -->
@@ -557,10 +557,10 @@
             </button>
         </div>
 
-        <!-- Grilla de 4 Tarjetas de Detalle Técnico Completo -->
+        <!-- Grilla de 4 Tarjetas de Detalle Técnico Completo (FICHA 360) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             
-            <!-- Tarjeta 1: Presupuesto y Fechas (Apertura y Cierre) -->
+            <!-- Tarjeta 1: Presupuesto y Cronograma de Convocatoria -->
             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
                 <div>
                     <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PRESUPUESTO OFICIAL</span>
@@ -579,14 +579,26 @@
                         <div id="ficha-cierre-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
                         <span id="ficha-cierre-dias" class="text-xs font-mono font-bold text-amber-700"></span>
                     </div>
+
+                    <div id="ficha-apertura-ofertas-box" class="hidden">
+                        <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">APERTURA EFECTIVA DE OFERTAS</span>
+                        <div id="ficha-apertura-ofertas" class="text-xs font-mono font-bold text-[#00232c]"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tarjeta 2: Entidad, Adjudicador y Ubicación -->
+            <!-- Tarjeta 2: Entidad Contratante (NIT, Orden y Ubicación) -->
             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
                 <div>
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ENTIDAD CONTRATANTE</span>
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">ENTIDAD CONTRATANTE</span>
+                        <span id="ficha-orden-entidad-label" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#e3dbc2]/60 text-[#00232c] hidden"></span>
+                    </div>
                     <div id="ficha-entidad" class="text-xs font-bold text-[#00232c] leading-snug"></div>
+                    <div id="ficha-nit-box" class="mt-1.5 hidden">
+                        <span class="text-[10px] font-mono text-[#56686b] uppercase">NIT:</span>
+                        <span id="ficha-nit" class="text-xs font-mono text-[#00232c] font-semibold"></span>
+                    </div>
                     <div id="ficha-adjudicador-box" class="mt-1 hidden">
                         <span class="text-[10px] font-mono text-[#56686b] uppercase">Adjudicador:</span>
                         <span id="ficha-adjudicador" class="text-xs font-mono text-[#00232c] font-medium"></span>
@@ -599,29 +611,40 @@
                 </div>
             </div>
 
-            <!-- Tarjeta 3: Modalidad y Estado -->
+            <!-- Tarjeta 3: Régimen y Modalidad Contractual -->
             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
                 <div>
                     <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">MODALIDAD DE CONTRATACIÓN</span>
                     <div id="ficha-modalidad" class="text-xs font-mono font-bold text-[#00232c]"></div>
                 </div>
 
-                <div class="pt-2 border-t border-[#e3dbc2]/60">
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ESTADO / FASE ACTUAL</span>
-                    <div id="ficha-estado" class="text-xs font-mono font-bold text-emerald-800"></div>
+                <div class="pt-2 border-t border-[#e3dbc2]/60 space-y-1.5">
+                    <div>
+                        <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">TIPO DE CONTRATO</span>
+                        <div id="ficha-tipo-contrato-text" class="text-xs font-mono font-bold text-[#00232c]">Prestación de Servicios</div>
+                    </div>
+                    <div id="ficha-unspsc-box" class="hidden">
+                        <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">CÓDIGO PRINCIPAL UNSPSC</span>
+                        <div id="ficha-unspsc-text" class="text-xs font-mono font-bold text-[#0b4a57]"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tarjeta 4: Plazo, Interés y Adendas -->
+            <!-- Tarjeta 4: Plazo, Competencia y Estado -->
             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
                 <div>
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN</span>
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN (REAL)</span>
                     <div id="ficha-plazo" class="text-xs font-mono font-bold text-[#00232c]"></div>
                 </div>
 
                 <div class="pt-2 border-t border-[#e3dbc2]/60">
                     <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">COMPETENCIA / INTERÉS REGISTRADO</span>
-                    <div id="ficha-vistas" class="text-xs font-mono font-bold text-[#00232c]">1 vistas</div>
+                    <div id="ficha-vistas" class="text-xs font-mono font-bold text-[#00232c]">Sin postulaciones registradas</div>
+                </div>
+
+                <div class="pt-2 border-t border-[#e3dbc2]/60">
+                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">ESTADO / FASE ACTUAL</span>
+                    <div id="ficha-estado" class="text-xs font-mono font-bold text-emerald-800"></div>
                 </div>
 
                 <div id="ficha-adenda-box" class="pt-2 border-t border-[#e3dbc2]/60 hidden">
@@ -795,9 +818,35 @@ function openFichaModal(licOrId) {
         cierreEl.textContent = 'Pendiente por definir';
         cierreDiasEl.textContent = '';
     }
+
+    // Apertura efectiva de ofertas
+    const aperturaOfertasBox = document.getElementById('ficha-apertura-ofertas-box');
+    if (lic.fecha_apertura_ofertas) {
+        document.getElementById('ficha-apertura-ofertas').textContent = lic.fecha_apertura_ofertas.substring(0, 10);
+        aperturaOfertasBox.classList.remove('hidden');
+    } else {
+        aperturaOfertasBox.classList.add('hidden');
+    }
     
-    // Tarjeta 2: Entidad, Adjudicador y Ubicación
+    // Tarjeta 2: Entidad, NIT, Orden, Adjudicador y Ubicación
     document.getElementById('ficha-entidad').textContent = lic.entidad || 'Entidad no especificada';
+    
+    const ordenEl = document.getElementById('ficha-orden-entidad-label');
+    if (lic.orden_entidad) {
+        ordenEl.textContent = lic.orden_entidad;
+        ordenEl.classList.remove('hidden');
+    } else {
+        ordenEl.classList.add('hidden');
+    }
+
+    const nitBox = document.getElementById('ficha-nit-box');
+    if (lic.nit_entidad) {
+        document.getElementById('ficha-nit').textContent = lic.nit_entidad;
+        nitBox.classList.remove('hidden');
+    } else {
+        nitBox.classList.add('hidden');
+    }
+
     const adjBox = document.getElementById('ficha-adjudicador-box');
     const adjEl = document.getElementById('ficha-adjudicador');
     if (lic.adjudicador) {
@@ -808,12 +857,30 @@ function openFichaModal(licOrId) {
     }
     document.getElementById('ficha-ubicacion').textContent = (lic.municipio ? lic.municipio + ', ' : '') + (lic.departamento || 'Colombia');
     
-    // Tarjeta 3: Modalidad y Estado
+    // Tarjeta 3: Modalidad, Tipo de Contrato y Código UNSPSC
     document.getElementById('ficha-modalidad').textContent = lic.tipo_proceso || 'Convocatoria Pública';
+    document.getElementById('ficha-tipo-contrato-text').textContent = lic.tipo_contrato || 'Prestación de Servicios';
+    
+    const unspscBox = document.getElementById('ficha-unspsc-box');
+    if (lic.codigo_unspsc) {
+        document.getElementById('ficha-unspsc-text').textContent = 'UNSPSC: ' + lic.codigo_unspsc;
+        unspscBox.classList.remove('hidden');
+    } else {
+        unspscBox.classList.add('hidden');
+    }
+    
+    // Tarjeta 4: Plazo real, Competencia, Estado y Adendas
+    if (lic.plazo_ejecucion_texto) {
+        document.getElementById('ficha-plazo').textContent = lic.plazo_ejecucion_texto;
+    } else if (lic.duracion && lic.unidad_duracion) {
+        document.getElementById('ficha-plazo').textContent = `${lic.duracion} ${lic.unidad_duracion}`;
+    } else if (lic.duracion) {
+        document.getElementById('ficha-plazo').textContent = `${lic.duracion} día(s)`;
+    } else {
+        document.getElementById('ficha-plazo').textContent = 'Según pliego de condiciones';
+    }
     document.getElementById('ficha-estado').textContent = (lic.fase || lic.estado || 'Publicado') + ' · abierto';
     
-    // Tarjeta 4: Plazo, Competencia y Adendas
-    document.getElementById('ficha-plazo').textContent = 'Según pliego de condiciones';
     const vistasEl = document.getElementById('ficha-vistas');
     if (vistasEl) {
         const provs = Number(lic.prov_unicos || 0);

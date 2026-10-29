@@ -22,6 +22,14 @@ class Licitacion extends Model
         'evaluado_en' => 'datetime',
     ];
 
+    protected $appends = [
+        'formatted_cuantia',
+        'codigo_proceso',
+        'dias_convocatoria',
+        'plazo_ejecucion_texto',
+        'urgency_info',
+    ];
+
     public function getConnectionName()
     {
         return $this->connection ?: MarketService::connection();
@@ -91,10 +99,16 @@ class Licitacion extends Model
     }
 
     /**
-     * Plazo de ejecución verificado (según pliego oficial de SECOP II)
+     * Plazo de ejecución verificado (según duración oficial de SECOP II o pliego)
      */
     public function getPlazoEjecucionTextoAttribute(): string
     {
+        if (!empty($this->duracion) && !empty($this->unidad_duracion)) {
+            return trim($this->duracion) . ' ' . trim($this->unidad_duracion);
+        }
+        if (!empty($this->duracion)) {
+            return trim($this->duracion) . ' día(s)';
+        }
         return 'Según pliego de condiciones';
     }
 

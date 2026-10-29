@@ -140,7 +140,7 @@ class SecopColombiaService
         $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND (fecha_de_recepcion_de >= '{$today}' OR fecha_de_recepcion_de IS NULL))";
         $whereSql = "{$whereKeywords} AND {$whereDate} AND (upper(nombre_del_procedimiento) NOT LIKE '%CUNDINAMARCA%')";
 
-        $query = "SELECT id_del_proceso, referencia, entidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, urlproceso, modalidad_de_contratacion, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
+        $query = "SELECT id_del_proceso, referencia, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
 
         $count = 0;
         try {
@@ -181,15 +181,22 @@ class SecopColombiaService
                             [
                                 'referencia' => $row['referencia'] ?? $extId,
                                 'entidad' => $row['entidad'] ?? 'Entidad Pública',
+                                'nit_entidad' => $row['nit_entidad'] ?? null,
+                                'orden_entidad' => $row['ordenentidad'] ?? null,
                                 'objeto' => $row['nombre_del_procedimiento'] ?? '',
                                 'departamento' => $row['departamento_entidad'] ?? '',
                                 'municipio' => $row['ciudad_entidad'] ?? '',
                                 'cuantia' => $cuantia,
                                 'moneda' => 'COP',
                                 'tipo_proceso' => $row['modalidad_de_contratacion'] ?? 'Convocatoria Pública',
+                                'tipo_contrato' => $row['tipo_de_contrato'] ?? null,
+                                'duracion' => !empty($row['duracion']) ? (string)$row['duracion'] : null,
+                                'unidad_duracion' => $row['unidad_de_duracion'] ?? null,
+                                'codigo_unspsc' => $row['codigo_principal_de_categoria'] ?? null,
                                 'estado' => $row['estado_del_procedimiento'] ?? 'Abierto',
                                 'fecha_publicacion' => !empty($row['fecha_de_publicacion_del']) ? substr($row['fecha_de_publicacion_del'], 0, 10) : null,
                                 'fecha_cierre' => !empty($row['fecha_de_recepcion_de']) ? substr($row['fecha_de_recepcion_de'], 0, 10) : null,
+                                'fecha_apertura_ofertas' => !empty($row['fecha_de_apertura_efectiva']) ? substr($row['fecha_de_apertura_efectiva'], 0, 10) : null,
                                 'url_proceso' => $row['urlproceso'] ?? null,
                             ]
                         );
