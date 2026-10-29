@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Licitacion;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
@@ -118,7 +119,62 @@ class TornusPlatformTest extends TestCase
 
         $response = $this->actingAs($user)->get('/afinidad');
         $response->assertStatus(200);
-        $response->assertSee('Calificación de Afinidad con Inteligencia Artificial');
+        $response->assertSee('Propuestas analizadas con IA');
+    }
+
+    public function test_can_delete_analyzed_proposal_individually(): void
+    {
+        $user = User::factory()->create();
+        $lic = Licitacion::on('colombia')->create([
+            'external_id' => 'TEST.DEL.1',
+            'referencia' => 'REF-DEL-1',
+            'entidad' => 'Entidad Test',
+            'objeto' => 'Servicios de publicidad y mercadeo',
+            'departamento' => 'Antioquia',
+            'cuantia' => 50000000,
+            'moneda' => 'COP',
+            'tipo_proceso' => 'Selección Abreviada',
+            'score' => 85,
+            'nivel' => 'ALTA',
+            'evaluado_en' => now(),
+            'en_cartera' => false,
+        ]);
+
+        $response = $this->actingAs($user)->delete(route('afinidad.destroy', $lic->id));
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('licitaciones', ['id' => $lic->id], 'colombia');
+    }
+
+    public function test_can_bulk_delete_analyzed_proposals(): void
+    {
+        $user = User::factory()->create();
+        $lic1 = Licitacion::on('colombia')->create([
+            'external_id' => 'TEST.BULK.1',
+            'referencia' => 'REF-BULK-1',
+            'entidad' => 'Entidad Test 1',
+            'objeto' => 'Campaña turística 1',
+            'score' => 75,
+            'nivel' => 'ALTA',
+            'evaluado_en' => now(),
+            'en_cartera' => false,
+        ]);
+        $lic2 = Licitacion::on('colombia')->create([
+            'external_id' => 'TEST.BULK.2',
+            'referencia' => 'REF-BULK-2',
+            'entidad' => 'Entidad Test 2',
+            'objeto' => 'Campaña turística 2',
+            'score' => 80,
+            'nivel' => 'ALTA',
+            'evaluado_en' => now(),
+            'en_cartera' => false,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('afinidad.bulk-destroy'), [
+            'ids' => [$lic1->id, $lic2->id]
+        ]);
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('licitaciones', ['id' => $lic1->id], 'colombia');
+        $this->assertDatabaseMissing('licitaciones', ['id' => $lic2->id], 'colombia');
     }
 
     public function test_calendar_feed_is_publicly_accessible(): void

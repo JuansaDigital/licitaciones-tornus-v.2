@@ -37,8 +37,9 @@
                             MI CARTERA
                         </a>
                         <a href="{{ route('afinidad') }}" 
-                            class="px-3 py-2 rounded transition-colors {{ request()->routeIs('afinidad') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
-                            AFINIDAD IA
+                            title="Propuestas analizadas con IA"
+                            class="px-3 py-2 rounded transition-colors whitespace-nowrap {{ request()->routeIs('afinidad') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">
+                            ANALIZADAS CON IA
                         </a>
                         <a href="{{ route('perfil') }}" 
                             class="px-3 py-2 rounded transition-colors {{ request()->routeIs('perfil') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df] hover:bg-[#0b4a57]/40' }}">

@@ -145,7 +145,38 @@ class OecePeruService
             }
         }
 
+        $this->purgeExpired('peru');
+
         return $count;
+    }
+
+    /**
+     * Purga automática de propuestas vencidas o fuera de la ventana de 5 meses en Perú.
+     * REGLA DE ORO: No borra si está en cartera o analizada con IA.
+     */
+    public function purgeExpired(string $connection = 'peru'): int
+    {
+        $today = now()->toDateString();
+        $fiveMonthsAgo = now()->subMonths(5)->toDateString();
+
+        try {
+            return Licitacion::on($connection)
+                ->where('en_cartera', false)
+                ->whereNull('score')
+                ->where(function ($q) use ($today, $fiveMonthsAgo) {
+                    $q->where(function ($sq) use ($today) {
+                        $sq->whereNotNull('fecha_cierre')
+                           ->whereRaw("substr(fecha_cierre, 1, 10) < ?", [$today]);
+                    })->orWhere(function ($sq) use ($fiveMonthsAgo) {
+                        $sq->whereNotNull('fecha_publicacion')
+                           ->whereRaw("substr(fecha_publicacion, 1, 10) < ?", [$fiveMonthsAgo]);
+                    });
+                })
+                ->delete();
+        } catch (\Exception $e) {
+            Log::error("Error en purgeExpired Perú: " . $e->getMessage());
+            return 0;
+        }
     }
 }
 

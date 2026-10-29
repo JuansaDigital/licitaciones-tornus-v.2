@@ -27,9 +27,12 @@ class SyncLicitacionesCommand extends Command
                 $this->info("  Importados {$imported} registros históricos de Colombia.");
             }
 
-            // 2. Intentar API en vivo
-            $live = $secop->syncFromSocrata(50);
-            $this->info("  Sincronizados {$live} registros en vivo desde SECOP II Socrata.");
+            // 2. Intentar API en vivo con ventana de 5 meses y purga automática
+            $live = $secop->syncFromSocrata(100);
+            $syncedCount = is_array($live) ? ($live['synced'] ?? 0) : $live;
+            $purgedCount = is_array($live) ? ($live['purged'] ?? 0) : 0;
+            $this->info("  Sincronizados {$syncedCount} registros en vivo desde SECOP II (ventana 5 meses).");
+            $this->info("  Depuradas {$purgedCount} propuestas vencidas (respetando Cartera y evaluaciones IA).");
         }
 
         if ($market === 'PE' || $market === 'ALL') {
@@ -44,7 +47,9 @@ class SyncLicitacionesCommand extends Command
 
             // 2. Consultar API en vivo
             $live = $oece->syncFromApi(3);
+            $purgedPe = $oece->purgeExpired('peru');
             $this->info("  Sincronizados {$live} registros desde API OCDS Perú.");
+            $this->info("  Depuradas {$purgedPe} propuestas vencidas en Perú.");
         }
 
         $this->info("Sincronización completada exitosamente.");

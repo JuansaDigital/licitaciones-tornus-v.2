@@ -61,10 +61,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/cartera/{id}/status', [CarteraController::class, 'updateStatus'])->name('cartera.status');
     Route::get('/cartera/export', [CarteraController::class, 'exportCsv'])->name('cartera.export');
 
-    // Módulo D: Evaluador de Afinidad IA (Gemini)
+    // Módulo D: Propuestas Analizadas con IA (Gemini)
     Route::get('/afinidad', [AfinidadController::class, 'index'])->name('afinidad');
     Route::post('/afinidad/{id}/evaluar', [AfinidadController::class, 'evaluate'])->name('afinidad.evaluate');
     Route::post('/afinidad/batch', [AfinidadController::class, 'evaluateBatch'])->name('afinidad.batch');
+    Route::delete('/afinidad/{id}', [AfinidadController::class, 'destroy'])->name('afinidad.destroy');
+    Route::post('/afinidad/bulk-delete', [AfinidadController::class, 'bulkDestroy'])->name('afinidad.bulk-destroy');
 
     // Base de Conocimiento / Perfil de Tornus Agency (Contexto para Gemini)
     Route::get('/perfil-tornus', [PerfilTornusController::class, 'index'])->name('perfil');

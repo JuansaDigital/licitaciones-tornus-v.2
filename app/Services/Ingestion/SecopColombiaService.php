@@ -85,75 +85,131 @@ class SecopColombiaService
     }
 
     /**
-     * Sincronizar desde la API Socrata v3 de SECOP II
+     * Purga automática de propuestas vencidas o fuera de la ventana de 5 meses.
+     * REGLA DE ORO DE PERSISTENCIA:
+     * NUNCA se eliminan las que están en Cartera (en_cartera = true).
+     * NUNCA se eliminan las que han sido analizadas con IA (score IS NOT NULL).
      */
-    public function syncFromSocrata(int $limit = 100): int
+    public function purgeExpired(string $connection = 'colombia'): int
     {
-        $v3Url = "https://www.datos.gov.co/api/v3/views/{$this->datasetId}/query.json";
+        $today = now()->toDateString();
+        $fiveMonthsAgo = now()->subMonths(5)->toDateString();
 
-        // Palabras clave de interés para Tornus
-        $keywords = ['TURISMO', 'BRANDING', 'COMUNICACIONES', 'AUDIOVISUAL', 'MARKETING', 'EVENTOS', 'PUBLICIDAD', 'PAUTA'];
-        $whereClauses = [];
-        foreach ($keywords as $kw) {
-            $whereClauses[] = "upper(nombre_del_procedimiento) LIKE '%{$kw}%'";
+        try {
+            return Licitacion::on($connection)
+                ->where('en_cartera', false)
+                ->whereNull('score')
+                ->where(function ($q) use ($today, $fiveMonthsAgo) {
+                    $q->where(function ($sq) use ($today) {
+                        $sq->whereNotNull('fecha_cierre')
+                           ->whereRaw("substr(fecha_cierre, 1, 10) < ?", [$today]);
+                    })->orWhere(function ($sq) use ($fiveMonthsAgo) {
+                        $sq->whereNotNull('fecha_publicacion')
+                           ->whereRaw("substr(fecha_publicacion, 1, 10) < ?", [$fiveMonthsAgo]);
+                    });
+                })
+                ->delete();
+        } catch (\Exception $e) {
+            Log::error("Error en purgeExpired ({$connection}): " . $e->getMessage());
+            return 0;
         }
-        $whereSql = '(' . implode(' OR ', $whereClauses) . ')';
-        // Regla anti falso positivo: Si tiene MARCA, excluir CUNDINAMARCA
-        $whereSql .= " AND (upper(nombre_del_procedimiento) NOT LIKE '%CUNDINAMARCA%')";
+    }
+
+    /**
+     * Sincronizar desde la API Socrata / SECOP II con ventana móvil de 5 meses
+     */
+    public function syncFromSocrata(int $limit = 100): array
+    {
+        $today = now()->toDateString();
+        $fiveMonthsAgo = now()->subMonths(5)->toDateString();
+
+        // Palabras clave de interés dinámicas según configuración Tornus
+        $filters = \App\Services\RadarFilterService::getData('CO');
+        $keywords = !empty($filters['keywords']) ? $filters['keywords'] : ['TURISMO', 'BRANDING', 'MARKETING', 'PUBLICIDAD'];
+
+        $whereClauses = [];
+        foreach (array_slice($keywords, 0, 15) as $kw) {
+            $kwEscaped = str_replace("'", "''", trim($kw));
+            if (!empty($kwEscaped)) {
+                $whereClauses[] = "upper(nombre_del_procedimiento) LIKE '%{$kwEscaped}%'";
+            }
+        }
+        $whereKeywords = '(' . implode(' OR ', $whereClauses) . ')';
+
+        // Ventana de 5 meses: Procesos publicados en los últimos 5 meses y con cierre vigente
+        $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND (fecha_de_recepcion_de >= '{$today}' OR fecha_de_recepcion_de IS NULL))";
+        $whereSql = "{$whereKeywords} AND {$whereDate} AND (upper(nombre_del_procedimiento) NOT LIKE '%CUNDINAMARCA%')";
 
         $query = "SELECT id_del_proceso, referencia, entidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, urlproceso, modalidad_de_contratacion, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
 
+        $count = 0;
         try {
-            $client = Http::timeout(20);
+            $client = Http::withoutVerifying()->timeout(25);
             if ($this->keyId && $this->secret) {
                 $client = $client->withBasicAuth($this->keyId, $this->secret);
             }
+            if ($this->keyId) {
+                $client = $client->withHeaders(['X-App-Token' => $this->keyId]);
+            }
 
+            // Intentar endpoint v3
+            $v3Url = "https://www.datos.gov.co/api/v3/views/{$this->datasetId}/query.json";
             $response = $client->get($v3Url, ['query' => $query]);
 
+            // Si no responde v3, consultar endpoint SODA 2.1
             if (!$response->successful()) {
-                Log::warning("SECOP II API returned HTTP " . $response->status());
-                return 0;
+                $sodaUrl = "https://www.datos.gov.co/resource/{$this->datasetId}.json";
+                $response = $client->get($sodaUrl, [
+                    '$where' => $whereSql,
+                    '$limit' => $limit,
+                    '$order' => 'fecha_de_recepcion_de DESC'
+                ]);
             }
 
-            $data = $response->json();
-            $records = $data['rows'] ?? $data ?? [];
-            if (!is_array($records)) {
-                return 0;
+            if ($response->successful()) {
+                $data = $response->json();
+                $records = $data['rows'] ?? $data ?? [];
+                if (is_array($records)) {
+                    foreach ($records as $row) {
+                        $extId = $row['id_del_proceso'] ?? $row['referencia'] ?? null;
+                        if (!$extId) continue;
+
+                        $cuantia = (float)($row['precio_base'] ?? 0);
+
+                        Licitacion::on('colombia')->updateOrCreate(
+                            ['external_id' => $extId],
+                            [
+                                'referencia' => $row['referencia'] ?? $extId,
+                                'entidad' => $row['entidad'] ?? 'Entidad Pública',
+                                'objeto' => $row['nombre_del_procedimiento'] ?? '',
+                                'departamento' => $row['departamento_entidad'] ?? '',
+                                'municipio' => $row['ciudad_entidad'] ?? '',
+                                'cuantia' => $cuantia,
+                                'moneda' => 'COP',
+                                'tipo_proceso' => $row['modalidad_de_contratacion'] ?? 'Convocatoria Pública',
+                                'estado' => $row['estado_del_procedimiento'] ?? 'Abierto',
+                                'fecha_publicacion' => !empty($row['fecha_de_publicacion_del']) ? substr($row['fecha_de_publicacion_del'], 0, 10) : null,
+                                'fecha_cierre' => !empty($row['fecha_de_recepcion_de']) ? substr($row['fecha_de_recepcion_de'], 0, 10) : null,
+                                'url_proceso' => $row['urlproceso'] ?? null,
+                            ]
+                        );
+                        $count++;
+                    }
+                }
+            } else {
+                Log::warning("SECOP II API status: " . $response->status());
             }
-
-            $count = 0;
-            foreach ($records as $row) {
-                $extId = $row['id_del_proceso'] ?? $row['referencia'] ?? null;
-                if (!$extId) continue;
-
-                $cuantia = (float)($row['precio_base'] ?? 0);
-
-                Licitacion::on('colombia')->updateOrCreate(
-                    ['external_id' => $extId],
-                    [
-                        'referencia' => $row['referencia'] ?? $extId,
-                        'entidad' => $row['entidad'] ?? 'Entidad Pública',
-                        'objeto' => $row['nombre_del_procedimiento'] ?? '',
-                        'departamento' => $row['departamento_entidad'] ?? '',
-                        'municipio' => $row['ciudad_entidad'] ?? '',
-                        'cuantia' => $cuantia,
-                        'moneda' => 'COP',
-                        'tipo_proceso' => $row['modalidad_de_contratacion'] ?? 'Convocatoria Pública',
-                        'estado' => $row['estado_del_procedimiento'] ?? 'Abierto',
-                        'fecha_publicacion' => $row['fecha_de_publicacion_del'] ?? null,
-                        'fecha_cierre' => $row['fecha_de_recepcion_de'] ?? null,
-                        'url_proceso' => $row['urlproceso'] ?? null,
-                    ]
-                );
-                $count++;
-            }
-
-            return $count;
         } catch (\Exception $e) {
             Log::error("Error sincronizando SECOP II: " . $e->getMessage());
-            return 0;
         }
+
+        // Ejecutar purga de vencidas fuera de la ventana de 5 meses (respetando cartera y análisis IA)
+        $purged = $this->purgeExpired('colombia');
+
+        return [
+            'synced' => $count,
+            'purged' => $purged
+        ];
     }
 }
 

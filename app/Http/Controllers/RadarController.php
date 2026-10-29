@@ -200,13 +200,17 @@ class RadarController extends Controller
     {
         $isPeru = MarketService::isPeru();
         $synced = 0;
+        $purged = 0;
 
         if ($isPeru) {
             $synced = $oece->syncFromApi(2);
+            $purged = $oece->purgeExpired('peru');
         } else {
-            $synced = $secop->syncFromSocrata(50);
+            $res = $secop->syncFromSocrata(100);
+            $synced = is_array($res) ? ($res['synced'] ?? 0) : $res;
+            $purged = is_array($res) ? ($res['purged'] ?? 0) : $secop->purgeExpired('colombia');
         }
 
-        return back()->with('status', "Radar sincronizado. Se actualizaron {$synced} registros en vivo.");
+        return back()->with('status', "Radar sincronizado con éxito (ventana de los últimos 5 meses hasta hoy). Se actualizaron {$synced} procesos en vivo y se depuraron {$purged} licitaciones vencidas no guardadas.");
     }
 }
