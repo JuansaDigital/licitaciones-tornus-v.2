@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Radar') | Tornus Procurement Platform</title>
     <link rel="icon" type="image/webp" href="/assets/favicon-tornus.webp">
     
@@ -99,6 +100,26 @@
                 </div>
 
             </div>
+
+            <!-- Navegación Móvil (< 768px) -->
+            <nav class="flex md:hidden items-center gap-1 font-mono text-[11px] overflow-x-auto pb-2.5 border-t border-[#15424d]/60 pt-2">
+                <a href="{{ route('radar') }}" 
+                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors {{ request()->routeIs('radar') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
+                    RADAR EN VIVO
+                </a>
+                <a href="{{ route('cartera') }}" 
+                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors {{ request()->routeIs('cartera') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
+                    MI CARTERA
+                </a>
+                <a href="{{ route('afinidad') }}" 
+                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors {{ request()->routeIs('afinidad') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
+                    ANALIZADAS IA
+                </a>
+                <a href="{{ route('perfil') }}" 
+                    class="px-2.5 py-1.5 rounded whitespace-nowrap transition-colors {{ request()->routeIs('perfil') ? 'bg-[#0b4a57] text-[#fbfb75] font-semibold' : 'text-[#9db3b4] hover:text-[#f7f2df]' }}">
+                    PERFIL TORNUS
+                </a>
+            </nav>
         </div>
     </header>
 

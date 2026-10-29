@@ -71,7 +71,7 @@ EOT;
             try {
                 $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
 
-                $response = Http::timeout(25)->post($endpoint, [
+                $response = Http::withoutVerifying()->timeout(25)->post($endpoint, [
                     'contents' => [
                         [
                             'parts' => [

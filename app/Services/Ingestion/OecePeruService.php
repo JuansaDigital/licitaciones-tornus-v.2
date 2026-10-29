@@ -76,7 +76,7 @@ class OecePeruService
 
         for ($page = 1; $page <= $maxPages; $page++) {
             try {
-                $response = Http::withHeaders([
+                $response = Http::withoutVerifying()->withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept' => 'application/json'
                 ])->timeout(15)->get("{$this->apiBaseUrl}?page={$page}");

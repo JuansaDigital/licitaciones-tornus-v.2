@@ -61,6 +61,30 @@ class Licitacion extends Model
     }
 
     /**
+     * Normalizar códigos cortos de categoría ('evt', 'plan', 'serv', etc.) en etiquetas legibles
+     */
+    public function getCategoriaAttribute($value): string
+    {
+        $val = strtolower(trim((string)$value));
+        $map = [
+            'evt'       => 'Eventos y Logística',
+            'plan'      => 'Planeación y Turismo',
+            'pub'       => 'Publicidad y Medios',
+            'estrat'    => 'Estrategia y Consultoría',
+            'audio'     => 'Producción Audiovisual',
+            'serv'      => 'Servicios Profesionales',
+            'servicios' => 'Servicios Profesionales',
+            'services'  => 'Servicios Profesionales',
+            'tech'      => 'Tecnología y Digital',
+            'infra'     => 'Infraestructura y Dotación',
+            'works'     => 'Obras y Adecuaciones',
+            'goods'     => 'Suministro de Bienes',
+        ];
+
+        return $map[$val] ?? ($value ? ucfirst(trim($value)) : 'Servicios Generales');
+    }
+
+    /**
      * Helper para obtener el código o número de proceso limpio (sin textos largos que desborden)
      */
     public function getCodigoProcesoAttribute(): string

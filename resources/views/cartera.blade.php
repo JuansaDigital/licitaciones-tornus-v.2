@@ -100,9 +100,9 @@
                 <div class="space-y-3 flex-1">
                     @forelse($cards as $lic)
                         <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded p-3 shadow-xs hover:border-[#00232c] transition-all">
-                            <div class="flex items-center justify-between text-[10px] font-mono text-[#56686b] mb-1.5">
-                                <span class="font-bold text-[#00232c]">{{ $lic->referencia ?: $lic->external_id }}</span>
-                                <span class="text-emerald-700 font-semibold">{{ $lic->formatted_cuantia }}</span>
+                            <div class="flex items-center justify-between gap-2 text-[10px] font-mono text-[#56686b] mb-1.5">
+                                <span class="font-bold text-[#00232c] truncate" title="{{ $lic->codigo_proceso }}">{{ $lic->codigo_proceso }}</span>
+                                <span class="text-emerald-700 font-semibold shrink-0">{{ $lic->formatted_cuantia }}</span>
                             </div>
 
                             <p class="text-xs text-[#00232c] font-medium leading-snug line-clamp-3 mb-2">

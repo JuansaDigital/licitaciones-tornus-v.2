@@ -53,7 +53,11 @@ class RadarController extends Controller
         foreach ($exclusions as $ex) {
             $exTrim = trim($ex);
             if (!empty($exTrim) && (empty($search) || stripos($search, $exTrim) === false)) {
-                $query->where('objeto', 'not like', "%{$exTrim}%");
+                $query->where('objeto', 'not like', "%{$exTrim}%")
+                      ->where(function ($sub) use ($exTrim) {
+                          $sub->whereNull('referencia')
+                              ->orWhere('referencia', 'not like', "%{$exTrim}%");
+                      });
             }
         }
 
@@ -72,14 +76,25 @@ class RadarController extends Controller
             ->pluck('departamento')
             ->toArray();
 
-        // 6. Conteo de propuestas vigentes en el mercado
-        $totalCount = Licitacion::on($connection)
+        // 6. Conteo de propuestas vigentes en el mercado (aplicando exclusiones activas)
+        $totalQuery = Licitacion::on($connection)
             ->where(function ($q) use ($today) {
                 $q->whereNull('fecha_cierre')
                   ->orWhereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today]);
             })
-            ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
-            ->count();
+            ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado']);
+
+        foreach ($exclusions as $ex) {
+            $exTrim = trim($ex);
+            if (!empty($exTrim)) {
+                $totalQuery->where('objeto', 'not like', "%{$exTrim}%")
+                           ->where(function ($sub) use ($exTrim) {
+                               $sub->whereNull('referencia')
+                                   ->orWhere('referencia', 'not like', "%{$exTrim}%");
+                           });
+            }
+        }
+        $totalCount = $totalQuery->count();
 
         // 7. Filtro de Plazo de Cierre (Vencimiento)
         $selectedUrgency = $request->input('urgency', 'all');
