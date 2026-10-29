@@ -814,6 +814,11 @@ function openFichaModal(licOrId) {
     
     // Tarjeta 4: Plazo, Competencia y Adendas
     document.getElementById('ficha-plazo').textContent = 'Según pliego de condiciones';
+    const vistasEl = document.getElementById('ficha-vistas');
+    if (vistasEl) {
+        const provs = Number(lic.prov_unicos || 0);
+        vistasEl.textContent = provs > 0 ? (provs + ' proveedor(es) con interés') : 'Sin postulaciones registradas';
+    }
     const adendaBox = document.getElementById('ficha-adenda-box');
     const adendaEl = document.getElementById('ficha-adenda-fecha');
     if (lic.adenda_fecha) {
