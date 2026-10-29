@@ -299,13 +299,13 @@
                                 <span>{{ $lic->fase ?: 'Convocado · Recibiendo ofertas' }}</span>
                             </span>
 
-                            <!-- Plazo en días -->
-                            <span class="px-1.5 py-0.5 text-[#56686b] flex items-center gap-1 whitespace-nowrap shrink-0">
+                            <!-- Ventana de Convocatoria para Ofertar -->
+                            <span class="px-1.5 py-0.5 text-[#56686b] flex items-center gap-1 whitespace-nowrap shrink-0" title="Tiempo de convocatoria para presentar ofertas">
                                 <svg class="w-3.5 h-3.5 text-[#56686b] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
-                                <span>{{ $lic->prov_unicos ? $lic->prov_unicos . ' día(s)' : '60 día(s)' }}</span>
+                                <span>{{ $lic->dias_convocatoria ? $lic->dias_convocatoria . ' d conv.' : 'Plazo s/pliego' }}</span>
                             </span>
 
                             <!-- Modalidad -->
@@ -344,6 +344,27 @@
                     <h3 class="w-full block text-sm sm:text-[15px] font-bold text-[#00232c] leading-snug line-clamp-2 my-2.5 break-words">
                         {{ $lic->objeto }}
                     </h3>
+
+                    <!-- Dictamen Estratégico de Gemini en la Tarjeta (Visible si está evaluado o al presionar Analizar) -->
+                    <div id="card-gemini-box-{{ $lic->id }}" class="{{ $lic->score !== null ? '' : 'hidden' }} my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 {{ ($lic->score ?? 0) >= 70 ? 'border-l-emerald-600' : (($lic->score ?? 0) >= 40 ? 'border-l-amber-500' : 'border-l-rose-500') }} text-xs font-mono space-y-1.5 transition-all">
+                        <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-[#e3dbc2]/60">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-[#00232c] flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                                </svg>
+                                <span>DICTAMEN ESTRATÉGICO GEMINI IA</span>
+                            </span>
+                            <span id="card-gemini-status-{{ $lic->id }}" class="text-[10px] font-bold tracking-wider {{ ($lic->score ?? 0) >= 70 ? 'text-emerald-800' : (($lic->score ?? 0) >= 40 ? 'text-amber-800' : 'text-rose-800') }}">
+                                {{ ($lic->score ?? 0) >= 70 ? 'APLICA DIRECTO' : (($lic->score ?? 0) >= 40 ? 'APLICA CON CONDICIONES' : 'NO APLICA') }}
+                            </span>
+                        </div>
+                        <p id="card-gemini-desc-{{ $lic->id }}" class="text-[#3a4749] font-sans text-xs leading-relaxed pt-0.5">
+                            {{ $lic->justificacion }}
+                        </p>
+                        <div id="card-gemini-points-wrapper-{{ $lic->id }}" class="{{ $lic->puntos_clave ? '' : 'hidden' }} pt-1 text-[11px] text-[#56686b] font-mono">
+                            <strong class="text-[#00232c]">Punto clave a revisar:</strong> <span id="card-gemini-points-{{ $lic->id }}">{{ $lic->puntos_clave }}</span>
+                        </div>
+                    </div>
 
                     <!-- Fila Inferior: Ubicación a la izquierda y 2 Filas de Botones a la derecha -->
                     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-[#f2ece0]">
@@ -792,7 +813,7 @@ function openFichaModal(licOrId) {
     document.getElementById('ficha-estado').textContent = (lic.fase || lic.estado || 'Publicado') + ' · abierto';
     
     // Tarjeta 4: Plazo, Competencia y Adendas
-    document.getElementById('ficha-plazo').textContent = (lic.prov_unicos ? lic.prov_unicos + ' día(s)' : '60 día(s)');
+    document.getElementById('ficha-plazo').textContent = 'Según pliego de condiciones';
     const adendaBox = document.getElementById('ficha-adenda-box');
     const adendaEl = document.getElementById('ficha-adenda-fecha');
     if (lic.adenda_fecha) {
@@ -929,7 +950,7 @@ async function analyzeWithGemini(id) {
                 Object.assign(window.licitacionesStore[id], evalData);
             }
             
-            // Actualizar tarjeta en radar
+            // Actualizar chip de afinidad en la tarjeta del radar
             const cardAffinity = document.getElementById('card-affinity-' + id);
             if (cardAffinity) {
                 const colorClass = evalData.score >= 70 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : (evalData.score >= 40 ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200');
@@ -941,6 +962,28 @@ async function analyzeWithGemini(id) {
                         <span>${evalData.score}% AFINIDAD · ${evalData.nivel}</span>
                     </span>
                 `;
+            }
+
+            // Desplegar bloque descriptivo estratégico de Gemini directamente en la tarjeta
+            const descBox = document.getElementById('card-gemini-box-' + id);
+            const descText = document.getElementById('card-gemini-desc-' + id);
+            const statusText = document.getElementById('card-gemini-status-' + id);
+            const pointsText = document.getElementById('card-gemini-points-' + id);
+            const pointsWrapper = document.getElementById('card-gemini-points-wrapper-' + id);
+
+            if (descBox && descText) {
+                descText.textContent = evalData.justificacion || 'Evaluación estratégica completada con Gemini IA.';
+                if (statusText) {
+                    statusText.textContent = evalData.score >= 70 ? 'APLICA DIRECTO' : (evalData.score >= 40 ? 'APLICA CON CONDICIONES' : 'NO APLICA');
+                    statusText.className = 'text-[10px] font-bold tracking-wider ' + (evalData.score >= 70 ? 'text-emerald-800' : (evalData.score >= 40 ? 'text-amber-800' : 'text-rose-800'));
+                }
+                if (pointsText && evalData.puntos_clave) {
+                    pointsText.textContent = evalData.puntos_clave;
+                    if (pointsWrapper) pointsWrapper.classList.remove('hidden');
+                }
+                descBox.className = 'my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 text-xs font-mono space-y-1.5 transition-all ' + 
+                    (evalData.score >= 70 ? 'border-l-emerald-600' : (evalData.score >= 40 ? 'border-l-amber-500' : 'border-l-rose-500'));
+                descBox.classList.remove('hidden');
             }
             
             if (btnText) btnText.textContent = 'Re-evaluar Gemini';

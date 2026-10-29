@@ -74,6 +74,31 @@ class Licitacion extends Model
     }
 
     /**
+     * Helper para calcular los días de convocatoria reales entre publicación y cierre
+     */
+    public function getDiasConvocatoriaAttribute(): ?int
+    {
+        if (!empty($this->fecha_publicacion) && !empty($this->fecha_cierre)) {
+            try {
+                $pub = \Carbon\Carbon::parse(substr($this->fecha_publicacion, 0, 10));
+                $cie = \Carbon\Carbon::parse(substr($this->fecha_cierre, 0, 10));
+                return max(1, (int)$pub->diffInDays($cie));
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Plazo de ejecución verificado (según pliego oficial de SECOP II)
+     */
+    public function getPlazoEjecucionTextoAttribute(): string
+    {
+        return 'Según pliego de condiciones';
+    }
+
+    /**
      * Helper de urgencia / tiempo restante hasta fecha de cierre
      */
     public function getUrgencyInfoAttribute(): array
