@@ -41,7 +41,9 @@ class Licitacion extends Model
     public function getFormattedCuantiaAttribute(): string
     {
         if (empty($this->cuantia) || (float)$this->cuantia <= 0) {
-            return 'A definir (RFI / Cotización)';
+            return $this->moneda === 'PEN'
+                ? 'A definir (En Bases SEACE)'
+                : 'A definir (RFI / Cotización)';
         }
         $symbol = $this->moneda === 'PEN' ? 'S/' : '$';
         return $symbol . ' ' . number_format($this->cuantia, 2, '.', ',');
@@ -132,6 +134,9 @@ class Licitacion extends Model
         }
         if (!empty($this->duracion)) {
             return trim($this->duracion) . ' día(s)';
+        }
+        if (($this->moneda ?? '') === 'PEN') {
+            return 'Según Bases Administrativas (SEACE)';
         }
         return 'Según pliego de condiciones';
     }

@@ -74,10 +74,15 @@ class RadarController extends Controller
                 $q->where('categoria', 'plan')
                   ->orWhere('objeto', 'like', '%turis%')
                   ->orWhere('objeto', 'like', '%fontur%')
+                  ->orWhere('objeto', 'like', '%promper%')
+                  ->orWhere('objeto', 'like', '%mincetur%')
+                  ->orWhere('objeto', 'like', '%dircetur%')
                   ->orWhere('objeto', 'like', '%famtrip%')
                   ->orWhere('objeto', 'like', '%destino%')
                   ->orWhere('entidad', 'like', '%turis%')
-                  ->orWhere('entidad', 'like', '%fontur%');
+                  ->orWhere('entidad', 'like', '%fontur%')
+                  ->orWhere('entidad', 'like', '%promper%')
+                  ->orWhere('entidad', 'like', '%mincetur%');
             });
         } elseif ($selectedCategory === 'eventos') {
             $query->where(function ($q) {

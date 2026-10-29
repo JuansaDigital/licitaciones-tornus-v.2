@@ -94,13 +94,13 @@
                     </div>
 
                     <div id="ficha-apertura-ofertas-box" class="hidden">
-                        <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">APERTURA EFECTIVA DE OFERTAS</span>
+                        <span id="ficha-apertura-ofertas-label" class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">APERTURA EFECTIVA DE OFERTAS</span>
                         <div id="ficha-apertura-ofertas" class="text-xs font-mono font-bold text-[#00232c]"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tarjeta 2: Entidad Contratante (NIT, Orden y Ubicación) -->
+            <!-- Tarjeta 2: Entidad Contratante (NIT / RUC, Orden y Ubicación) -->
             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
                 <div>
                     <div class="flex items-center justify-between gap-2 mb-1">
@@ -109,11 +109,11 @@
                     </div>
                     <div id="ficha-entidad" class="text-xs font-bold text-[#00232c] leading-snug"></div>
                     <div id="ficha-nit-box" class="mt-1.5 hidden">
-                        <span class="text-[10px] font-mono text-[#56686b] uppercase">NIT:</span>
+                        <span id="ficha-nit-label" class="text-[10px] font-mono text-[#56686b] uppercase">NIT:</span>
                         <span id="ficha-nit" class="text-xs font-mono text-[#00232c] font-semibold"></span>
                     </div>
                     <div id="ficha-adjudicador-box" class="mt-1 hidden">
-                        <span class="text-[10px] font-mono text-[#56686b] uppercase">Adjudicador:</span>
+                        <span id="ficha-adjudicador-label" class="text-[10px] font-mono text-[#56686b] uppercase">Adjudicador:</span>
                         <span id="ficha-adjudicador" class="text-xs font-mono text-[#00232c] font-medium"></span>
                     </div>
                 </div>
@@ -137,7 +137,7 @@
                         <div id="ficha-tipo-contrato-text" class="text-xs font-mono font-bold text-[#00232c]">Prestación de Servicios</div>
                     </div>
                     <div id="ficha-unspsc-box" class="hidden">
-                        <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">CÓDIGO PRINCIPAL UNSPSC</span>
+                        <span id="ficha-unspsc-label" class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">CÓDIGO PRINCIPAL UNSPSC</span>
                         <div id="ficha-unspsc-text" class="text-xs font-mono font-bold text-[#0b4a57]"></div>
                     </div>
                 </div>
@@ -146,7 +146,7 @@
             <!-- Tarjeta 4: Plazo, Competencia y Estado -->
             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded-lg p-4 space-y-3">
                 <div>
-                    <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN (REAL)</span>
+                    <span id="ficha-plazo-label" class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider mb-1">PLAZO DE EJECUCIÓN (REAL)</span>
                     <div id="ficha-plazo" class="text-xs font-mono font-bold text-[#00232c]"></div>
                 </div>
 
@@ -195,15 +195,28 @@
             </button>
         </div>
 
-        <a id="ficha-url-btn" href="#" target="_blank" rel="noopener noreferrer" 
-            class="px-5 py-2 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
-            <span>VER EN {{ strtoupper(App\Services\MarketService::sourceName()) }}</span>
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-        </a>
+        <div class="flex items-center gap-2">
+            <a id="ficha-doc-btn" href="#" target="_blank" rel="noopener noreferrer" 
+                class="hidden px-4 py-2 bg-[#0b4a57] hover:bg-[#155a68] text-[#f7f2df] border border-[#15424d] rounded text-xs font-mono font-bold tracking-wider items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                title="Descargar Bases Administrativas directamente desde SEACE">
+                <svg class="w-3.5 h-3.5 text-[#fbfb75]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>BASES SEACE</span>
+            </a>
+
+            <a id="ficha-url-btn" href="#" target="_blank" rel="noopener noreferrer" 
+                class="px-5 py-2 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
+                <span>VER EN {{ strtoupper(App\Services\MarketService::sourceName()) }}</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+            </a>
+        </div>
     </div>
 
 </aside>
@@ -230,6 +243,7 @@ function openFichaModal(licOrId) {
     }
     if (!lic) return;
     currentFichaLicitacion = lic;
+    const isPeru = (lic.moneda === 'PEN');
     
     document.getElementById('ficha-referencia-badge').textContent = lic.codigo_proceso || lic.referencia || lic.external_id || 'SIN REF';
     document.getElementById('ficha-categoria-badge').textContent = lic.categoria || 'Servicios Generales';
@@ -239,9 +253,11 @@ function openFichaModal(licOrId) {
     const cuantiaVal = Number(lic.cuantia || 0);
     if (cuantiaVal <= 0) {
         document.getElementById('ficha-cuantia').textContent = 'A definir';
-        document.getElementById('ficha-cuantia-raw').textContent = 'Solicitud de información / cotización previa sin cuantía fijada';
+        document.getElementById('ficha-cuantia-raw').textContent = isPeru
+            ? 'Valor referencial reservado / consultar Bases Administrativas SEACE'
+            : 'Solicitud de información / cotización previa sin cuantía fijada';
     } else {
-        const symbol = lic.moneda === 'PEN' ? 'S/' : '$';
+        const symbol = isPeru ? 'S/' : '$';
         document.getElementById('ficha-cuantia').textContent = symbol + ' ' + (cuantiaVal > 1000000 ? (cuantiaVal / 1000000).toFixed(0) + ' M' : cuantiaVal.toLocaleString());
         document.getElementById('ficha-cuantia-raw').textContent = symbol + ' ' + cuantiaVal.toLocaleString() + ' ' + (lic.moneda || 'COP');
     }
@@ -251,7 +267,7 @@ function openFichaModal(licOrId) {
     if (lic.fecha_publicacion) {
         aperturaEl.textContent = lic.fecha_publicacion.substring(0, 10);
     } else {
-        aperturaEl.textContent = 'No registrada en SECOP II';
+        aperturaEl.textContent = isPeru ? 'No registrada en SEACE / OECE' : 'No registrada en SECOP II';
     }
 
     // Fecha Cierre / Recepción
@@ -285,8 +301,12 @@ function openFichaModal(licOrId) {
         cierreDiasEl.textContent = '';
     }
 
-    // Apertura efectiva de ofertas
+    // Apertura efectiva de ofertas / Inicio etapa consultas
     const aperturaOfertasBox = document.getElementById('ficha-apertura-ofertas-box');
+    const aperturaOfertasLabel = document.getElementById('ficha-apertura-ofertas-label');
+    if (aperturaOfertasLabel) {
+        aperturaOfertasLabel.textContent = isPeru ? 'INICIO ETAPA DE CONSULTAS / OFERTAS' : 'APERTURA EFECTIVA DE OFERTAS';
+    }
     if (lic.fecha_apertura_ofertas) {
         document.getElementById('ficha-apertura-ofertas').textContent = lic.fecha_apertura_ofertas.substring(0, 10);
         aperturaOfertasBox.classList.remove('hidden');
@@ -294,7 +314,7 @@ function openFichaModal(licOrId) {
         aperturaOfertasBox.classList.add('hidden');
     }
     
-    // Tarjeta 2: Entidad, NIT, Orden, Adjudicador y Ubicación
+    // Tarjeta 2: Entidad, NIT/RUC, Orden, Adjudicador/Dirección y Ubicación
     document.getElementById('ficha-entidad').textContent = lic.entidad || 'Entidad no especificada';
     
     const ordenEl = document.getElementById('ficha-orden-entidad-label');
@@ -306,6 +326,10 @@ function openFichaModal(licOrId) {
     }
 
     const nitBox = document.getElementById('ficha-nit-box');
+    const nitLabel = document.getElementById('ficha-nit-label');
+    if (nitLabel) {
+        nitLabel.textContent = isPeru ? 'RUC:' : 'NIT:';
+    }
     if (lic.nit_entidad) {
         document.getElementById('ficha-nit').textContent = lic.nit_entidad;
         nitBox.classList.remove('hidden');
@@ -314,28 +338,40 @@ function openFichaModal(licOrId) {
     }
 
     const adjBox = document.getElementById('ficha-adjudicador-box');
+    const adjLabel = document.getElementById('ficha-adjudicador-label');
     const adjEl = document.getElementById('ficha-adjudicador');
+    if (adjLabel) {
+        adjLabel.textContent = isPeru ? 'Dirección / Contacto:' : 'Adjudicador:';
+    }
     if (lic.adjudicador) {
         adjEl.textContent = lic.adjudicador;
         adjBox.classList.remove('hidden');
     } else {
         adjBox.classList.add('hidden');
     }
-    document.getElementById('ficha-ubicacion').textContent = (lic.municipio ? lic.municipio + ', ' : '') + (lic.departamento || 'Colombia');
+    document.getElementById('ficha-ubicacion').textContent = (lic.municipio ? lic.municipio + ', ' : '') + (lic.departamento || (isPeru ? 'Perú' : 'Colombia'));
     
-    // Tarjeta 3: Modalidad, Tipo de Contrato y Código UNSPSC
+    // Tarjeta 3: Modalidad, Tipo de Contrato y Código UNSPSC / CUBSO
     document.getElementById('ficha-modalidad').textContent = lic.tipo_proceso || 'Convocatoria Pública';
-    document.getElementById('ficha-tipo-contrato-text').textContent = lic.tipo_contrato || 'Prestación de Servicios';
+    document.getElementById('ficha-tipo-contrato-text').textContent = lic.tipo_contrato || (isPeru ? 'Contratación de Servicios (SEACE)' : 'Prestación de Servicios');
     
     const unspscBox = document.getElementById('ficha-unspsc-box');
+    const unspscLabel = document.getElementById('ficha-unspsc-label');
+    if (unspscLabel) {
+        unspscLabel.textContent = isPeru ? 'CLASIFICACIÓN UNSPSC / CUBSO (SEACE)' : 'CÓDIGO PRINCIPAL UNSPSC';
+    }
     if (lic.codigo_unspsc) {
-        document.getElementById('ficha-unspsc-text').textContent = 'UNSPSC: ' + lic.codigo_unspsc;
+        document.getElementById('ficha-unspsc-text').textContent = (lic.codigo_unspsc.startsWith('UNSPSC') ? '' : 'UNSPSC: ') + lic.codigo_unspsc;
         unspscBox.classList.remove('hidden');
     } else {
         unspscBox.classList.add('hidden');
     }
     
     // Tarjeta 4: Plazo real, Competencia, Estado y Adendas
+    const plazoLabel = document.getElementById('ficha-plazo-label');
+    if (plazoLabel) {
+        plazoLabel.textContent = isPeru ? 'PLAZO / DURACIÓN ETAPA SEACE' : 'PLAZO DE EJECUCIÓN (REAL)';
+    }
     if (lic.plazo_ejecucion_texto) {
         document.getElementById('ficha-plazo').textContent = lic.plazo_ejecucion_texto;
     } else if (lic.duracion && lic.unidad_duracion) {
@@ -343,14 +379,14 @@ function openFichaModal(licOrId) {
     } else if (lic.duracion) {
         document.getElementById('ficha-plazo').textContent = `${lic.duracion} día(s)`;
     } else {
-        document.getElementById('ficha-plazo').textContent = 'Según pliego de condiciones';
+        document.getElementById('ficha-plazo').textContent = isPeru ? 'Según Bases Administrativas (SEACE)' : 'Según pliego de condiciones';
     }
     document.getElementById('ficha-estado').textContent = (lic.fase || lic.estado || 'Publicado') + ' · abierto';
     
     const vistasEl = document.getElementById('ficha-vistas');
     if (vistasEl) {
         const provs = Number(lic.prov_unicos || 0);
-        vistasEl.textContent = provs > 0 ? (provs + ' proveedor(es) con interés') : 'Sin postulaciones registradas';
+        vistasEl.textContent = provs > 0 ? (provs + ' postor(es) / proveedor(es) registrado(s)') : 'Sin postulaciones registradas';
     }
     const adendaBox = document.getElementById('ficha-adenda-box');
     const adendaEl = document.getElementById('ficha-adenda-fecha');
@@ -364,7 +400,20 @@ function openFichaModal(licOrId) {
     // Objeto Full
     document.getElementById('ficha-objeto-full').textContent = lic.objeto;
     
-    // URL SECOP II
+    // Botón de descarga directa de Bases Administrativas SEACE (Perú)
+    const docBtn = document.getElementById('ficha-doc-btn');
+    if (docBtn) {
+        if (isPeru && lic.fase2_fecha && lic.fase2_fecha.startsWith('http')) {
+            docBtn.href = lic.fase2_fecha;
+            docBtn.classList.remove('hidden');
+            docBtn.classList.add('flex');
+        } else {
+            docBtn.classList.add('hidden');
+            docBtn.classList.remove('flex');
+        }
+    }
+
+    // URL Portal Oficial
     const urlBtn = document.getElementById('ficha-url-btn');
     if (lic.url_proceso) {
         urlBtn.href = lic.url_proceso;
