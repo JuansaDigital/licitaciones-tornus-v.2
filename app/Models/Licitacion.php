@@ -28,12 +28,49 @@ class Licitacion extends Model
     }
 
     /**
-     * Helper para formatear moneda acorde al mercado
+     * Helper para formatear moneda acorde al mercado y manejar procesos sin cuantía fija (RFI / Cotización)
      */
     public function getFormattedCuantiaAttribute(): string
     {
+        if (empty($this->cuantia) || (float)$this->cuantia <= 0) {
+            return 'A definir (RFI / Cotización)';
+        }
         $symbol = $this->moneda === 'PEN' ? 'S/' : '$';
         return $symbol . ' ' . number_format($this->cuantia, 2, '.', ',');
+    }
+
+    /**
+     * Helper para garantizar que nunca se muestre 'No definido' si la descripción real
+     * vino en el campo de referencia por parte de la entidad contratante.
+     */
+    public function getObjetoAttribute($value): string
+    {
+        $valTrim = trim((string)$value);
+        if ((empty($valTrim) || strcasecmp($valTrim, 'No definido') === 0) && !empty($this->attributes['referencia'])) {
+            return trim($this->attributes['referencia']);
+        }
+        return $valTrim ?: 'Objeto contractual en proceso de publicación';
+    }
+
+    /**
+     * Helper para obtener el código o número de proceso limpio (sin textos largos que desborden)
+     */
+    public function getCodigoProcesoAttribute(): string
+    {
+        // 1. Si la referencia es un código corto oficial (hasta 35 caracteres), usarla
+        if (!empty($this->attributes['referencia'])) {
+            $ref = trim($this->attributes['referencia']);
+            if (strlen($ref) <= 35 && strcasecmp($ref, 'No definido') !== 0) {
+                return $ref;
+            }
+        }
+
+        // 2. Si no, usar external_id (ej. CO1.REQ.11225725)
+        if (!empty($this->external_id)) {
+            return trim($this->external_id);
+        }
+
+        return 'SIN REF';
     }
 
     /**

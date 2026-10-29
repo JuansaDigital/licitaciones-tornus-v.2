@@ -315,20 +315,27 @@
                         </div>
 
                         <!-- Presupuesto Oficial & Fechas Clave -->
-                        <div class="text-right shrink-0">
-                            <div class="font-bold text-xl sm:text-2xl text-[#00232c] tracking-tight">
-                                {{ $lic->formatted_cuantia }}
-                            </div>
-                            <div class="text-[11px] font-mono text-[#56686b]">
+                        <div class="text-right shrink-0 max-w-[220px] sm:max-w-[260px]">
+                            @if(empty($lic->cuantia) || (float)$lic->cuantia <= 0)
+                                <div class="font-bold text-xs sm:text-[13px] text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded inline-block tracking-tight mb-1 whitespace-nowrap">
+                                    A definir (RFI / Cotización)
+                                </div>
+                            @else
+                                <div class="font-bold text-xl sm:text-2xl text-[#00232c] tracking-tight whitespace-nowrap">
+                                    {{ $lic->formatted_cuantia }}
+                                </div>
+                            @endif
+
+                            <div class="text-[11px] font-mono text-[#56686b] whitespace-nowrap">
                                 Cierre de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? date('d M', strtotime($lic->fecha_cierre)) : 'Pendiente' }}</strong>
                             </div>
                             @if($lic->fecha_publicacion)
-                                <div class="text-[10px] font-mono text-[#56686b]">
+                                <div class="text-[10px] font-mono text-[#56686b] whitespace-nowrap">
                                     Apertura / Salida: <strong>{{ date('d M', strtotime($lic->fecha_publicacion)) }}</strong>
                                 </div>
                             @endif
-                            <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5">
-                                {{ $lic->referencia ?: $lic->external_id }}
+                            <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5 truncate ml-auto" title="{{ $lic->codigo_proceso }}">
+                                {{ $lic->codigo_proceso }}
                             </div>
                         </div>
                     </div>
@@ -713,15 +720,20 @@ function openFichaModal(licOrId) {
     if (!lic) return;
     currentFichaLicitacion = lic;
     
-    document.getElementById('ficha-referencia-badge').textContent = lic.referencia || lic.external_id || 'SIN REF';
+    document.getElementById('ficha-referencia-badge').textContent = lic.codigo_proceso || lic.referencia || lic.external_id || 'SIN REF';
     document.getElementById('ficha-categoria-badge').textContent = lic.categoria || 'Servicios Generales';
     document.getElementById('ficha-objeto-title').textContent = lic.objeto;
     
     // Tarjeta 1: Presupuesto y Fechas (Apertura y Cierre)
     const cuantiaVal = Number(lic.cuantia || 0);
-    const symbol = lic.moneda === 'PEN' ? 'S/' : '$';
-    document.getElementById('ficha-cuantia').textContent = symbol + ' ' + (cuantiaVal > 1000000 ? (cuantiaVal / 1000000).toFixed(0) + ' M' : cuantiaVal.toLocaleString());
-    document.getElementById('ficha-cuantia-raw').textContent = symbol + ' ' + cuantiaVal.toLocaleString() + ' ' + (lic.moneda || 'COP');
+    if (cuantiaVal <= 0) {
+        document.getElementById('ficha-cuantia').textContent = 'A definir';
+        document.getElementById('ficha-cuantia-raw').textContent = 'Solicitud de información / cotización previa sin cuantía fijada';
+    } else {
+        const symbol = lic.moneda === 'PEN' ? 'S/' : '$';
+        document.getElementById('ficha-cuantia').textContent = symbol + ' ' + (cuantiaVal > 1000000 ? (cuantiaVal / 1000000).toFixed(0) + ' M' : cuantiaVal.toLocaleString());
+        document.getElementById('ficha-cuantia-raw').textContent = symbol + ' ' + cuantiaVal.toLocaleString() + ' ' + (lic.moneda || 'COP');
+    }
     
     // Fecha Apertura / Salida
     const aperturaEl = document.getElementById('ficha-apertura-fecha');

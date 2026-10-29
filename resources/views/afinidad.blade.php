@@ -192,7 +192,7 @@
                             <!-- Badges -->
                             <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
                                 <span class="px-2 py-0.5 rounded font-bold bg-[#f7f2df] text-[#00232c] border border-[#e3dbc2] whitespace-nowrap shrink-0">
-                                    {{ $lic->referencia ?: $lic->external_id }}
+                                    {{ $lic->codigo_proceso }}
                                 </span>
 
                                 <span class="px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold' : 'bg-rose-50 text-rose-800 border-rose-300 font-bold') }}">
@@ -213,9 +213,15 @@
 
                         <!-- Presupuesto Oficial -->
                         <div class="text-right shrink-0">
-                            <div class="font-bold text-xl sm:text-2xl text-[#00232c]">
-                                {{ $lic->formatted_cuantia }}
-                            </div>
+                            @if(empty($lic->cuantia) || (float)$lic->cuantia <= 0)
+                                <div class="font-bold text-xs sm:text-[13px] text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded inline-block tracking-tight mb-1 whitespace-nowrap">
+                                    A definir (RFI / Cotización)
+                                </div>
+                            @else
+                                <div class="font-bold text-xl sm:text-2xl text-[#00232c] whitespace-nowrap">
+                                    {{ $lic->formatted_cuantia }}
+                                </div>
+                            @endif
                             <div class="text-[10px] font-mono text-[#56686b] uppercase">
                                 {{ $lic->moneda }} · {{ Str::limit($lic->entidad, 35) }}
                             </div>
