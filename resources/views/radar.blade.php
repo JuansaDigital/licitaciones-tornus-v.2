@@ -1107,35 +1107,4 @@ function shareCurrentFicha() {
     }
 }
 </script>
-        reEvalBtn.disabled = true;
-        reEvalBtn.innerHTML = `
-            <svg class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-            <span>ANALIZANDO CON IA...</span>
-        `;
-    }
-    
-    await analyzeWithGemini(currentFichaLicitacion.id);
-    
-    if (reEvalBtn) {
-        reEvalBtn.disabled = false;
-        reEvalBtn.innerHTML = `
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
-            <span>RE-EVALUAR CON GEMINI</span>
-        `;
-    }
-}
-
-function shareCurrentFicha() {
-    if (!currentFichaLicitacion) return;
-    const shareText = `Licitación: ${currentFichaLicitacion.referencia || currentFichaLicitacion.external_id}\nObjeto: ${currentFichaLicitacion.objeto}\nPresupuesto: ${currentFichaLicitacion.formatted_cuantia || ''}\nVer en SECOP II: ${currentFichaLicitacion.url_proceso || window.location.href}`;
-    
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(shareText).then(() => {
-            alert('Enlace y detalles de la ficha copiados al portapapeles.');
-        });
-    } else {
-        alert(shareText);
-    }
-}
-</script>
 @endsection
