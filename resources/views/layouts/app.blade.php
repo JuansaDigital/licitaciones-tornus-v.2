@@ -23,7 +23,7 @@
 
     <!-- Barra de Navegación Principal -->
     <header class="bg-[#00232c] text-[#f7f2df] border-b border-[#15424d] sticky top-0 z-50 shadow-sm">
-        <div class="max-w-[1750px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 
                 <!-- Logo y Enlaces Principales -->
@@ -138,8 +138,8 @@
     </header>
 
     <!-- Sub-Barra Informativa de Mercado Activo -->
-    <div class="bg-[#f2ece0] border-b border-[#e3dbc2] py-2 px-4 sm:px-8 lg:px-12 xl:px-16 text-xs font-mono text-[#56686b]">
-        <div class="max-w-[1750px] mx-auto flex flex-wrap items-center justify-between gap-2">
+    <div class="bg-[#f2ece0] border-b border-[#e3dbc2] py-2 px-4 sm:px-6 lg:px-8 text-xs font-mono text-[#56686b]">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full {{ App\Services\MarketService::isColombia() ? 'bg-amber-600' : 'bg-rose-600' }}"></span>
                 <span class="font-bold text-[#00232c]">MERCADO ACTIVO: {{ strtoupper(App\Services\MarketService::marketName()) }}</span>
@@ -159,13 +159,13 @@
     </div>
 
     <!-- Contenido Principal -->
-    <main class="flex-1 max-w-[1750px] w-full mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         @yield('content')
     </main>
 
     <!-- Pie de Página Institucional -->
     <footer class="bg-[#00232c] text-[#9db3b4] border-t border-[#15424d] py-6 text-xs font-mono">
-        <div class="max-w-[1750px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
                 Tornus Agency · copyright © 2026 Todos los derechos reservados 
             </div>

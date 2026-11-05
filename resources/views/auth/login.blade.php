@@ -22,7 +22,7 @@
     </div>
 
     <!-- Encabezado superior sobre el Wallpaper -->
-    <header class="relative z-10 w-full max-w-[1750px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-5 flex items-center justify-between">
+    <header class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-5 flex items-center justify-between">
         <div class="flex items-center gap-3">
             <img src="/assets/logo-tornus-white-1.svg" alt="Tornus" class="h-7 w-auto" onerror="this.src='/assets/logo-tornus.png'">
             <span class="text-xs uppercase tracking-widest font-mono text-[#f7f2df]/80 font-medium hidden sm:inline-block">Procurement Intelligence</span>
@@ -32,8 +32,8 @@
         </div>
     </header>
 
-    <!-- Contenedor Principal: Disposición fluida y equilibrada para pantallas estándar y ultrapanorámicas -->
-    <main class="relative z-10 w-full max-w-[1750px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 my-auto py-8 flex flex-col lg:flex-row items-center justify-between gap-12">
+    <!-- Contenedor Principal: Disposición equilibrada con márgenes de seguridad -->
+    <main class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 my-auto py-8 flex flex-col lg:flex-row items-center justify-between gap-12">
         
         <!-- Bloque de Identidad Institucional (Visible en Desktop) -->
         <div class="hidden lg:block max-w-lg text-[#f7f2df] space-y-4">
@@ -118,7 +118,7 @@
     </main>
 
     <!-- Pie inferior sobre el Wallpaper -->
-    <footer class="relative z-10 w-full max-w-[1750px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-[#f7f2df]/80 border-t border-white/10">
+    <footer class="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-[#f7f2df]/80 border-t border-white/10">
         <div>
             Tornus Agency · Todos los derechos reservados copyright © 2026
         </div>
