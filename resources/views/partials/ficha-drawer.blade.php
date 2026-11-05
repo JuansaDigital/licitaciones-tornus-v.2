@@ -663,6 +663,39 @@ async function analyzeWithGemini(id) {
             }
             
             if (btnText) btnText.textContent = 'Re-evaluar Gemini';
+
+            // Si la evaluación determina que la oferta NO APLICA (score < 40 o Descartar)
+            const isDiscarded = (evalData.score < 40) || (evalData.estrategia_postulacion && evalData.estrategia_postulacion.toLowerCase() === 'descartar');
+            if (isDiscarded) {
+                const cardEl = document.getElementById('lic-card-' + id);
+                if (cardEl) {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const currentIaFilter = urlParams.get('ia_filter') || 'viable';
+                    
+                    if (currentIaFilter === 'viable') {
+                        const discardNotice = document.createElement('div');
+                        discardNotice.className = 'my-2.5 p-2.5 rounded bg-rose-50 border border-rose-200 text-rose-800 text-xs font-mono flex items-center justify-between transition-all';
+                        discardNotice.innerHTML = `
+                            <span class="flex items-center gap-1.5 font-bold">
+                                <svg class="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <span>Oferta no afín a Tornus. Descartada por IA (0% afinidad). Ocultando del Radar...</span>
+                            </span>
+                        `;
+                        if (descBox && descBox.parentNode) {
+                            descBox.parentNode.insertBefore(discardNotice, descBox.nextSibling);
+                        }
+
+                        setTimeout(() => {
+                            cardEl.style.transition = 'all 0.6s ease';
+                            cardEl.style.opacity = '0';
+                            cardEl.style.transform = 'translateY(-10px)';
+                            setTimeout(() => {
+                                cardEl.style.display = 'none';
+                            }, 600);
+                        }, 2200);
+                    }
+                }
+            }
             
             if (currentFichaLicitacion && currentFichaLicitacion.id == id) {
                 Object.assign(currentFichaLicitacion, evalData);
