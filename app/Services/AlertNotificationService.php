@@ -65,38 +65,50 @@ class AlertNotificationService
     }
 
     /**
-     * Enviar un correo de prueba al usuario actual
+     * Enviar un correo de prueba al usuario actual respetando estrictamente su mercado seleccionado
      */
     public static function sendTestEmail(User $user): bool
     {
-        $mockTenders = [
-            [
-                'referencia' => 'FONTUR-LP-012-2026',
-                'entidad' => 'FONDO NACIONAL DEL TURISMO (FONTUR)',
-                'objeto' => 'Diseño, ejecución y evaluación de la campaña de promoción y posicionamiento turístico internacional de Colombia como destino biocultural de alto valor.',
-                'formatted_cuantia' => '$ 2.850.000.000 COP',
-                'fecha_cierre' => now()->addDays(18)->format('Y-m-d H:i:s'),
-                'departamento' => 'Bogotá D.C.',
-                'url_proceso' => 'https://community.secop.gov.co',
-                'score' => 92,
-            ],
-            [
-                'referencia' => 'OECE-CP-045-2026',
-                'entidad' => 'PROMPERÚ - COMISIÓN DE PROMOCIÓN DEL PERÚ',
-                'objeto' => 'Servicio de agencia creativa 360 y producción multimedia para el desarrollo de contenidos promocionales en mercados emisores prioritarios.',
-                'formatted_cuantia' => 'S/ 1.450.000 PEN',
-                'fecha_cierre' => now()->addDays(24)->format('Y-m-d H:i:s'),
-                'departamento' => 'Lima',
-                'url_proceso' => 'https://prodapp2.seace.gob.pe',
-                'score' => 88,
-            ],
+        $userMarket = strtoupper($user->notificar_mercado ?? 'TODOS');
+
+        $coTender = [
+            'referencia' => 'FONTUR-LP-012-2026',
+            'entidad' => 'FONDO NACIONAL DEL TURISMO (FONTUR)',
+            'objeto' => 'Diseño, ejecución y evaluación de la campaña de promoción y posicionamiento turístico internacional de Colombia como destino biocultural de alto valor.',
+            'formatted_cuantia' => '$ 2.850.000.000 COP',
+            'fecha_cierre' => now()->addDays(18)->format('Y-m-d H:i:s'),
+            'departamento' => 'Bogotá D.C.',
+            'url_proceso' => 'https://community.secop.gov.co',
+            'score' => 92,
         ];
+
+        $peTender = [
+            'referencia' => 'OECE-CP-045-2026',
+            'entidad' => 'PROMPERÚ - COMISIÓN DE PROMOCIÓN DEL PERÚ',
+            'objeto' => 'Servicio de agencia creativa 360 y producción multimedia para el desarrollo de contenidos promocionales en mercados emisores prioritarios.',
+            'formatted_cuantia' => 'S/ 1.450.000 PEN',
+            'fecha_cierre' => now()->addDays(24)->format('Y-m-d H:i:s'),
+            'departamento' => 'Lima',
+            'url_proceso' => 'https://prodapp2.seace.gob.pe',
+            'score' => 88,
+        ];
+
+        $mockTenders = [];
+        if ($userMarket === 'CO') {
+            $mockTenders = [$coTender];
+        } elseif ($userMarket === 'PE') {
+            $mockTenders = [$peTender];
+        } else {
+            $mockTenders = [$coTender, $peTender];
+        }
+
+        $marketLabel = $userMarket === 'CO' ? 'Colombia' : ($userMarket === 'PE' ? 'Perú' : 'TODOS');
 
         try {
             Mail::to($user->email)->send(
                 new NuevasLicitacionesMail(
                     licitaciones: $mockTenders,
-                    market: 'TODOS',
+                    market: $marketLabel,
                     totalCount: count($mockTenders),
                     recipientName: $user->name
                 )
