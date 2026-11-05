@@ -42,6 +42,10 @@ class ConfiguracionController extends Controller
 
         $aiModel = env('GEMINI_MODEL', 'gemini-3.8-flash');
 
+        // Configuración de frecuencia y límites de consulta de datos (SECOP / OECE)
+        $syncConfig = \App\Services\SyncConfigService::getConfig();
+        $syncFrequencies = \App\Services\SyncConfigService::FREQUENCIES;
+
         return view('configuracion', compact(
             'users',
             'totalMiembros',
@@ -55,7 +59,9 @@ class ConfiguracionController extends Controller
             'costoMes',
             'llamadasMes',
             'historialDiario',
-            'aiModel'
+            'aiModel',
+            'syncConfig',
+            'syncFrequencies'
         ));
     }
 
@@ -108,6 +114,28 @@ class ConfiguracionController extends Controller
         } catch (\Throwable $e) {
             return back()->withErrors(['error' => 'No se pudo enviar el correo de prueba: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Actualizar parámetros de frecuencia y cuota de consultas a SECOP II / OECE
+     */
+    public function updateSyncConfig(Request $request)
+    {
+        if (!Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores pueden modificar los parámetros de sincronización.']);
+        }
+
+        $validated = $request->validate([
+            'frequency' => ['required', 'string', 'in:hourly,everyTwoHours,everyFourHours,everySixHours,twiceDaily,daily'],
+            'daily_manual_limit' => ['required', 'integer', 'min:1', 'max:100']
+        ]);
+
+        \App\Services\SyncConfigService::saveConfig(
+            $validated['frequency'],
+            (int) $validated['daily_manual_limit']
+        );
+
+        return back()->with('status', 'Parámetros de frecuencia y límites de consulta a SECOP II actualizados correctamente.');
     }
 
     /**

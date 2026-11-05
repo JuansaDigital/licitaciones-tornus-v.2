@@ -54,6 +54,8 @@ class SyncLicitacionesCommand extends Command
         $this->line("Verificando alertas por correo para el equipo...");
         $this->call('tornus:send-alerts', ['market' => $market, '--hours' => 2]);
 
+        \App\Services\SyncConfigService::recordSync();
+
         $this->info("Sincronización completada exitosamente.");
         return 0;
     }

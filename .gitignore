@@ -27,3 +27,6 @@ Homestead.yaml
 Thumbs.db
 scripts/remote_*.py
 scripts/deploy_*.py
+scripts/update_*.py
+__pycache__/
+

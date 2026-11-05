@@ -68,3 +68,4 @@ class AiTokenUsage extends Model
         ]);
     }
 }
+

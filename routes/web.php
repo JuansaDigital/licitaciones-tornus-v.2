@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/configuracion/usuarios/{id}/toggle-notification', [ConfiguracionController::class, 'toggleNotification'])->name('configuracion.usuarios.toggle_notification');
     Route::post('/configuracion/alertas/guardar', [ConfiguracionController::class, 'updateNotificationSettings'])->name('configuracion.alertas.update');
     Route::post('/configuracion/alertas/probar', [ConfiguracionController::class, 'sendTestEmail'])->middleware('throttle:5,1')->name('configuracion.alertas.test');
+    Route::post('/configuracion/sync/guardar', [ConfiguracionController::class, 'updateSyncConfig'])->name('configuracion.sync.update');
     Route::delete('/configuracion/usuarios/{id}', [ConfiguracionController::class, 'destroy'])->name('configuracion.usuarios.destroy');
 
     // Módulo A & B: Radar en Vivo y Filtros

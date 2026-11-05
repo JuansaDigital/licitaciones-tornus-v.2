@@ -28,3 +28,4 @@ return new class extends Migration
         Schema::dropIfExists('ai_token_usages');
     }
 };
+

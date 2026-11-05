@@ -409,6 +409,13 @@ class RadarController extends Controller
 
     public function sync(Request $request, SecopColombiaService $secop, OecePeruService $oece)
     {
+        if (!\App\Services\SyncConfigService::canManualSync()) {
+            $limit = \App\Services\SyncConfigService::getLimit();
+            return back()->withErrors(['error' => "Se ha alcanzado el límite configurado de {$limit} consultas manuales diarias a la API de compras públicas. El sistema continuará actualizándose automáticamente en su frecuencia programada."]);
+        }
+
+        \App\Services\SyncConfigService::recordSync();
+
         $isPeru = MarketService::isPeru();
         $synced = 0;
         $purged = 0;
