@@ -397,19 +397,19 @@
 
         </div>
 
-        <!-- SECCIÓN: FRECUENCIA Y LÍMITES DE CONSULTA DE DATOS (SECOP II / OECE) -->
+        <!-- SECCIÓN: FRECUENCIA Y LÍMITES DE CONSULTA DE DATOS (SECOP II / OECE) Y ALERTAS EMAIL -->
         <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-xl p-6 sm:p-8 shadow-xs space-y-6">
             
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#f2ece0]">
                 <div>
                     <span class="text-[11px] font-mono uppercase tracking-wider text-[#56686b] block">
-                        INGESTIÓN DE DATOS & CUOTA DE API
+                        INGESTIÓN DE DATOS & DESPACHO DE ALERTAS
                     </span>
                     <h2 class="font-['Instrument_Serif',serif] text-2xl sm:text-3xl text-[#00232c] font-normal tracking-tight uppercase mt-1">
-                        FRECUENCIA Y LÍMITES DE CONSULTA
+                        FRECUENCIA DE CONSULTA & CORREOS
                     </h2>
                     <p class="text-xs font-mono text-[#56686b] mt-1">
-                        Configura la periodicidad con la que el sistema consulta SECOP II y el tope diario de sincronizaciones manuales.
+                        Configura la periodicidad con la que el sistema consulta SECOP II, el tope diario de sincronizaciones manuales y cada cuánto se despachan las alertas por email.
                     </p>
                 </div>
 
@@ -422,24 +422,34 @@
             </div>
 
             <!-- Rejilla Informativa de Estado Actual -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-1">
-                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Frecuencia Programada (Cron)</span>
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Frecuencia Radar (Cron)</span>
                     <div class="font-bold text-sm sm:text-base text-[#00232c] font-mono">
                         {{ \App\Services\SyncConfigService::getFrequencyLabel() }}
                     </div>
                     <p class="text-[11px] font-mono text-[#56686b]">
-                        Ejecución en segundo plano sin intervención
+                        Ejecución de ingesta en segundo plano
                     </p>
                 </div>
 
                 <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-1">
-                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Consultas Realizadas Hoy</span>
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Consultas Manuales Hoy</span>
                     <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-[#00232c]">
                         {{ $syncConfig['today_count'] ?? 0 }} <span class="text-sm font-sans font-normal text-[#56686b]">/ {{ $syncConfig['daily_manual_limit'] ?? 15 }} permitidas</span>
                     </div>
                     <p class="text-[11px] font-mono text-[#56686b]">
                         Límite diario de consultas manuales
+                    </p>
+                </div>
+
+                <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-1">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Frecuencia Avisos Email</span>
+                    <div class="font-bold text-sm sm:text-base text-[#00232c] font-mono">
+                        {{ \App\Services\SyncConfigService::getEmailFrequencyLabel() }}
+                    </div>
+                    <p class="text-[11px] font-mono text-[#56686b]">
+                        Despacho a usuarios con avisos activos
                     </p>
                 </div>
 
@@ -458,12 +468,12 @@
             @if(Auth::user()->isAdmin())
                 <form action="{{ route('configuracion.sync.update') }}" method="POST" class="space-y-4 pt-2 border-t border-[#f2ece0]">
                     @csrf
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                         
                         <!-- 1. Frecuencia del Cron Job -->
                         <div class="space-y-1.5">
                             <label class="block text-xs font-mono font-bold uppercase text-[#56686b]">
-                                1. Periodicidad de Consulta Automática (Cron Job)
+                                1. Periodicidad Radar (Cron Job)
                             </label>
                             <select name="frequency" class="w-full px-3 py-2 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
                                 @foreach($syncFrequencies as $fKey => $fLabel)
@@ -473,25 +483,42 @@
                                 @endforeach
                             </select>
                             <span class="text-[11px] font-mono text-[#56686b] block">
-                                Determina cada cuánto tiempo el servidor se conecta a SECOP II para traer nuevas licitaciones.
+                                Cada cuánto el servidor consulta SECOP II para traer nuevas licitaciones.
                             </span>
                         </div>
 
                         <!-- 2. Límite de Consultas Manuales por Día -->
                         <div class="space-y-1.5">
                             <label class="block text-xs font-mono font-bold uppercase text-[#56686b]">
-                                2. Cuota Máxima de Consultas Manuales al Día
+                                2. Cuota Manual al Día
                             </label>
                             <select name="daily_manual_limit" class="w-full px-3 py-2 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
-                                <option value="5" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 5 ? 'selected' : '' }}>5 veces por día (Baja)</option>
-                                <option value="10" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 10 ? 'selected' : '' }}>10 veces por día (Controlada)</option>
-                                <option value="15" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 15 ? 'selected' : '' }}>15 veces por día [Recomendado]</option>
-                                <option value="25" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 25 ? 'selected' : '' }}>25 veces por día (Alta)</option>
-                                <option value="50" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 50 ? 'selected' : '' }}>50 veces por día (Intensiva)</option>
-                                <option value="100" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 100 ? 'selected' : '' }}>100 veces por día (Sin restricción práctica)</option>
+                                <option value="5" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 5 ? 'selected' : '' }}>5 veces al día (Baja)</option>
+                                <option value="10" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 10 ? 'selected' : '' }}>10 veces al día (Controlada)</option>
+                                <option value="15" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 15 ? 'selected' : '' }}>15 veces al día [Recomendado]</option>
+                                <option value="25" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 25 ? 'selected' : '' }}>25 veces al día (Alta)</option>
+                                <option value="50" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 50 ? 'selected' : '' }}>50 veces al día (Intensiva)</option>
+                                <option value="100" {{ ($syncConfig['daily_manual_limit'] ?? 15) == 100 ? 'selected' : '' }}>100 veces al día (Sin restricción)</option>
                             </select>
                             <span class="text-[11px] font-mono text-[#56686b] block">
-                                Cuántas veces el equipo comercial puede presionar "Sincronizar Radar" manualmente por día.
+                                Cuántas veces el equipo puede pulsar "Sincronizar Radar" manualmente por día.
+                            </span>
+                        </div>
+
+                        <!-- 3. Frecuencia de Alertas por Correo -->
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-mono font-bold uppercase text-[#56686b]">
+                                3. Despacho de Alertas por Correo
+                            </label>
+                            <select name="email_frequency" class="w-full px-3 py-2 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
+                                @foreach($emailFrequencies as $efKey => $efLabel)
+                                    <option value="{{ $efKey }}" {{ ($syncConfig['email_frequency'] ?? 'daily') === $efKey ? 'selected' : '' }}>
+                                        {{ $efLabel }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <span class="text-[11px] font-mono text-[#56686b] block">
+                                Define cuándo se envían los correos de nuevas propuestas viables a los miembros suscritos.
                             </span>
                         </div>
 
@@ -499,13 +526,13 @@
 
                     <div class="flex items-center justify-end pt-2">
                         <button type="submit" class="px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold transition-colors shadow-xs cursor-pointer">
-                            GUARDAR PARÁMETROS DE CONSULTA
+                            GUARDAR PARÁMETROS DE CONSULTA Y CORREO
                         </button>
                     </div>
                 </form>
             @else
                 <div class="p-3 bg-[#fcfaf2] border border-[#e3dbc2] rounded text-xs font-mono text-[#56686b]">
-                    Solo los administradores de Tornus pueden modificar la periodicidad y cuotas de consulta. Tu cuenta cuenta con permisos de consulta y lectura.
+                    Solo los administradores de Tornus pueden modificar la periodicidad y cuotas de consulta y avisos. Tu cuenta cuenta con permisos de lectura.
                 </div>
             @endif
 

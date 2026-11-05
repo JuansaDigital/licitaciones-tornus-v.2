@@ -16,8 +16,19 @@ match ($syncFreq) {
     default => $syncCommand->everyTwoHours(),
 };
 
-// Tarea programada para despachar alertas diarias de nuevas oportunidades (ventana amplia >= 3 días)
-Schedule::command('tornus:send-alerts ALL --hours=24 --min-days=3')
-    ->dailyAt('08:00')
-    ->withoutOverlapping()
-    ->runInBackground();
+// Tarea programada para despachar alertas por correo según configuración del panel
+$emailFreq = SyncConfigService::getEmailFrequency();
+
+if ($emailFreq === 'daily') {
+    Schedule::command('tornus:send-alerts ALL --hours=24 --min-days=3')
+        ->dailyAt('08:00')
+        ->withoutOverlapping()
+        ->runInBackground();
+} elseif ($emailFreq === 'twiceDaily') {
+    Schedule::command('tornus:send-alerts ALL --hours=12 --min-days=3')
+        ->twiceDaily(8, 17)
+        ->withoutOverlapping()
+        ->runInBackground();
+}
+// Si es 'realtime', se despachan alertas en cada ciclo de tornus:sync.
+// Si es 'disabled', no se ejecutan alertas por correo.

@@ -51,8 +51,12 @@ class SyncLicitacionesCommand extends Command
         $this->call('tornus:auto-triage', ['market' => $market, '--limit' => 20]);
 
         // 4. Despachar alertas automáticas por correo para propuestas detectadas (solo viables)
-        $this->line("Verificando alertas por correo para el equipo...");
-        $this->call('tornus:send-alerts', ['market' => $market, '--hours' => 2]);
+        if (\App\Services\SyncConfigService::getEmailFrequency() === 'realtime') {
+            $this->line("Verificando alertas por correo para el equipo (Modo Tiempo Real)...");
+            $this->call('tornus:send-alerts', ['market' => $market, '--hours' => 2]);
+        } else {
+            $this->line("Alertas por correo en tiempo real omitidas (Modalidad configurada: " . \App\Services\SyncConfigService::getEmailFrequencyLabel() . ")");
+        }
 
         \App\Services\SyncConfigService::recordSync();
 

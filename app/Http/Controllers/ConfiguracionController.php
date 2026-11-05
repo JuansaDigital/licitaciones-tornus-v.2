@@ -42,9 +42,10 @@ class ConfiguracionController extends Controller
 
         $aiModel = env('GEMINI_MODEL', 'gemini-3.8-flash');
 
-        // Configuración de frecuencia y límites de consulta de datos (SECOP / OECE)
+        // Configuración de frecuencia y límites de consulta de datos (SECOP / OECE) y alertas email
         $syncConfig = \App\Services\SyncConfigService::getConfig();
         $syncFrequencies = \App\Services\SyncConfigService::FREQUENCIES;
+        $emailFrequencies = \App\Services\SyncConfigService::EMAIL_FREQUENCIES;
 
         return view('configuracion', compact(
             'users',
@@ -61,7 +62,8 @@ class ConfiguracionController extends Controller
             'historialDiario',
             'aiModel',
             'syncConfig',
-            'syncFrequencies'
+            'syncFrequencies',
+            'emailFrequencies'
         ));
     }
 
@@ -127,15 +129,17 @@ class ConfiguracionController extends Controller
 
         $validated = $request->validate([
             'frequency' => ['required', 'string', 'in:hourly,everyTwoHours,everyFourHours,everySixHours,twiceDaily,daily'],
-            'daily_manual_limit' => ['required', 'integer', 'min:1', 'max:100']
+            'daily_manual_limit' => ['required', 'integer', 'min:1', 'max:100'],
+            'email_frequency' => ['required', 'string', 'in:realtime,daily,twiceDaily,disabled']
         ]);
 
         \App\Services\SyncConfigService::saveConfig(
             $validated['frequency'],
-            (int) $validated['daily_manual_limit']
+            (int) $validated['daily_manual_limit'],
+            $validated['email_frequency']
         );
 
-        return back()->with('status', 'Parámetros de frecuencia y límites de consulta a SECOP II actualizados correctamente.');
+        return back()->with('status', 'Parámetros de frecuencia de consulta y alertas por correo actualizados correctamente.');
     }
 
     /**
