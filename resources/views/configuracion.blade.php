@@ -348,18 +348,21 @@
                     <div class="bg-white border border-[#e3dbc2] rounded-lg p-4 space-y-3">
                         <span class="text-[10px] font-mono font-bold uppercase text-[#56686b] block">2. CRITERIO DE DISPARO</span>
                         <select name="notificar_criterio" class="w-full px-3 py-2 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
+                            <option value="viables" {{ (Auth::user()->notificar_criterio === 'viables' || Auth::user()->notificar_criterio === 'todas' || empty(Auth::user()->notificar_criterio)) ? 'selected' : '' }}>
+                                Solo Oportunidades Viables (Afines o Pendientes) [Activo / Recomendado]
+                            </option>
                             <option value="afinidad_alta" {{ Auth::user()->notificar_criterio === 'afinidad_alta' ? 'selected' : '' }}>
-                                Solo Afinidad Alta con IA (Score >= 70 o Prioritarias) [Recomendado]
+                                Solo Afinidad Alta con IA (Score >= 70 o Prioritarias)
                             </option>
                             <option value="prioritarias" {{ Auth::user()->notificar_criterio === 'prioritarias' ? 'selected' : '' }}>
                                 Solo Entidades Prioritarias (FONTUR, MINCIT, IDT, PROMPERÚ...)
                             </option>
                             <option value="todas" {{ Auth::user()->notificar_criterio === 'todas' ? 'selected' : '' }}>
-                                Todas las propuestas que superen los filtros de Tornus
+                                Todas las propuestas (sin filtrar por IA)
                             </option>
                         </select>
                         <span class="text-[11px] font-mono text-[#56686b] block">
-                            Filtra el nivel de oportunidad antes de generar el aviso por correo.
+                            Criterio oficial: únicamente despacha al correo las oportunidades clasificadas como viables por Gemini IA, descartando de inmediato las no pertinentes.
                         </span>
                     </div>
 

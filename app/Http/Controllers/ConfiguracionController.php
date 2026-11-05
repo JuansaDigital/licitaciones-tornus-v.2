@@ -84,7 +84,7 @@ class ConfiguracionController extends Controller
     {
         $validated = $request->validate([
             'notificar_email' => ['nullable', 'boolean'],
-            'notificar_criterio' => ['required', 'in:todas,afinidad_alta,prioritarias'],
+            'notificar_criterio' => ['required', 'in:viables,todas,afinidad_alta,prioritarias'],
             'notificar_mercado' => ['required', 'in:TODOS,CO,PE'],
         ]);
 

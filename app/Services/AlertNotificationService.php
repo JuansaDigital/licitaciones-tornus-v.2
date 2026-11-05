@@ -222,22 +222,29 @@ class AlertNotificationService
      */
     protected static function filterTendersForUser(array $licitaciones, User $user, string $market): array
     {
-        $criterio = $user->notificar_criterio ?? 'todas';
+        $criterio = $user->notificar_criterio ?? 'viables';
 
-        if ($criterio === 'todas') {
-            return $licitaciones;
-        }
-
-        $filters = RadarFilterService::getFilters($market);
+        $filters = RadarFilterService::getData($market);
         $priorityEntities = $filters['priority_entities'] ?? [];
 
         return array_values(array_filter($licitaciones, function ($lic) use ($criterio, $priorityEntities) {
             $score = is_object($lic) ? ($lic->score ?? null) : ($lic['score'] ?? null);
+            $estrategia = is_object($lic) ? ($lic->estrategia_postulacion ?? '') : ($lic['estrategia_postulacion'] ?? '');
             $entidad = is_object($lic) ? ($lic->entidad ?? '') : ($lic['entidad'] ?? '');
+
+            // CRITERIO OFICIAL: Solo Oportunidades Viables (Afines o Pendientes) [Activo]
+            // Incluye ofertas pendientes de evaluar (score null) y ofertas afines con score >= 40 sin descarte.
+            // Excluye tajantemente cualquier oferta descartada por la IA (score < 40 o 'Descartar').
+            if ($criterio === 'viables') {
+                if (is_null($score)) {
+                    return true;
+                }
+                return ($score >= 40) && strcasecmp($estrategia, 'Descartar') !== 0;
+            }
 
             if ($criterio === 'afinidad_alta') {
                 if (!is_null($score)) {
-                    return $score >= 70;
+                    return $score >= 70 && strcasecmp($estrategia, 'Descartar') !== 0;
                 }
                 // Si aún no está evaluada con IA, verificar si es de entidad prioritaria
                 foreach ($priorityEntities as $pe) {
@@ -255,6 +262,10 @@ class AlertNotificationService
                     }
                 }
                 return false;
+            }
+
+            if ($criterio === 'todas') {
+                return true;
             }
 
             return true;
