@@ -82,8 +82,8 @@
             </div>
         @endif
 
-        <!-- Tarjetas de Métricas Superiores (Idénticas a la Referencia) -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Tarjetas de Métricas Superiores -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
             <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg p-5 shadow-xs">
                 <span class="text-[11px] font-mono uppercase tracking-wider text-[#56686b]">TOTAL MIEMBROS</span>
@@ -101,6 +101,12 @@
                 <span class="text-[11px] font-mono uppercase tracking-wider text-[#56686b]">ADMINISTRADORES</span>
                 <div class="font-['Instrument_Serif',serif] text-4xl font-normal text-[#00232c] mt-1">{{ $administradores }}</div>
                 <p class="text-[11px] font-mono text-[#56686b] mt-1">Control total de la plataforma</p>
+            </div>
+
+            <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg p-5 shadow-xs">
+                <span class="text-[11px] font-mono uppercase tracking-wider text-[#56686b]">ALERTAS POR EMAIL</span>
+                <div class="font-['Instrument_Serif',serif] text-4xl font-normal text-blue-900 mt-1">{{ $conAlertasEmail }}</div>
+                <p class="text-[11px] font-mono text-[#56686b] mt-1">Suscritos a avisos automáticos</p>
             </div>
 
         </div>
@@ -149,6 +155,7 @@
                             <th class="py-3 px-3 font-semibold">USUARIO</th>
                             <th class="py-3 px-3 font-semibold">ROL</th>
                             <th class="py-3 px-3 font-semibold">ESTADO</th>
+                            <th class="py-3 px-3 font-semibold">AVISOS EMAIL</th>
                             <th class="py-3 px-3 font-semibold">ÚLTIMO ACCESO</th>
                             <th class="py-3 px-3 font-semibold text-right">ACCIONES</th>
                         </tr>
@@ -203,6 +210,32 @@
                                     @endif
                                 </td>
 
+                                <!-- Avisos Email -->
+                                <td class="py-3.5 px-3 font-mono text-[11px]">
+                                    <div class="flex items-center gap-2">
+                                        @if($u->notificar_email)
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                <span>Activo ({{ $u->notificar_mercado ?? 'TODOS' }})</span>
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                                <span>Silenciado</span>
+                                            </span>
+                                        @endif
+
+                                        @if(Auth::user()->isAdmin() || Auth::id() === $u->id)
+                                            <form action="{{ route('configuracion.usuarios.toggle_notification', $u->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-[10px] text-[#56686b] hover:text-[#00232c] underline cursor-pointer">
+                                                    {{ $u->notificar_email ? 'Pausar' : 'Activar' }}
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+
                                 <!-- Último Acceso -->
                                 <td class="py-3.5 px-3 font-mono text-[11px] text-[#56686b]">
                                     {{ $u->ultimo_acceso ? $u->ultimo_acceso->format('Y-m-d H:i:s') : 'Sin ingresos' }}
@@ -225,7 +258,7 @@
                                             <form action="{{ route('configuracion.usuarios.toggle_status', $u->id) }}" method="POST" class="inline">
                                                 @csrf
                                                 <button type="submit" 
-                                                    class="px-2.5 py-1 border border-[#e3dbc2] bg-white hover:bg-[#f7f2df] text-[#00232c] rounded text-[11px] font-mono font-semibold transition-colors cursor-pointer">
+                                                     class="px-2.5 py-1 border border-[#e3dbc2] bg-white hover:bg-[#f7f2df] text-[#00232c] rounded text-[11px] font-mono font-semibold transition-colors cursor-pointer">
                                                     {{ $u->activo ? 'DESACTIVAR' : 'ACTIVAR' }}
                                                 </button>
                                             </form>
@@ -252,6 +285,114 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- Tarjeta de Configuración de Alertas por Correo -->
+        <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg p-6 shadow-xs space-y-6">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#f2ece0]">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-bold">
+                            Servicio SMTP Activo
+                        </span>
+                        <span class="text-[10px] font-mono text-[#56686b]">
+                            smtp.gmail.com:587 (TLS) · tornuswebmaster@gmail.com
+                        </span>
+                    </div>
+                    <h2 class="font-['Instrument_Serif',serif] text-2xl sm:text-3xl text-[#00232c] font-normal tracking-tight uppercase mt-1">
+                        AVISOS AUTOMÁTICOS POR CORREO
+                    </h2>
+                    <p class="text-xs font-mono text-[#56686b] mt-0.5">
+                        Configura cómo y cuándo deseas recibir las alertas tempranas de nuevas oportunidades detectadas por el Radar.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <form action="{{ route('configuracion.alertas.test') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="px-3.5 py-2 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] text-[#00232c] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-2xs cursor-pointer"
+                            title="Enviar un correo de muestra con propuestas a tu dirección actual">
+                            <svg class="w-3.5 h-3.5 text-blue-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                            <span>ENVIAR CORREO DE PRUEBA</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Formulario de Preferencias Personales del Usuario -->
+            <form action="{{ route('configuracion.alertas.update') }}" method="POST" class="space-y-5">
+                @csrf
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    
+                    <!-- 1. Estado de Alertas -->
+                    <div class="bg-white border border-[#e3dbc2] rounded-lg p-4 space-y-3">
+                        <span class="text-[10px] font-mono font-bold uppercase text-[#56686b] block">1. ESTADO DE SUSCRIPCIÓN</span>
+                        <label class="flex items-start gap-3 cursor-pointer pt-1">
+                            <input type="checkbox" name="notificar_email" value="1" {{ Auth::user()->notificar_email ? 'checked' : '' }}
+                                class="mt-0.5 rounded border-[#e3dbc2] text-[#00232c] focus:ring-[#00232c]">
+                            <div>
+                                <span class="text-xs font-bold font-mono text-[#00232c] block">Recibir Avisos por Correo</span>
+                                <span class="text-[11px] font-mono text-[#56686b] block mt-0.5">
+                                    Enviar alertas automáticas a {{ Auth::user()->email }} cuando el radar ingeste nuevas licitaciones.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 2. Criterio de Selección -->
+                    <div class="bg-white border border-[#e3dbc2] rounded-lg p-4 space-y-3">
+                        <span class="text-[10px] font-mono font-bold uppercase text-[#56686b] block">2. CRITERIO DE DISPARO</span>
+                        <select name="notificar_criterio" class="w-full px-3 py-2 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
+                            <option value="afinidad_alta" {{ Auth::user()->notificar_criterio === 'afinidad_alta' ? 'selected' : '' }}>
+                                Solo Afinidad Alta con IA (Score >= 70 o Prioritarias) [Recomendado]
+                            </option>
+                            <option value="prioritarias" {{ Auth::user()->notificar_criterio === 'prioritarias' ? 'selected' : '' }}>
+                                Solo Entidades Prioritarias (FONTUR, MINCIT, IDT, PROMPERÚ...)
+                            </option>
+                            <option value="todas" {{ Auth::user()->notificar_criterio === 'todas' ? 'selected' : '' }}>
+                                Todas las propuestas que superen los filtros de Tornus
+                            </option>
+                        </select>
+                        <span class="text-[11px] font-mono text-[#56686b] block">
+                            Filtra el nivel de oportunidad antes de generar el aviso por correo.
+                        </span>
+                    </div>
+
+                    <!-- 3. Mercado de Interés -->
+                    <div class="bg-white border border-[#e3dbc2] rounded-lg p-4 space-y-3">
+                        <span class="text-[10px] font-mono font-bold uppercase text-[#56686b] block">3. MERCADO DE INTERÉS</span>
+                        <select name="notificar_mercado" class="w-full px-3 py-2 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
+                            <option value="TODOS" {{ (Auth::user()->notificar_mercado ?? 'TODOS') === 'TODOS' ? 'selected' : '' }}>
+                                Ambos Mercados (Colombia · SECOP II y Perú · OECE)
+                            </option>
+                            <option value="CO" {{ Auth::user()->notificar_mercado === 'CO' ? 'selected' : '' }}>
+                                Solo Colombia (SECOP II)
+                            </option>
+                            <option value="PE" {{ Auth::user()->notificar_mercado === 'PE' ? 'selected' : '' }}>
+                                Solo Perú (SEACE / OECE)
+                            </option>
+                        </select>
+                        <span class="text-[11px] font-mono text-[#56686b] block">
+                            Recibe únicamente convocatorias del país seleccionado.
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="flex items-center justify-end pt-2">
+                    <button type="submit" class="px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold transition-colors shadow-xs cursor-pointer">
+                        GUARDAR PREFERENCIAS DE AVISO
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
 
         </div>
 

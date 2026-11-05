@@ -18,6 +18,9 @@ class User extends Authenticatable
         'password',
         'rol',
         'activo',
+        'notificar_email',
+        'notificar_criterio',
+        'notificar_mercado',
         'ultimo_acceso',
     ];
 
@@ -32,6 +35,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'activo' => 'boolean',
+            'notificar_email' => 'boolean',
             'ultimo_acceso' => 'datetime',
         ];
     }

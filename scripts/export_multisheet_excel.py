@@ -72,6 +72,8 @@ def build_excel_report(db_path, logo_path, output_path, params_json, filters_jso
             fecha_cierre,
             url_proceso
         FROM licitaciones
+        WHERE (fecha_cierre IS NULL OR fecha_cierre >= datetime('now', 'localtime'))
+          AND estado NOT IN ('Cancelado', 'Cerrado', 'Desierto', 'Adjudicado')
         ORDER BY cuantia DESC, fecha_cierre DESC
     """)
     raw_rows = cur.fetchall()

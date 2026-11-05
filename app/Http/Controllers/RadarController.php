@@ -24,10 +24,14 @@ class RadarController extends Controller
         $priorityEntities = $filters['priority_entities'] ?? [];
 
         // 1. REGLA ESTRICTA DE VIGENCIA: Excluir propuestas vencidas y canceladas
+        $nowDateTime = now()->format('Y-m-d H:i:s');
         $today = now()->toDateString();
-        $query->where(function ($q) use ($today) {
+        $query->where(function ($q) use ($nowDateTime, $today) {
             $q->whereNull('fecha_cierre')
-              ->orWhereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today]);
+              ->orWhere(function ($sub) use ($nowDateTime, $today) {
+                  $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
+                      ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
+              });
         })->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado']);
 
         // 2. Aplicar filtro de búsqueda textual
@@ -155,9 +159,12 @@ class RadarController extends Controller
 
         // 6. Conteo de propuestas vigentes en el mercado (aplicando exclusiones activas)
         $totalQuery = Licitacion::on($connection)
-            ->where(function ($q) use ($today) {
+            ->where(function ($q) use ($nowDateTime, $today) {
                 $q->whereNull('fecha_cierre')
-                  ->orWhereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today]);
+                  ->orWhere(function ($sub) use ($nowDateTime, $today) {
+                      $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
+                          ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
+                  });
             })
             ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado']);
 
@@ -183,7 +190,10 @@ class RadarController extends Controller
 
         if ($selectedUrgency === 'critical') {
             $query->whereNotNull('fecha_cierre')
-                  ->whereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today])
+                  ->where(function ($sub) use ($nowDateTime, $today) {
+                      $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
+                          ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
+                  })
                   ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateCritical]);
         } elseif ($selectedUrgency === 'week') {
             $query->whereNotNull('fecha_cierre')
@@ -336,6 +346,17 @@ class RadarController extends Controller
             $res = $secop->syncFromSocrata(100);
             $synced = is_array($res) ? ($res['synced'] ?? 0) : $res;
             $purged = is_array($res) ? ($res['purged'] ?? 0) : $secop->purgeExpired('colombia');
+        }
+
+        if ($synced > 0) {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('tornus:send-alerts', [
+                    'market' => $isPeru ? 'PE' : 'CO',
+                    '--hours' => 2,
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Error despachando alertas en sync: ' . $e->getMessage());
+            }
         }
 
         return back()->with('status', "Radar sincronizado con éxito (ventana de los últimos 5 meses hasta hoy). Se actualizaron {$synced} procesos en vivo y se depuraron {$purged} licitaciones vencidas no guardadas.");

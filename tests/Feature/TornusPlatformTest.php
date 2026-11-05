@@ -261,14 +261,12 @@ class TornusPlatformTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('radar'));
+        $response = $this->actingAs($user)->get(route('perfil', ['tab' => 'filtros', 'country' => 'CO']));
         $response->assertStatus(200);
-        $response->assertSee('PALABRAS CLAVE DEL RADAR');
-        $response->assertSee('PALABRAS A EXCLUIR EN EL RADAR');
-        $response->assertSee('AGREGAR PALABRA CLAVE');
-        $response->assertSee('AGREGAR EXCLUSIÓN');
-        $response->assertSee('RESTABLECER PALABRAS PREDETERMINADAS');
-        $response->assertSee('GUARDAR Y ACTUALIZAR RADAR');
+        $response->assertSee('Palabras Clave de Búsqueda (Colombia)');
+        $response->assertSee('Términos de Exclusión Automática (Colombia)');
+        $response->assertSee('AGREGAR PALABRA CO');
+        $response->assertSee('AGREGAR EXCLUSIÓN CO');
     }
 
     public function test_keywords_and_exclusions_management(): void
@@ -308,8 +306,8 @@ class TornusPlatformTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('perfil'));
         $response->assertStatus(200);
-        $response->assertSee('Base de Conocimiento de Tornus Agency (Contexto para Gemini)');
-        $response->assertSee('GUARDAR PERFIL DE TORNUS');
+        $response->assertSee('Perfil Corporativo e Inteligencia Estratégica');
+        $response->assertSee('GUARDAR PERFIL ESTRATÉGICO');
 
         $updateResponse = $this->actingAs($user)->post(route('perfil.update'), [
             'nombre_agencia' => 'Tornus Agency Test',
@@ -322,5 +320,144 @@ class TornusPlatformTest extends TestCase
         ]);
 
         $updateResponse->assertSessionHas('status');
+    }
+
+    public function test_user_can_update_email_alert_settings_and_toggle_notification(): void
+    {
+        $user = User::factory()->create([
+            'rol' => 'administrador',
+            'notificar_email' => false,
+            'notificar_criterio' => 'todas',
+            'notificar_mercado' => 'TODOS',
+        ]);
+
+        // Guardar preferencias
+        $response = $this->actingAs($user)->post(route('configuracion.alertas.update'), [
+            'notificar_email' => '1',
+            'notificar_criterio' => 'afinidad_alta',
+            'notificar_mercado' => 'CO',
+        ]);
+
+        $response->assertSessionHas('status');
+        $user->refresh();
+        $this->assertTrue($user->notificar_email);
+        $this->assertEquals('afinidad_alta', $user->notificar_criterio);
+        $this->assertEquals('CO', $user->notificar_mercado);
+
+        // Conmutar notificación
+        $toggleResponse = $this->actingAs($user)->post(route('configuracion.usuarios.toggle_notification', $user->id));
+        $toggleResponse->assertSessionHas('status');
+        $user->refresh();
+        $this->assertFalse($user->notificar_email);
+    }
+
+    public function test_user_can_view_licitacion_raw_json(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'json_test@tornus.agency',
+            'activo' => true,
+        ]);
+
+        $lic = Licitacion::create([
+            'external_id' => 'CO1.REQ.TESTJSON',
+            'referencia' => 'PROCESO-JSON-001',
+            'entidad' => 'Entidad de Prueba',
+            'objeto' => 'Campaña de Promoción y Marca Territorial',
+            'cuantia' => 250000000,
+            'moneda' => 'COP',
+            'tipo_proceso' => 'Licitación Pública',
+            'estado' => 'Convocado',
+            'fecha_publicacion' => '2026-11-01 10:00:00',
+            'fecha_cierre' => '2026-11-20 17:00:00',
+        ]);
+
+        $response = $this->actingAs($user)->get("/licitaciones/{$lic->id}/json");
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/json; charset=utf-8');
+        $response->assertJsonFragment([
+            'external_id' => 'CO1.REQ.TESTJSON',
+            'referencia' => 'PROCESO-JSON-001',
+            'fecha_cierre' => '2026-11-20 17:00:00',
+        ]);
+    }
+
+    public function test_alert_notification_service_only_selects_fresh_proposals_with_ample_window(): void
+    {
+        // 1. Propuesta ya cerrada (no debe seleccionarse)
+        Licitacion::on('colombia')->create([
+            'external_id' => 'CO1.REQ.CLOSED',
+            'referencia' => 'PROC-CLOSED',
+            'entidad' => 'FONTUR',
+            'objeto' => 'Campaña turística cerrada',
+            'cuantia' => 100000000,
+            'moneda' => 'COP',
+            'tipo_proceso' => 'Licitación',
+            'estado' => 'Cerrado',
+            'fecha_publicacion' => now()->subDays(10)->toDateTimeString(),
+            'fecha_cierre' => now()->subDay()->toDateTimeString(),
+        ]);
+
+        // 2. Propuesta con cierre inminente < 48 horas (no debe seleccionarse)
+        Licitacion::on('colombia')->create([
+            'external_id' => 'CO1.REQ.IMMINENT',
+            'referencia' => 'PROC-IMMINENT',
+            'entidad' => 'FONTUR',
+            'objeto' => 'Campaña turística por vencer en 24h',
+            'cuantia' => 150000000,
+            'moneda' => 'COP',
+            'tipo_proceso' => 'Licitación',
+            'estado' => 'Convocado',
+            'fecha_publicacion' => now()->subDays(2)->toDateTimeString(),
+            'fecha_cierre' => now()->addHours(24)->toDateTimeString(),
+        ]);
+
+        // 3. Propuesta recién salida con ventana amplia de 20 días (DEBE seleccionarse)
+        $fresh = Licitacion::on('colombia')->create([
+            'external_id' => 'CO1.REQ.FRESH',
+            'referencia' => 'PROC-FRESH',
+            'entidad' => 'FONDO NACIONAL DEL TURISMO FONTUR',
+            'objeto' => 'Estrategia integral de promoción turística nacional y marketing de destinos',
+            'cuantia' => 850000000,
+            'moneda' => 'COP',
+            'tipo_proceso' => 'Licitación Pública',
+            'estado' => 'Convocado',
+            'fecha_publicacion' => now()->addDays(20)->toDateTimeString(),
+            'fecha_cierre' => now()->addDays(40)->toDateTimeString(),
+        ]);
+
+        $eligible = \App\Services\AlertNotificationService::getEligibleNewTendersForAlerts('CO', 48, 3, 30);
+        $ids = array_map(fn($t) => is_object($t) ? $t->external_id : $t['external_id'], $eligible);
+
+        $this->assertContains('CO1.REQ.FRESH', $ids);
+        $this->assertNotContains('CO1.REQ.CLOSED', $ids);
+        $this->assertNotContains('CO1.REQ.IMMINENT', $ids);
+    }
+
+    public function test_security_headers_are_present_in_responses(): void
+    {
+        $response = $this->get('/login');
+        $response->assertStatus(200);
+        $response->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+        $response->assertHeader('X-XSS-Protection', '1; mode=block');
+        $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    }
+
+    public function test_login_endpoint_has_rate_limiting(): void
+    {
+        for ($i = 0; $i < 6; $i++) {
+            $this->post('/login', [
+                'email' => 'bad_attempts@tornus.agency',
+                'password' => 'wrongpass',
+            ]);
+        }
+
+        // El 7º intento debe ser bloqueado por HTTP 429 Too Many Requests
+        $response = $this->post('/login', [
+            'email' => 'bad_attempts@tornus.agency',
+            'password' => 'wrongpass',
+        ]);
+
+        $response->assertStatus(429);
     }
 }

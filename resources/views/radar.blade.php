@@ -132,58 +132,7 @@
         </form>
     </div>
 
-    <!-- ========================================================================= -->
-    <!-- BARRA EJECUTIVA DE FOCO Y ACCESO A FILTROS DEL RADAR                      -->
-    <!-- ========================================================================= -->
-    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg p-4 shadow-xs space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
-            <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 rounded-full bg-[#00232c]/5 border border-[#e3dbc2] flex items-center justify-center text-[#00232c] shrink-0">
-                    <svg class="w-3.5 h-3.5 text-blue-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                    </svg>
-                </div>
-                <div>
-                    <span class="font-bold text-[#00232c] uppercase">Filtros Activos en {{ App\Services\MarketService::marketName() }}:</span>
-                    <span class="text-[#56686b] text-[11px] block sm:inline">
-                        {{ count($keywords) }} palabras clave · {{ count($exclusions) }} exclusiones · {{ count($priorityEntities) }} entidades prioritarias
-                    </span>
-                </div>
-            </div>
 
-            <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ route('perfil', ['tab' => 'filtros', 'country' => App\Services\MarketService::current()]) }}" 
-                    class="px-3 py-1.5 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] text-[#00232c] font-semibold rounded transition-colors flex items-center gap-1.5 shadow-2xs text-xs"
-                    title="Configurar palabras clave, exclusiones y entidades en Perfil Tornus">
-                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                    <span>Configurar Filtros en Perfil</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- Chips Rápidos de Entidades Prioritarias para filtrado instantáneo -->
-        @if(!empty($priorityEntities))
-            <div class="pt-2 border-t border-[#f0ebd8] flex flex-wrap items-center gap-1.5">
-                <span class="text-[10px] font-mono text-[#56686b] uppercase mr-1">Foco rápido:</span>
-                @foreach($priorityEntities as $ent)
-                    @php $entCount = $priorityEntityCounts[$ent] ?? 0; @endphp
-                    <a href="{{ route('radar', ['q' => $ent]) }}" 
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#e3dbc2] rounded text-[11px] font-mono text-[#00232c] hover:border-[#00232c] transition-colors {{ request('q') === $ent ? 'border-[#00232c] bg-[#fbfb75] font-bold' : '' }}"
-                        title="Filtrar propuestas de: {{ $ent }}">
-                        <span class="truncate max-w-[180px]">{{ $ent }}</span>
-                        @if($entCount > 0)
-                            <span class="px-1.5 py-0.1 rounded text-[9px] font-mono font-bold bg-[#00232c] text-[#fbfb75]">
-                                {{ $entCount }}
-                            </span>
-                        @endif
-                    </a>
-                @endforeach
-            </div>
-        @endif
-    </div>
 
     <!-- Lista Dinámica de Licitaciones -->
     @if ($licitaciones->isEmpty())
@@ -268,7 +217,7 @@
                             @endif
 
                             <div class="text-[11px] font-mono text-[#56686b] whitespace-nowrap">
-                                Cierre de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? date('d M', strtotime($lic->fecha_cierre)) : 'Pendiente' }}</strong>
+                                Cierre de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? (strlen($lic->fecha_cierre) > 10 && substr($lic->fecha_cierre, 11, 5) !== '00:00' ? date('d M · H:i', strtotime($lic->fecha_cierre)) : date('d M', strtotime($lic->fecha_cierre))) : 'Pendiente' }}</strong>
                             </div>
                             @if($lic->fecha_publicacion)
                                 <div class="text-[10px] font-mono text-[#56686b] whitespace-nowrap">

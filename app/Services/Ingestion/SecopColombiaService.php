@@ -21,6 +21,25 @@ class SecopColombiaService
     }
 
     /**
+     * Normaliza y preserva fecha y hora exacta de SECOP II (YYYY-MM-DD HH:mm:ss)
+     */
+    public function parseSecopDate(?string $value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+
+        try {
+            $dt = new \DateTime($trimmed);
+            return $dt->format('Y-m-d H:i:s');
+        } catch (\Exception $e) {
+            return strlen($trimmed) >= 19 ? str_replace('T', ' ', substr($trimmed, 0, 19)) : substr($trimmed, 0, 10);
+        }
+    }
+
+    /**
      * Importar registros existentes de la base histórica si existe
      */
     public function importFromLegacyDatabase(string $legacyDbPath, int $limit = 500): int
@@ -66,12 +85,12 @@ class SecopColombiaService
                         'categoria' => $row['categoria'] ?? 'servicios',
                         'estado' => $row['estado'] ?? 'Abierto',
                         'fase' => $row['fase'] ?? 'Presentación de ofertas',
-                        'fecha_publicacion' => $row['fecha_publicacion'] ?? null,
-                        'fecha_cierre' => $row['fecha_cierre'] ?? null,
+                        'fecha_publicacion' => $this->parseSecopDate($row['fecha_publicacion'] ?? null),
+                        'fecha_cierre' => $this->parseSecopDate($row['fecha_cierre'] ?? null),
                         'url_proceso' => $row['url_proceso'] ?? null,
                         'prov_unicos' => (int)($row['prov_unicos'] ?? 0),
-                        'fase2_fecha' => $row['fase2_fecha'] ?? null,
-                        'adenda_fecha' => $row['adenda_fecha'] ?? null,
+                        'fase2_fecha' => $this->parseSecopDate($row['fase2_fecha'] ?? null),
+                        'adenda_fecha' => $this->parseSecopDate($row['adenda_fecha'] ?? null),
                     ]
                 );
                 $imported++;
@@ -92,17 +111,33 @@ class SecopColombiaService
      */
     public function purgeExpired(string $connection = 'colombia'): int
     {
+        $nowDateTime = now()->format('Y-m-d H:i:s');
         $today = now()->toDateString();
         $fiveMonthsAgo = now()->subMonths(5)->toDateString();
 
         try {
+            // 1. Marcar como 'Cerrado' los procesos vencidos que se conservan por cartera o score
+            Licitacion::on($connection)
+                ->whereNotNull('fecha_cierre')
+                ->where('fecha_cierre', '!=', '')
+                ->where(function ($sub) use ($nowDateTime, $today) {
+                    $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
+                        ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
+                })
+                ->whereNotIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
+                ->update(['estado' => 'Cerrado']);
+
+            // 2. Eliminar de la base activa las no guardadas ni analizadas que ya cerraron o superan 5 meses
             return Licitacion::on($connection)
                 ->where('en_cartera', false)
                 ->whereNull('score')
-                ->where(function ($q) use ($today, $fiveMonthsAgo) {
-                    $q->where(function ($sq) use ($today) {
+                ->where(function ($q) use ($nowDateTime, $today, $fiveMonthsAgo) {
+                    $q->where(function ($sq) use ($nowDateTime, $today) {
                         $sq->whereNotNull('fecha_cierre')
-                           ->whereRaw("substr(fecha_cierre, 1, 10) < ?", [$today]);
+                           ->where(function ($ts) use ($nowDateTime, $today) {
+                               $ts->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
+                                  ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
+                           });
                     })->orWhere(function ($sq) use ($fiveMonthsAgo) {
                         $sq->whereNotNull('fecha_publicacion')
                            ->whereRaw("substr(fecha_publicacion, 1, 10) < ?", [$fiveMonthsAgo]);
@@ -140,7 +175,7 @@ class SecopColombiaService
         $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND (fecha_de_recepcion_de >= '{$today}' OR fecha_de_recepcion_de IS NULL))";
         $whereSql = "{$whereKeywords} AND {$whereDate} AND (upper(nombre_del_procedimiento) NOT LIKE '%CUNDINAMARCA%')";
 
-        $query = "SELECT id_del_proceso, referencia, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
+        $query = "SELECT id_del_proceso, referencia, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, fecha_de_apertura_de_respuesta, fecha_de_adjudicacion, fecha_de_ultima_publicacion, fase, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
 
         $count = 0;
         try {
@@ -175,6 +210,7 @@ class SecopColombiaService
                         if (!$extId) continue;
 
                         $cuantia = (float)($row['precio_base'] ?? 0);
+                        $hasAdjudicacion = !empty($row['fecha_de_adjudicacion']);
 
                         Licitacion::on('colombia')->updateOrCreate(
                             ['external_id' => $extId],
@@ -193,10 +229,13 @@ class SecopColombiaService
                                 'duracion' => !empty($row['duracion']) ? (string)$row['duracion'] : null,
                                 'unidad_duracion' => $row['unidad_de_duracion'] ?? null,
                                 'codigo_unspsc' => $row['codigo_principal_de_categoria'] ?? null,
-                                'estado' => $row['estado_del_procedimiento'] ?? 'Abierto',
-                                'fecha_publicacion' => !empty($row['fecha_de_publicacion_del']) ? substr($row['fecha_de_publicacion_del'], 0, 10) : null,
-                                'fecha_cierre' => !empty($row['fecha_de_recepcion_de']) ? substr($row['fecha_de_recepcion_de'], 0, 10) : null,
-                                'fecha_apertura_ofertas' => !empty($row['fecha_de_apertura_efectiva']) ? substr($row['fecha_de_apertura_efectiva'], 0, 10) : null,
+                                'estado' => $hasAdjudicacion ? 'Adjudicado' : ($row['estado_del_procedimiento'] ?? 'Abierto'),
+                                'fase' => $row['fase'] ?? ($hasAdjudicacion ? 'Adjudicado' : 'Presentación de ofertas'),
+                                'fecha_publicacion' => $this->parseSecopDate($row['fecha_de_publicacion_del'] ?? null),
+                                'fecha_cierre' => $this->parseSecopDate($row['fecha_de_recepcion_de'] ?? null),
+                                'fecha_apertura_ofertas' => $this->parseSecopDate($row['fecha_de_apertura_efectiva'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
+                                'adenda_fecha' => $this->parseSecopDate($row['fecha_de_ultima_publicacion'] ?? null),
+                                'fase2_fecha' => $this->parseSecopDate($row['fecha_de_adjudicacion'] ?? null),
                                 'url_proceso' => $row['urlproceso'] ?? null,
                             ]
                         );

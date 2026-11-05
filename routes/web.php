@@ -23,9 +23,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Autenticación independiente (Login Aparte)
+// Autenticación independiente (Login Aparte con protección anti-fuerza bruta)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1')->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Feed de Calendario iCal (.ics) - Suscripción Universal
@@ -43,13 +43,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/configuracion/usuarios', [ConfiguracionController::class, 'store'])->name('configuracion.usuarios.store');
     Route::post('/configuracion/usuarios/{id}/password', [ConfiguracionController::class, 'updatePassword'])->name('configuracion.usuarios.password');
     Route::post('/configuracion/usuarios/{id}/toggle-status', [ConfiguracionController::class, 'toggleStatus'])->name('configuracion.usuarios.toggle_status');
+    Route::post('/configuracion/usuarios/{id}/toggle-notification', [ConfiguracionController::class, 'toggleNotification'])->name('configuracion.usuarios.toggle_notification');
+    Route::post('/configuracion/alertas/guardar', [ConfiguracionController::class, 'updateNotificationSettings'])->name('configuracion.alertas.update');
+    Route::post('/configuracion/alertas/probar', [ConfiguracionController::class, 'sendTestEmail'])->middleware('throttle:5,1')->name('configuracion.alertas.test');
     Route::delete('/configuracion/usuarios/{id}', [ConfiguracionController::class, 'destroy'])->name('configuracion.usuarios.destroy');
 
     // Módulo A & B: Radar en Vivo y Filtros
     Route::get('/radar', [RadarController::class, 'index'])->name('radar');
     Route::get('/radar/export', [RadarController::class, 'exportExcel'])->name('radar.export');
-    Route::post('/radar/sync', [RadarController::class, 'sync'])->name('radar.sync');
+    Route::post('/radar/sync', [RadarController::class, 'sync'])->middleware('throttle:10,1')->name('radar.sync');
     Route::post('/radar/{id}/cartera', [RadarController::class, 'toggleCartera'])->name('radar.cartera');
+    Route::get('/licitaciones/{id}/json', function ($id) {
+        $licitacion = \App\Models\Licitacion::findOrFail($id);
+        return response()->json($licitacion, 200, [
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Cache-Control' => 'no-cache, private'
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    })->name('licitaciones.json');
     Route::post('/radar/keywords', [RadarController::class, 'addKeyword'])->name('radar.keywords.add');
     Route::post('/radar/keywords/update', [RadarController::class, 'updateKeyword'])->name('radar.keywords.update');
     Route::post('/radar/keywords/remove', [RadarController::class, 'removeKeyword'])->name('radar.keywords.remove');

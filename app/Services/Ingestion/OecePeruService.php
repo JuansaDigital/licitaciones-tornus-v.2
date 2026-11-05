@@ -371,17 +371,33 @@ class OecePeruService
      */
     public function purgeExpired(string $connection = 'peru'): int
     {
+        $nowDateTime = now()->format('Y-m-d H:i:s');
         $today = now()->toDateString();
         $fiveMonthsAgo = now()->subMonths(5)->toDateString();
 
         try {
+            // 1. Marcar como 'Cerrado' los procesos vencidos que se conservan por cartera o score
+            Licitacion::on($connection)
+                ->whereNotNull('fecha_cierre')
+                ->where('fecha_cierre', '!=', '')
+                ->where(function ($sub) use ($nowDateTime, $today) {
+                    $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
+                        ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
+                })
+                ->whereNotIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
+                ->update(['estado' => 'Cerrado']);
+
+            // 2. Eliminar de la base activa las no guardadas ni analizadas que ya cerraron o superan 5 meses
             return Licitacion::on($connection)
                 ->where('en_cartera', false)
                 ->whereNull('score')
-                ->where(function ($q) use ($today, $fiveMonthsAgo) {
-                    $q->where(function ($sq) use ($today) {
+                ->where(function ($q) use ($nowDateTime, $today, $fiveMonthsAgo) {
+                    $q->where(function ($sq) use ($nowDateTime, $today) {
                         $sq->whereNotNull('fecha_cierre')
-                           ->whereRaw("substr(fecha_cierre, 1, 10) < ?", [$today]);
+                           ->where(function ($ts) use ($nowDateTime, $today) {
+                               $ts->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
+                                  ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
+                           });
                     })->orWhere(function ($sq) use ($fiveMonthsAgo) {
                         $sq->whereNotNull('fecha_publicacion')
                            ->whereRaw("substr(fecha_publicacion, 1, 10) < ?", [$fiveMonthsAgo]);

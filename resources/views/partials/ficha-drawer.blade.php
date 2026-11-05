@@ -28,7 +28,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#e3dbc2]">
                 <div class="flex items-center gap-2">
                     <span id="ficha-gemini-pill" class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold tracking-wider"></span>
-                    <span class="text-xs font-mono text-[#56686b] font-medium">Gemini 2.5 Flash</span>
+                    <span class="text-xs font-mono text-[#56686b] font-medium">Gemini 3.8 Flash</span>
                 </div>
                 <span id="ficha-gemini-status" class="text-xs font-mono font-bold tracking-wider"></span>
             </div>
@@ -193,6 +193,16 @@
                 <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                 <span>Compartir</span>
             </button>
+
+            <a id="ficha-json-btn" href="#" target="_blank" rel="noopener noreferrer" 
+               class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold text-[#00232c] hover:bg-[#f2ece0] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer" 
+               title="Abrir datos técnicos JSON en una nueva pestaña del navegador">
+                <svg class="w-3.5 h-3.5 text-[#0b4a57]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+                <span>Ver JSON</span>
+            </a>
         </div>
 
         <div class="flex items-center gap-2">
@@ -245,6 +255,11 @@ function openFichaModal(licOrId) {
     currentFichaLicitacion = lic;
     const isPeru = (lic.moneda === 'PEN');
     
+    const jsonBtn = document.getElementById('ficha-json-btn');
+    if (jsonBtn) {
+        jsonBtn.href = '/licitaciones/' + (lic.id || '') + '/json';
+    }
+    
     document.getElementById('ficha-referencia-badge').textContent = lic.codigo_proceso || lic.referencia || lic.external_id || 'SIN REF';
     document.getElementById('ficha-categoria-badge').textContent = lic.categoria || 'Servicios Generales';
     document.getElementById('ficha-objeto-title').textContent = lic.objeto;
@@ -274,26 +289,27 @@ function openFichaModal(licOrId) {
     const cierreEl = document.getElementById('ficha-cierre-fecha');
     const cierreDiasEl = document.getElementById('ficha-cierre-dias');
     if (lic.fecha_cierre) {
-        const cierreStr = lic.fecha_cierre.substring(0, 10);
-        cierreEl.textContent = cierreStr;
+        const hasTime = lic.fecha_cierre.length > 10;
+        const timePart = hasTime ? ' · ' + lic.fecha_cierre.substring(11, 16) : '';
+        cierreEl.textContent = lic.fecha_cierre.substring(0, 10) + timePart;
         
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const cierreDate = new Date(cierreStr + 'T00:00:00');
-        const diffTime = cierreDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const now = new Date();
+        const cierreDate = hasTime ? new Date(lic.fecha_cierre.replace(' ', 'T')) : new Date(lic.fecha_cierre.substring(0, 10) + 'T23:59:59');
+        const diffMs = cierreDate - now;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
         
-        if (diffDays < 0) {
-            cierreDiasEl.textContent = 'Proceso cerrado';
-            cierreDiasEl.className = 'text-xs font-mono font-bold text-rose-700';
-        } else if (diffDays === 0) {
-            cierreDiasEl.textContent = '¡Cierra hoy!';
+        if (diffMs < 0) {
+            cierreDiasEl.textContent = 'Proceso cerrado' + (hasTime ? ' (' + lic.fecha_cierre.substring(11, 16) + ')' : '');
+            cierreDiasEl.className = 'text-xs font-mono font-bold text-slate-500';
+        } else if (diffHours <= 24) {
+            cierreDiasEl.textContent = `¡Cierra hoy${timePart}! (Quedan ${Math.max(1, diffHours)}h)`;
             cierreDiasEl.className = 'text-xs font-mono font-bold text-rose-700 animate-pulse';
-        } else if (diffDays === 1) {
-            cierreDiasEl.textContent = 'Queda 1 día (Vence mañana)';
+        } else if (diffHours <= 48) {
+            cierreDiasEl.textContent = `Cierra mañana${timePart} (Quedan ${diffHours}h)`;
             cierreDiasEl.className = 'text-xs font-mono font-bold text-rose-700';
         } else {
-            cierreDiasEl.textContent = `Quedan ${diffDays} días`;
+            cierreDiasEl.textContent = `Quedan ${diffDays} días${timePart}`;
             cierreDiasEl.className = diffDays <= 7 ? 'text-xs font-mono font-bold text-amber-700' : 'text-xs font-mono font-bold text-emerald-700';
         }
     } else {
@@ -308,7 +324,9 @@ function openFichaModal(licOrId) {
         aperturaOfertasLabel.textContent = isPeru ? 'INICIO ETAPA DE CONSULTAS / OFERTAS' : 'APERTURA EFECTIVA DE OFERTAS';
     }
     if (lic.fecha_apertura_ofertas) {
-        document.getElementById('ficha-apertura-ofertas').textContent = lic.fecha_apertura_ofertas.substring(0, 10);
+        const hasApTime = lic.fecha_apertura_ofertas.length > 10;
+        const apTimePart = hasApTime ? ' · ' + lic.fecha_apertura_ofertas.substring(11, 16) : '';
+        document.getElementById('ficha-apertura-ofertas').textContent = lic.fecha_apertura_ofertas.substring(0, 10) + apTimePart;
         aperturaOfertasBox.classList.remove('hidden');
     } else {
         aperturaOfertasBox.classList.add('hidden');
@@ -562,7 +580,7 @@ function renderFichaGeminiBox(lic) {
             pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
             status.textContent = 'APLICA';
             status.className = 'text-xs font-mono font-bold text-emerald-800 tracking-wider';
-        } else if (lic.score >= 40) {
+        } else if (lic.score >= 50) {
             box.className = 'p-5 rounded-lg border border-amber-200 bg-amber-50/50 border-l-4 border-l-amber-500 space-y-3';
             pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300';
             status.textContent = 'APLICA CON CONDICIONES';

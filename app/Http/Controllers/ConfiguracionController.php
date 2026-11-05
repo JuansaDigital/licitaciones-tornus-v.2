@@ -19,13 +19,66 @@ class ConfiguracionController extends Controller
         $totalMiembros = $users->count();
         $usuariosActivos = $users->where('activo', true)->count();
         $administradores = $users->where('rol', 'administrador')->count();
+        $conAlertasEmail = $users->where('notificar_email', true)->count();
 
         return view('configuracion', compact(
             'users',
             'totalMiembros',
             'usuariosActivos',
-            'administradores'
+            'administradores',
+            'conAlertasEmail'
         ));
+    }
+
+    /**
+     * Activar o pausar avisos por correo para un miembro
+     */
+    public function toggleNotification(Request $request, $id)
+    {
+        $targetUser = User::findOrFail($id);
+
+        if (!Auth::user()->isAdmin() && Auth::id() !== $targetUser->id) {
+            return back()->withErrors(['error' => 'No tienes permisos para modificar las alertas de este usuario.']);
+        }
+
+        $targetUser->notificar_email = !$targetUser->notificar_email;
+        $targetUser->save();
+
+        $action = $targetUser->notificar_email ? 'activadas' : 'desactivadas';
+        return back()->with('status', "Alertas por correo {$action} para {$targetUser->name}.");
+    }
+
+    /**
+     * Actualizar criterios y preferencias de alertas por correo
+     */
+    public function updateNotificationSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'notificar_email' => ['nullable', 'boolean'],
+            'notificar_criterio' => ['required', 'in:todas,afinidad_alta,prioritarias'],
+            'notificar_mercado' => ['required', 'in:TODOS,CO,PE'],
+        ]);
+
+        $user = Auth::user();
+        $user->notificar_email = $request->has('notificar_email');
+        $user->notificar_criterio = $validated['notificar_criterio'];
+        $user->notificar_mercado = $validated['notificar_mercado'];
+        $user->save();
+
+        return back()->with('status', 'Preferencias de alertas por correo actualizadas correctamente.');
+    }
+
+    /**
+     * Enviar correo de prueba inmediato al usuario autenticado
+     */
+    public function sendTestEmail(Request $request)
+    {
+        try {
+            \App\Services\AlertNotificationService::sendTestEmail(Auth::user());
+            return back()->with('status', 'Correo de prueba enviado exitosamente a ' . Auth::user()->email . '. Revisa tu bandeja de entrada.');
+        } catch (\Throwable $e) {
+            return back()->withErrors(['error' => 'No se pudo enviar el correo de prueba: ' . $e->getMessage()]);
+        }
     }
 
     /**

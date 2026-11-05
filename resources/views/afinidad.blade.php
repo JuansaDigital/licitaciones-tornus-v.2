@@ -24,7 +24,7 @@
                 <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#00232c] text-[#fbfb75] uppercase">
                     MÓDULO DE INTELIGENCIA
                 </span>
-                <span class="text-xs font-mono text-[#56686b]">Google Gemini 2.5 Flash</span>
+                <span class="text-xs font-mono text-[#56686b]">Google Gemini 3.8 Flash</span>
             </div>
             <h1 class="font-['Instrument_Serif',serif] text-2xl sm:text-3xl text-[#00232c] font-normal">
                 Propuestas analizadas con IA

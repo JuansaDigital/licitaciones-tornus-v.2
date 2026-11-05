@@ -15,7 +15,7 @@ class GeminiAffinityService
     public function __construct()
     {
         $this->apiKey = env('GEMINI_API_KEY');
-        $this->model = env('GEMINI_MODEL', 'gemini-2.5-flash');
+        $this->model = env('GEMINI_MODEL', 'gemini-3.8-flash');
         $this->loadAgencyProfile();
     }
 
@@ -32,11 +32,28 @@ class GeminiAffinityService
         $profileJson = json_encode($this->agencyProfile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
         $prompt = <<<EOT
-Eres el Director de Licitaciones y Desarrollo de Negocios de TORNUS S.A.S. (Tornus Agency).
-Tu tarea es analizar exhaustivamente la siguiente oportunidad de contratación pública (SECOP II Colombia o SEACE Perú) y emitir un dictamen de afinidad estratégica, técnica y financiera, utilizando el perfil corporativo y la matriz de emparejamiento de Tornus.
+Actúa como analista de inteligencia comercial especializado en identificar y evaluar oportunidades de contratación para TORNUS en SECOP II y otros sistemas de contratación pública, portales de convocatorias y plataformas de organismos nacionales e internacionales.
+Tu objetivo es encontrar oportunidades con alta afinidad real con el portafolio de Tornus. Analiza el propósito de la contratación, las actividades, los entregables y el alcance técnico; no te limites a coincidencias de palabras en el título.
 
-BASE DE CONOCIMIENTO Y PERFIL CORPORATIVO DE TORNUS S.A.S.:
-{$profileJson}
+1. CONTEXTO EMPRESARIAL DE TORNUS:
+TORNUS es una agencia creativa especializada en promoción de destinos, construcción y posicionamiento de marcas territoriales, y producción de contenidos de marca —place branding y branded content—.
+Combina estrategia, creatividad, producción audiovisual, comunicación, promoción comercial, inteligencia de mercados y herramientas digitales para fortalecer la visibilidad, el posicionamiento y la competitividad de destinos y organizaciones.
+REGLA MANDATORIA DE ALCANCE SECTORIAL: El turismo es su especialidad central, pero sus capacidades creativas, audiovisuales, publicitarias y de contenido también son aplicables a otros sectores. Por tanto, NO descartes una oportunidad de comunicación o producción audiovisual únicamente porque no mencione turismo.
+
+LÍNEAS DE SERVICIO QUE DEBES RECONOCER:
+- A. Estrategia y promoción turística: Planes de marketing de destinos, campañas de demanda turística, promoción de nichos.
+- B. Marca territorial y de destino: Place branding, identidad visual, narrativa territorial, marcas ciudad y región.
+- C. Creatividad, publicidad y comunicación: Campañas 360°, comunicación institucional, relaciones públicas, pauta digital y exterior, activaciones de marca.
+- D. Producción audiovisual y branded content: Videos promocionales, documentales, series de contenido, fotografía y bancos de imágenes, cobertura en tiempo real, storytelling.
+- E. Promoción comercial y activaciones internacionales: Ferias (ANATO, FITUR), lanzamientos BTL, ruedas de negocios, FamTrips/PressTrips. (Nota: Evalúa la logística como componente de estas estrategias; no asumas que cualquier contrato puramente logístico tiene alta afinidad).
+- F. Desarrollo de producto y contenidos turísticos especializados: Rutas, circuitos, guías turísticas, aviturismo, senderismo, turismo cultural/comunitario, señalética interpretativa.
+- G. Competitividad y fortalecimiento empresarial turístico: Formación y fortalecimiento en marketing, IA aplicada, acompañamiento a empresarios. (Nota: Distingue el acompañamiento empresarial de certificación o educación reglada).
+- H. Inteligencia de mercados y analítica: Captación, procesamiento y análisis de datos turísticos, diagnóstico de demanda y sentimiento. (Nota: Valida el alcance antes de atribuir capacidades en estadística o sistemas de información ajenos).
+- I. Herramientas y presencia digital para destinos: Portales y ecosistemas digitales orientados a promoción turística y digitalización de oferta. (Nota: No generalices estas capacidades como experiencia en software empresarial, ciberseguridad o ERP).
+
+CASOS Y REFERENCIAS DEL PORTAFOLIO:
+Colombia El País de la Belleza, Descubre La Guajira, Visit Valle del Cauca, Armenia (campaña y ruedas de negocios), Atlántico es más, Santa Marta naturalmente mágica, Cartagena (marca y conectividad), Perú / Inti Raymi, Corona, Aeroméxico y Stella Artois.
+(Nota: Utiliza estos casos como evidencia de afinidad temática y funcional. No inventes experiencia contractual ni facturación no verificada).
 
 DATOS DE LA LICITACIÓN CONVOCADA:
 - Identificador / Referencia: {$licitacion->referencia}
@@ -46,36 +63,53 @@ DATOS DE LA LICITACIÓN CONVOCADA:
 - Cuantía / Presupuesto Oficial: {$licitacion->formatted_cuantia} {$licitacion->moneda}
 - Modalidad de Contratación: {$licitacion->tipo_proceso}
 
-REGLAS MANDATORIAS DE EVALUACIÓN (RÚBRICA OFICIAL):
-1. CRITERIOS DE EXCLUSIÓN TOTAL (Score 0):
-   Si el objeto contractual o su núcleo principal corresponde a: obras civiles, vías, pavimentación, acueductos, vigilancia, seguridad física, aseo, cafetería, insumos médicos/hospitalarios, alimentación escolar (PAE), suministro de combustible, vehículos o maquinaria pesada, o interventoría de obras civiles: Asigna inmediatamente Score = 0, Nivel = "BAJA", Estrategia = "Descartar".
+2. FILTROS PARA REDUCIR FALSOS POSITIVOS (DESCARTE O BAJA AFINIDAD):
+Asigna baja afinidad (Score 0 a 30) o descarta procesos cuyo alcance principal sea:
+- Construcción, mantenimiento de infraestructura u obra civil.
+- Suministro de equipos, mobiliario o bienes sin componente creativo relevante.
+- Aseo, vigilancia, alimentación escolar (PAE) o transporte aislados.
+- Venta de tiquetes, alojamiento o intermediación de viajes sin estrategia promocional.
+- Alquiler de sonido, tarimas, carpas o sillas como único servicio.
+- Impresión de piezas ya diseñadas, sin estrategia ni creación de contenidos.
+- Desarrollo de software empresarial, ciberseguridad o infraestructura de TI ajenos al marketing.
+- Consultorías jurídicas, contables, clínicas o de ingeniería civil.
+- Formación genérica sin conexión con las capacidades descritas.
+- Servicios individuales que no permitan la participación de una persona jurídica.
+EXCEPCIÓN DE PROYECTO INTEGRAL: No descartes automáticamente un proyecto integral por contener alguna de estas actividades secundarias. Determina qué componente domina el alcance y el presupuesto. (Ej: 'Promoción y prevención en salud' solo es afín si contrata campaña de comunicación publicitaria ejecutable por Tornus; 'Producción de documental cultural' tiene alta afinidad aunque no mencione turismo; 'Operador logístico de eventos' tiene afinidad condicionada a entregables de montaje de ferias/diseño).
 
-2. PONDERACIÓN OFICIAL DE AFINIDAD (Score 0 a 100):
-   - 35%: Correspondencia del objeto y alcance con las Líneas de Servicio A a I (Estrategia y promoción turística, Marca territorial/Place branding, Creatividad y comunicación 360°, Producción audiovisual cine/digital, Promoción comercial/Ferias/BTL/FamTrips, Desarrollo de producto turístico/Rutas/Señalética, Competitividad/Capacitación/IA, Inteligencia de mercados/Big Data, Herramientas digitales/Portales de destino).
-   - 35%: Correspondencia de actividades y entregables específicos (diagnósticos, conceptos de campaña, bancos audiovisuales, montajes de stands, planes de medios, guías impresas/digitales, apps, etc.).
-   - 20%: Similitud con casos emblemáticos del portafolio (Colombia el país de la belleza, Descubre La Guajira, Visit Valle, Pueblos Mágicos, Armenia corazón de Colombia, Atlántico es más, Santa Marta naturalmente mágica, Inti Raymi Perú, Corona, Aeroméxico).
-   - 10%: Correspondencia con los sectores y entidades objetivo (Turismo, Cultura, Desarrollo Económico, FONTUR, Viceministerio, Alcaldías/Gobernaciones turísticas, Bureaus, Cámaras de Comercio).
+3. EVALUACIÓN Y PONDERACIÓN EXACTA DE AFINIDAD (Score 0 a 100):
+Calcula el puntaje utilizando estrictamente estos 4 pesos oficiales:
+- Criterio 1: Correspondencia del objeto y alcance con las líneas de servicio A-I (35 puntos max).
+- Criterio 2: Correspondencia de actividades y entregables (35 puntos max).
+- Criterio 3: Similitud con casos del portafolio (20 puntos max).
+- Criterio 4: Correspondencia con sectores, públicos y mercados atendidos (10 puntos max).
+Valora cada criterio de 0 a 5 (0=sin correspondencia, 1=marginal, 2=parcial, 3=relevante, 4=alta, 5=directa).
+Multiplica la valoración dividida entre 5 por el peso respectivo y suma los 4 factores.
 
-3. BANDAS DE DECISIÓN:
-   - 85 a 100: "ALTA" (Afinidad Muy Alta - Prioridad comercial inmediata. Convocar comité técnico).
-   - 70 a 84: "ALTA" (Afinidad Alta - Oportunidad plenamente viable y estratégica).
-   - 50 a 69: "MEDIA" (Afinidad Media - Procesos con componentes mixtos o complementarios que aconsejan Consorcio o Unión Temporal).
-   - 0 a 49: "BAJA" (Afinidad Baja - Descartar del radar comercial).
+BANDAS OFICIALES DE CLASIFICACIÓN:
+- 85 a 100: Afinidad muy alta (Nivel: "ALTA"). Prioridad comercial inmediata.
+- 70 a 84: Afinidad alta (Nivel: "ALTA"). Viable y estratégica.
+- 50 a 69: Afinidad media (Nivel: "MEDIA"). Requiere revisión de alcance o conformación de Consorcio / UT.
+- 0 a 49: Afinidad baja (Nivel: "BAJA"). Descartar del radar.
 
-4. CAPACIDAD FINANCIERA Y POSTULACIÓN:
-   - Tornus S.A.S. posee un Capital de Trabajo en RUP de $5.058.026.000 COP, Liquidez de 8,17 y Endeudamiento de 0,11.
-   - Respalda postulaciones directas de hasta $12.600M COP.
-   - Si la cuantía supera $12.000M COP o el pliego incluye componentes logísticos masivos o transversales fuera del core creativo/promocional, recomienda estrategia "Consorcio / UT" señalando el perfil del socio complementario.
+4. EVALUACIÓN SEPARADA DE VIABILIDAD PARA PARTICIPAR:
+Clasifica la viabilidad en una de estas 4 categorías oficiales:
+- "Por verificar"
+- "Potencialmente viable, con los soportes disponibles"
+- "Requiere aliado o estructura de participación permitida"
+- "No viable por una restricción confirmada"
+(Nota financiera: Tornus posee Capital de Trabajo RUP de $5.058M COP, Liquidez 8,17, Endeudamiento 0,11. Respalda postulación directa hasta $12.600M COP. Si supera ese valor o exige logística pesada, debe clasificarse como 'Requiere aliado o estructura de participación permitida').
 
-ESTRUCTURA DE RESPUESTA REQUERIDA (ESTRICTAMENTE JSON VÁLIDO, SIN BLOQUES MARKDOWN NI COMENTARIOS):
+ESTRUCTURA DE RESPUESTA REQUERIDA (ESTRICTAMENTE JSON VÁLIDO, SIN BLOQUES MARKDOWN NI TEXTO ADICIONAL):
 {
-  "score": (entero entre 0 y 100),
+  "score": (entero entre 0 y 100 resultante de la suma ponderada),
   "nivel": ("ALTA" si score >= 70, "MEDIA" si score entre 50 y 69, "BAJA" si score < 50),
   "lineas_afines": ["Línea A - Estrategia y promoción turística", "Línea D - Producción audiovisual..."],
-  "justificacion": "Texto explicativo ejecutivo y fundamentado de 1 a 2 párrafos que analice el encaje con las líneas A-I, portafolio y viabilidad para Tornus.",
+  "viabilidad_participacion": "Potencialmente viable, con los soportes disponibles" | "Requiere aliado o estructura de participación permitida" | "Por verificar" | "No viable por una restricción confirmada",
+  "justificacion": "Explicación clara de por qué encaja o no con Tornus, qué actividades y entregables sustentan la afinidad y qué caso del portafolio guarda mayor relación.",
   "servicios_sugeridos": ["Servicio o entregable clave 1", "Servicio o entregable clave 2"],
-  "estrategia_postulacion": "Postulación Directa" o "Consorcio / UT" o "Descartar",
-  "puntos_clave": "Puntos críticos habilitantes (financieros, RUP, plazos, personal senior clave) a considerar en el pliego."
+  "estrategia_postulacion": "Postulación Directa" | "Consorcio / UT" | "Descartar",
+  "puntos_clave": "Requisitos críticos, aspectos por verificar (experiencia, RUP, plazos) y necesidad eventual de aliados."
 }
 EOT;
 
@@ -285,12 +319,17 @@ EOT;
 
     protected function saveEvaluation(Licitacion $licitacion, array $data): void
     {
+        $puntosClave = $data['puntos_clave'] ?? null;
+        if (!empty($data['viabilidad_participacion']) && !str_contains($puntosClave ?? '', 'Viabilidad:')) {
+            $puntosClave = "Viabilidad: " . $data['viabilidad_participacion'] . ($puntosClave ? " · " . $puntosClave : "");
+        }
+
         $licitacion->score = $data['score'] ?? null;
         $licitacion->nivel = $data['nivel'] ?? null;
         $licitacion->justificacion = $data['justificacion'] ?? null;
         $licitacion->servicios_sugeridos = $data['servicios_sugeridos'] ?? [];
         $licitacion->estrategia_postulacion = $data['estrategia_postulacion'] ?? null;
-        $licitacion->puntos_clave = $data['puntos_clave'] ?? null;
+        $licitacion->puntos_clave = $puntosClave;
         $licitacion->evaluado_en = now();
         $licitacion->save();
     }

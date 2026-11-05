@@ -151,75 +151,91 @@ class Licitacion extends Model
                 'badge' => 'Sin fecha fijada',
                 'class' => 'bg-slate-100 text-slate-700 border-slate-200',
                 'is_critical' => false,
-                'hours_left' => null
+                'hours_left' => null,
             ];
         }
 
         try {
-            $todayStr = now()->format('Y-m-d');
-            $cierreDateStr = substr($this->fecha_cierre, 0, 10);
+            $now = new \DateTime();
+            $cierreStr = trim($this->fecha_cierre);
+            // Si viene solo YYYY-MM-DD sin hora, asumimos el fin del día (23:59:59)
+            $cierre = strlen($cierreStr) <= 10
+                ? new \DateTime($cierreStr . ' 23:59:59')
+                : new \DateTime($cierreStr);
 
-            // Si cierra hoy exactamente
-            if ($cierreDateStr === $todayStr) {
-                return [
-                    'badge' => 'Cierra hoy',
-                    'class' => 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
-                    'is_critical' => true,
-                    'hours_left' => 12
-                ];
-            }
+            $hasExplicitTime = strlen($cierreStr) > 10;
+            $timeLabel = $hasExplicitTime ? ' · ' . $cierre->format('H:i') : '';
 
-            // Si es anterior a hoy
-            if ($cierreDateStr < $todayStr) {
+            // Ya venció
+            if ($cierre < $now) {
                 return [
-                    'badge' => 'Cerrada',
+                    'badge' => 'Cerrada' . $timeLabel,
                     'class' => 'bg-slate-200 text-slate-700 border-slate-300',
                     'is_critical' => false,
-                    'hours_left' => 0
+                    'hours_left' => 0,
                 ];
             }
 
-            $cierre = new \DateTime($cierreDateStr . ' 23:59:59');
-            $now = new \DateTime(now()->format('Y-m-d H:i:s'));
+            // Horas y días exactos restantes
             $diff = $now->diff($cierre);
+            $totalHours = ($diff->days * 24) + $diff->h;
             $days = $diff->days;
 
-            if ($days <= 2) {
+            // 1. Crítico: Menos de 48 horas
+            if ($totalHours <= 48) {
+                if ($days === 0) {
+                    $badge = $totalHours <= 6
+                        ? "¡Cierra en {$totalHours}h{$timeLabel}!"
+                        : "Cierra hoy{$timeLabel} ({$totalHours}h)";
+                } elseif ($days === 1) {
+                    $badge = "Cierra mañana{$timeLabel} ({$totalHours}h)";
+                } else {
+                    $badge = "Cierra en {$totalHours} horas";
+                }
+
                 return [
-                    'badge' => 'Cierra en ' . ($days == 1 ? '1 día' : $days . ' días'),
-                    'class' => 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
+                    'badge' => $badge,
+                    'class' => 'bg-rose-100 text-rose-800 border-rose-300 font-bold shadow-2xs',
                     'is_critical' => true,
-                    'hours_left' => $days * 24
-                ];
-            } elseif ($days <= 7) {
-                return [
-                    'badge' => 'Cierra en ' . $days . ' días',
-                    'class' => 'bg-amber-100 text-amber-900 border-amber-300 font-semibold',
-                    'is_critical' => false,
-                    'hours_left' => $days * 24
-                ];
-            } elseif ($days <= 30) {
-                return [
-                    'badge' => 'Cierra en ' . $days . ' días',
-                    'class' => 'bg-emerald-50 text-emerald-800 border-emerald-200 font-medium',
-                    'is_critical' => false,
-                    'hours_left' => $days * 24
-                ];
-            } else {
-                $months = round($days / 30, 1);
-                return [
-                    'badge' => 'Con tiempo: ' . $days . 'd (~' . $months . ' m)',
-                    'class' => 'bg-blue-50 text-blue-800 border-blue-200 font-medium',
-                    'is_critical' => false,
-                    'hours_left' => $days * 24
+                    'hours_left' => $totalHours,
                 ];
             }
+
+            // 2. Esta semana: 3 a 7 días
+            if ($days <= 7) {
+                return [
+                    'badge' => "Cierra en {$days} días{$timeLabel}",
+                    'class' => 'bg-amber-100 text-amber-900 border-amber-300 font-semibold',
+                    'is_critical' => false,
+                    'hours_left' => $totalHours,
+                ];
+            }
+
+            // 3. Con tiempo: 15 a 30 días
+            if ($days <= 30) {
+                return [
+                    'badge' => "Cierra en {$days} días",
+                    'class' => 'bg-emerald-50 text-emerald-800 border-emerald-200 font-medium',
+                    'is_critical' => false,
+                    'hours_left' => $totalHours,
+                ];
+            }
+
+            // 4. Con tiempo: más de 30 días
+            $months = round($days / 30, 1);
+
+            return [
+                'badge' => "Con tiempo: {$days}d (~{$months} m)",
+                'class' => 'bg-blue-50 text-blue-800 border-blue-200 font-medium',
+                'is_critical' => false,
+                'hours_left' => $totalHours,
+            ];
         } catch (\Exception $e) {
             return [
                 'badge' => substr($this->fecha_cierre, 0, 10),
                 'class' => 'bg-slate-100 text-slate-600 border-slate-200',
                 'is_critical' => false,
-                'hours_left' => null
+                'hours_left' => null,
             ];
         }
     }
