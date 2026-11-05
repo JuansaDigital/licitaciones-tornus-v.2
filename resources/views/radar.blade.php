@@ -34,6 +34,20 @@
                     <span>Exportar Excel</span>
                 </a>
 
+                <!-- Botón de Auto-Triage con IA -->
+                <form action="{{ route('radar.auto_triage') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-3.5 py-2 bg-[#0b4a57] hover:bg-[#00232c] text-[#fbfb75] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer" title="Analizar propuestas con Gemini y descartar automáticamente las que no tienen que ver con Tornus">
+                        <svg class="w-3.5 h-3.5 text-[#fbfb75]" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                        </svg>
+                        <span>Auto-Triage IA</span>
+                        @if(($pendingEvaluationCount ?? 0) > 0)
+                            <span class="text-[10px] bg-[#fbfb75] text-[#00232c] px-1.5 py-0.2 rounded font-bold">{{ $pendingEvaluationCount }}</span>
+                        @endif
+                    </button>
+                </form>
+
                 <!-- Botón de actualización de radar -->
                 <form action="{{ route('radar.sync') }}" method="POST">
                     @csrf
@@ -50,6 +64,7 @@
         <!-- Formulario de Búsqueda y Región -->
         <form action="{{ route('radar') }}" method="GET" class="space-y-4">
             <input type="hidden" name="urgency" value="{{ $selectedUrgency }}">
+            <input type="hidden" name="ia_filter" value="{{ $selectedIaFilter ?? 'viable' }}">
             
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                 <div class="md:col-span-5 relative">
@@ -129,6 +144,51 @@
                     @endif
                 </a>
             </div>
+
+            <!-- FILTRO INTELIGENTE DE AFINIDAD CON IA (AUTO-TRIAGE TORNUS) -->
+            <div class="pt-3 border-t border-[#e3dbc2] flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-[#56686b] font-semibold mr-1 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                        </svg>
+                        <span>FILTRO INTELIGENTE IA:</span>
+                    </span>
+
+                    <!-- Opción 1: Solo Viables (Por Defecto) -->
+                    <a href="{{ route('radar', array_merge(request()->query(), ['ia_filter' => 'viable'])) }}"
+                        class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ ($selectedIaFilter ?? 'viable') === 'viable' ? 'border-emerald-600 bg-emerald-100 text-emerald-950 font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}">
+                        <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                        <span>Solo Oportunidades Viables (Afines o Pendientes)</span>
+                        @if(($selectedIaFilter ?? 'viable') === 'viable')
+                            <span class="text-[10px] bg-emerald-700 text-white px-1.5 py-0.2 rounded font-mono">Activo</span>
+                        @endif
+                    </a>
+
+                    <!-- Opción 2: Todas las Ofertas -->
+                    <a href="{{ route('radar', array_merge(request()->query(), ['ia_filter' => 'all'])) }}"
+                        class="px-2.5 py-1 rounded border transition-colors {{ ($selectedIaFilter ?? 'viable') === 'all' ? 'border-[#00232c] bg-[#00232c] text-[#fbfb75] font-semibold' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}">
+                        <span>Todas las ofertas</span>
+                    </a>
+
+                    <!-- Opción 3: Descartadas por IA -->
+                    <a href="{{ route('radar', array_merge(request()->query(), ['ia_filter' => 'discarded'])) }}"
+                        class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ ($selectedIaFilter ?? 'viable') === 'discarded' ? 'border-rose-400 bg-rose-100 text-rose-950 font-bold shadow-2xs' : 'border-rose-200 bg-rose-50/60 text-rose-800 hover:bg-rose-100' }}">
+                        <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        <span>Descartadas por IA</span>
+                        <span class="text-[10px] bg-rose-200 text-rose-900 px-1.5 py-0.2 rounded font-bold">{{ $discardedCount ?? 0 }}</span>
+                    </a>
+                </div>
+
+                @if(($discardedCount ?? 0) > 0 && ($selectedIaFilter ?? 'viable') === 'viable')
+                    <div class="text-[11px] text-[#56686b] italic">
+                        <span>{{ $discardedCount }} ofertas no afines ocultadas automáticamente</span>
+                    </div>
+                @endif
+            </div>
         </form>
     </div>
 
@@ -165,6 +225,16 @@
                                         <path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 11h2M9 15h2M13 11h2M13 15h2"></path>
                                     </svg>
                                     <span>FOCO PRIORITARIO</span>
+                                </span>
+                            @endif
+
+                            @if($lic->score !== null && ($lic->score < 40 || strcasecmp($lic->estrategia_postulacion ?? '', 'Descartar') === 0))
+                                <span class="px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200 font-bold whitespace-nowrap shrink-0 flex items-center gap-1">
+                                    <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    <span>DESCARTADA POR IA</span>
                                 </span>
                             @endif
 

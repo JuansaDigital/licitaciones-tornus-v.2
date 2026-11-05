@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/radar', [RadarController::class, 'index'])->name('radar');
     Route::get('/radar/export', [RadarController::class, 'exportExcel'])->name('radar.export');
     Route::post('/radar/sync', [RadarController::class, 'sync'])->middleware('throttle:10,1')->name('radar.sync');
+    Route::post('/radar/auto-triage', [RadarController::class, 'autoTriage'])->middleware('throttle:5,1')->name('radar.auto_triage');
     Route::post('/radar/{id}/cartera', [RadarController::class, 'toggleCartera'])->name('radar.cartera');
     Route::get('/licitaciones/{id}/json', function ($id) {
         $licitacion = \App\Models\Licitacion::findOrFail($id);

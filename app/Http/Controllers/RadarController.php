@@ -209,6 +209,41 @@ class RadarController extends Controller
                   ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateQuarterEnd]);
         }
 
+        // 8. FILTRO INTELIGENTE DE AFINIDAD CON IA (AUTO-TRIAGE TORNUS)
+        // 'viable' (por defecto): Oculta propuestas con score < 40 o marcadas como 'Descartar'.
+        // 'all': Muestra todas las propuestas sin discriminación por IA.
+        // 'discarded': Muestra exclusivamente las propuestas descartadas por IA para auditoría.
+        $selectedIaFilter = $request->input('ia_filter', 'viable');
+        if ($selectedIaFilter === 'viable') {
+            $query->where(function ($q) {
+                $q->whereNull('score')
+                  ->orWhere(function ($sub) {
+                      $sub->where('score', '>=', 40)
+                          ->where(function ($s2) {
+                              $s2->whereNull('estrategia_postulacion')
+                                 ->orWhere('estrategia_postulacion', '!=', 'Descartar');
+                          });
+                  });
+            });
+        } elseif ($selectedIaFilter === 'discarded') {
+            $query->whereNotNull('score')
+                  ->where(function ($q) {
+                      $q->where('score', '<', 40)
+                        ->orWhere('estrategia_postulacion', 'Descartar');
+                  });
+        }
+
+        $discardedCount = (clone $totalQuery)
+            ->whereNotNull('score')
+            ->where(function ($q) {
+                $q->where('score', '<', 40)
+                  ->orWhere('estrategia_postulacion', 'Descartar');
+            })->count();
+
+        $pendingEvaluationCount = (clone $totalQuery)
+            ->whereNull('score')
+            ->count();
+
         $licitaciones = $query
             ->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC")
             ->paginate(15)
@@ -222,6 +257,9 @@ class RadarController extends Controller
             'selectedRegion',
             'selectedCategory',
             'selectedUrgency',
+            'selectedIaFilter',
+            'discardedCount',
+            'pendingEvaluationCount',
             'search',
             'totalCount',
             'keywords',
@@ -230,6 +268,42 @@ class RadarController extends Controller
             'priorityEntityCounts',
             'selectedPriorityOnly'
         ));
+    }
+
+    /**
+     * Ejecuta Auto-Triage con IA en lote sobre las ofertas pendientes del mercado activo
+     */
+    public function autoTriage(Request $request, \App\Services\GeminiAffinityService $gemini)
+    {
+        $connection = MarketService::connection();
+        $pendientes = Licitacion::on($connection)
+            ->whereNull('score')
+            ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
+            ->orderBy('created_at', 'desc')
+            ->limit(25)
+            ->get();
+
+        if ($pendientes->isEmpty()) {
+            return back()->with('status', 'No hay propuestas pendientes de evaluación con IA en este momento.');
+        }
+
+        $evaluadas = 0;
+        $descartadas = 0;
+
+        foreach ($pendientes as $lic) {
+            try {
+                $res = $gemini->evaluate($lic);
+                $evaluadas++;
+                if (($res['score'] ?? 0) < 40 || strcasecmp($res['estrategia_postulacion'] ?? '', 'Descartar') === 0) {
+                    $descartadas++;
+                }
+            } catch (\Throwable $e) {
+                // Continuar evaluando los demás
+            }
+        }
+
+        $viables = $evaluadas - $descartadas;
+        return back()->with('status', "Auto-Triage con IA completado: {$evaluadas} ofertas evaluadas. {$descartadas} descartadas por no ser afines y {$viables} confirmadas viables.");
     }
 
     public function addKeyword(Request $request)

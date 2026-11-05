@@ -157,6 +157,18 @@ class AlertNotificationService
             }
         }
 
+        // 3b. REGLA ESTRICTA DE AFINIDAD CON IA: Excluir ofertas descartadas por Gemini
+        $query->where(function ($q) {
+            $q->whereNull('score')
+              ->orWhere(function ($sub) {
+                  $sub->where('score', '>=', 40)
+                      ->where(function ($s2) {
+                          $s2->whereNull('estrategia_postulacion')
+                             ->orWhere('estrategia_postulacion', '!=', 'Descartar');
+                      });
+              });
+        });
+
         // 4. REGLA DE PERTINENCIA: Al menos una palabra clave afín o entidad prioritaria
         $query->where(function ($q) use ($keywords, $priorityEntities) {
             $hasCondition = false;

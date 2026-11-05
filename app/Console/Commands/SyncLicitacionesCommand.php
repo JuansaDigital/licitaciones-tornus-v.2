@@ -46,7 +46,11 @@ class SyncLicitacionesCommand extends Command
             $this->info("  Depuradas {$purgedPe} propuestas vencidas en Perú.");
         }
 
-        // Despachar alertas automáticas por correo para propuestas detectadas
+        // 3. AUTO-TRIAGE CON IA: Clasificar y descartar ofertas automáticamente con Gemini
+        $this->line("Ejecutando Auto-Triage con IA (Gemini) para filtrar y descartar ofertas no pertinentes...");
+        $this->call('tornus:auto-triage', ['market' => $market, '--limit' => 20]);
+
+        // 4. Despachar alertas automáticas por correo para propuestas detectadas (solo viables)
         $this->line("Verificando alertas por correo para el equipo...");
         $this->call('tornus:send-alerts', ['market' => $market, '--hours' => 2]);
 
