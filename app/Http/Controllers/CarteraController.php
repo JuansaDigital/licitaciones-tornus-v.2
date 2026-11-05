@@ -126,5 +126,10 @@ class CarteraController extends Controller
             fclose($handle);
         }, 200, $headers);
     }
+
+    public function exportExcel()
+    {
+        return \App\Services\Export\ExcelExportService::download('cartera');
+    }
 }
 

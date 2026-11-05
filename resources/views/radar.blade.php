@@ -23,16 +23,28 @@
                 </p>
             </div>
 
-            <!-- Botón de actualización de radar -->
-            <form action="{{ route('radar.sync') }}" method="POST">
-                @csrf
-                <button type="submit" class="px-3.5 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+            <div class="flex items-center gap-2">
+                <!-- Botón de Exportar Excel Ejecutivo -->
+                <a href="{{ route('radar.export') }}" class="px-3.5 py-2 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] text-[#00232c] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer" title="Descargar libro Excel institucional de 3 hojas">
+                    <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    <span>Sincronizar Radar</span>
-                </button>
-            </form>
+                    <span>Exportar Excel</span>
+                </a>
+
+                <!-- Botón de actualización de radar -->
+                <form action="{{ route('radar.sync') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-3.5 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+                        </svg>
+                        <span>Sincronizar Radar</span>
+                    </button>
+                </form>
+            </div>
         </div>
 
         <!-- Formulario de Búsqueda y Región -->
@@ -102,173 +114,75 @@
                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>
                     <span>Con tiempo: 1 a 3 meses</span>
                 </a>
+
+                <span class="text-[#e3dbc2] mx-1 hidden sm:inline">|</span>
+
+                <!-- Botón de Foco en Entidades Prioritarias -->
+                <a href="{{ route('radar', array_merge(request()->query(), ['priority_only' => $selectedPriorityOnly ? null : 1])) }}"
+                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedPriorityOnly ? 'border-[#00232c] bg-[#fbfb75] text-[#00232c] font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}">
+                    <svg class="w-3.5 h-3.5 {{ $selectedPriorityOnly ? 'text-[#00232c]' : 'text-[#56686b]' }}" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 11h2M9 15h2M13 11h2M13 15h2"></path>
+                    </svg>
+                    <span>Solo Entidades Prioritarias</span>
+                    @if($selectedPriorityOnly)
+                        <span class="text-[10px] bg-[#00232c] text-[#fbfb75] px-1.5 py-0.2 rounded font-mono">Activo</span>
+                    @endif
+                </a>
             </div>
         </form>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- ACORDEÓN 1: PALABRAS CLAVE DEL RADAR                                      -->
+    <!-- BARRA EJECUTIVA DE FOCO Y ACCESO A FILTROS DEL RADAR                      -->
     <!-- ========================================================================= -->
-    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg shadow-xs overflow-hidden">
-        
-        <!-- Botón de apertura/cierre del acordeón -->
-        <button type="button" onclick="toggleAccordion('accordion-keywords', 'chevron-keywords')" 
-            class="w-full p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#f7f2df]/50 transition-colors cursor-pointer">
-            <div class="flex items-center gap-3">
-                <h2 class="font-['Instrument_Serif',serif] text-xl sm:text-2xl text-[#00232c] font-normal tracking-tight uppercase">
-                    PALABRAS CLAVE DEL RADAR
-                </h2>
-                <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-[#f7f2df] text-[#56686b] border border-[#e3dbc2] font-semibold">
-                    {{ count($keywords) }} activas
-                </span>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-mono text-[#56686b]">
-                <span>Términos de búsqueda en {{ App\Services\MarketService::sourceName() }}. Toca para ver, agregar o editar.</span>
-                <svg id="chevron-keywords" class="w-4 h-4 text-[#00232c] transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </div>
-        </button>
-
-        <!-- Contenido desplegable del acordeón -->
-        <div id="accordion-keywords" class="hidden p-5 pt-0 border-t border-[#f2ece0] space-y-5">
-            <p class="text-xs font-mono text-[#56686b] pt-4">
-                El Radar busca cada término en el nombre, la descripción o la entidad del proceso. Agrega, edita o elimina términos y luego vuelve a consultar {{ App\Services\MarketService::sourceName() }}.
-            </p>
-
-            <!-- Formulario para Agregar Nueva Palabra Clave -->
-            <form action="{{ route('radar.keywords.add') }}" method="POST" class="space-y-2">
-                @csrf
-                <label class="block text-[11px] font-mono font-semibold uppercase tracking-wider text-[#56686b]">
-                    NUEVA PALABRA O FRASE
-                </label>
-                <div class="flex flex-col sm:flex-row items-center gap-2 max-w-xl">
-                    <input type="text" name="keyword" required placeholder="Ej.: turismo comunitario"
-                        class="w-full px-3 py-2 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c]">
-                    <button type="submit" 
-                        class="w-full sm:w-auto px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold tracking-wider whitespace-nowrap transition-colors shadow-xs cursor-pointer">
-                        AGREGAR PALABRA CLAVE
-                    </button>
+    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg p-4 shadow-xs space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full bg-[#00232c]/5 border border-[#e3dbc2] flex items-center justify-center text-[#00232c] shrink-0">
+                    <svg class="w-3.5 h-3.5 text-blue-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
                 </div>
-            </form>
+                <div>
+                    <span class="font-bold text-[#00232c] uppercase">Filtros Activos en {{ App\Services\MarketService::marketName() }}:</span>
+                    <span class="text-[#56686b] text-[11px] block sm:inline">
+                        {{ count($keywords) }} palabras clave · {{ count($exclusions) }} exclusiones · {{ count($priorityEntities) }} entidades prioritarias
+                    </span>
+                </div>
+            </div>
 
-            <!-- Rejilla de Palabras Clave Configuradas -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2">
-                @foreach($keywords as $kw)
-                    <div class="bg-white border border-[#e3dbc2] rounded p-2.5 flex items-center justify-between gap-2 shadow-2xs hover:border-[#00232c] transition-colors">
-                        <a href="{{ route('radar', ['q' => $kw]) }}" 
-                            class="font-mono text-xs font-bold text-[#00232c] hover:underline truncate"
-                            title="Filtrar radar por: {{ $kw }}">
-                            {{ $kw }}
-                        </a>
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button type="button" onclick="openEditKeywordModal('{{ addslashes($kw) }}')" 
-                                class="px-2 py-0.5 rounded text-[10px] font-mono text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] border border-transparent hover:border-[#e3dbc2] transition-colors cursor-pointer">
-                                EDITAR
-                            </button>
-                            <form action="{{ route('radar.keywords.remove') }}" method="POST" class="inline">
-                                @csrf
-                                <input type="hidden" name="keyword" value="{{ $kw }}">
-                                <button type="submit" class="px-2 py-0.5 rounded text-[10px] font-mono text-[#56686b] hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer">
-                                    ELIMINAR
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="{{ route('perfil', ['tab' => 'filtros', 'country' => App\Services\MarketService::current()]) }}" 
+                    class="px-3 py-1.5 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] text-[#00232c] font-semibold rounded transition-colors flex items-center gap-1.5 shadow-2xs text-xs"
+                    title="Configurar palabras clave, exclusiones y entidades en Perfil Tornus">
+                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Configurar Filtros en Perfil</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Chips Rápidos de Entidades Prioritarias para filtrado instantáneo -->
+        @if(!empty($priorityEntities))
+            <div class="pt-2 border-t border-[#f0ebd8] flex flex-wrap items-center gap-1.5">
+                <span class="text-[10px] font-mono text-[#56686b] uppercase mr-1">Foco rápido:</span>
+                @foreach($priorityEntities as $ent)
+                    @php $entCount = $priorityEntityCounts[$ent] ?? 0; @endphp
+                    <a href="{{ route('radar', ['q' => $ent]) }}" 
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#e3dbc2] rounded text-[11px] font-mono text-[#00232c] hover:border-[#00232c] transition-colors {{ request('q') === $ent ? 'border-[#00232c] bg-[#fbfb75] font-bold' : '' }}"
+                        title="Filtrar propuestas de: {{ $ent }}">
+                        <span class="truncate max-w-[180px]">{{ $ent }}</span>
+                        @if($entCount > 0)
+                            <span class="px-1.5 py-0.1 rounded text-[9px] font-mono font-bold bg-[#00232c] text-[#fbfb75]">
+                                {{ $entCount }}
+                            </span>
+                        @endif
+                    </a>
                 @endforeach
             </div>
-
-            <!-- Barra inferior con totales y botón para restablecer -->
-            <div class="pt-4 border-t border-[#f2ece0] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono">
-                <span class="text-[#56686b]">
-                    {{ count($keywords) }} de 50 palabras o frases configuradas.
-                </span>
-
-                <div class="flex items-center gap-2">
-                    <form action="{{ route('radar.filters.reset') }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="px-3 py-1.5 rounded border border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df] transition-colors cursor-pointer">
-                            RESTABLECER PALABRAS PREDETERMINADAS
-                        </button>
-                    </form>
-
-                    <form action="{{ route('radar.sync') }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="px-3.5 py-1.5 rounded bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] font-semibold transition-colors shadow-xs cursor-pointer">
-                            GUARDAR Y ACTUALIZAR RADAR
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- ACORDEÓN 2: PALABRAS A EXCLUIR EN EL RADAR (ANTI-FALSOS POSITIVOS)        -->
-    <!-- ========================================================================= -->
-    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg shadow-xs overflow-hidden">
-        
-        <!-- Botón de apertura/cierre del acordeón -->
-        <button type="button" onclick="toggleAccordion('accordion-exclusions', 'chevron-exclusions')" 
-            class="w-full p-5 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#f7f2df]/50 transition-colors cursor-pointer">
-            <div class="flex items-center gap-3">
-                <h2 class="font-['Instrument_Serif',serif] text-xl sm:text-2xl text-[#00232c] font-normal tracking-tight uppercase">
-                    PALABRAS A EXCLUIR EN EL RADAR
-                </h2>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
-                    {{ count($exclusions) }} términos
-                </span>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-mono text-[#56686b]">
-                <span>Filtro de exclusión automática (policía, militar, aseo, combustible, dotaciones). Toca para ver o modificar.</span>
-                <svg id="chevron-exclusions" class="w-4 h-4 text-[#00232c] transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </div>
-        </button>
-
-        <!-- Contenido desplegable del acordeón -->
-        <div id="accordion-exclusions" class="hidden p-5 pt-0 border-t border-[#f2ece0] space-y-5">
-            <p class="text-xs font-mono text-[#56686b] pt-4">
-                Cualquier licitación cuyo objeto o entidad contenga una de estas palabras será descartada automáticamente del Radar. Agrega o elimina términos según el foco de Tornus.
-            </p>
-
-            <!-- Formulario para Agregar Término de Exclusión -->
-            <form action="{{ route('radar.exclusions.add') }}" method="POST" class="space-y-2">
-                @csrf
-                <label class="block text-[11px] font-mono font-semibold uppercase tracking-wider text-[#56686b]">
-                    NUEVA PALABRA O TÉRMINO A EXCLUIR
-                </label>
-                <div class="flex flex-col sm:flex-row items-center gap-2 max-w-xl">
-                    <input type="text" name="exclusion" required placeholder="Ej.: vigilancia, policía, dotación"
-                        class="w-full px-3 py-2 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c]">
-                    <button type="submit" 
-                        class="w-full sm:w-auto px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold tracking-wider whitespace-nowrap transition-colors shadow-xs cursor-pointer">
-                        AGREGAR EXCLUSIÓN
-                    </button>
-                </div>
-            </form>
-
-            <!-- Rejilla de Términos Excluidos -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 pt-2">
-                @foreach($exclusions as $ex)
-                    <div class="bg-white border border-[#e3dbc2] rounded p-2.5 flex items-center justify-between gap-1.5 shadow-2xs">
-                        <span class="font-mono text-xs font-bold text-[#00232c] truncate">
-                            {{ $ex }}
-                        </span>
-                        <form action="{{ route('radar.exclusions.remove') }}" method="POST" class="shrink-0 inline">
-                            @csrf
-                            <input type="hidden" name="exclusion" value="{{ $ex }}">
-                            <button type="submit" class="text-[10px] font-mono text-rose-700 hover:text-rose-900 transition-colors font-medium cursor-pointer">
-                                × QUITAR
-                            </button>
-                        </form>
-                    </div>
-                @endforeach
-            </div>
-
-        </div>
+        @endif
     </div>
 
     <!-- Lista Dinámica de Licitaciones -->
@@ -281,14 +195,30 @@
             @foreach($licitaciones as $lic)
                 @php
                     $urgency = $lic->urgency_info;
+                    $isPriority = false;
+                    foreach ($priorityEntities as $pEnt) {
+                        if (!empty($pEnt) && mb_stripos($lic->entidad, $pEnt, 0, 'UTF-8') !== false) {
+                            $isPriority = true;
+                            break;
+                        }
+                    }
                 @endphp
-                <div id="lic-card-{{ $lic->id }}" class="licitacion-card bg-[#fffdf6] border border-[#e3dbc2] border-l-4 border-l-[#8a252c] rounded p-4 sm:p-5 shadow-xs hover:border-[#0b4a57] transition-all">
+                <div id="lic-card-{{ $lic->id }}" class="licitacion-card bg-[#fffdf6] border {{ $isPriority ? 'border-[#00232c] ring-1 ring-[#00232c]/20 shadow-sm' : 'border-[#e3dbc2] shadow-xs' }} border-l-4 {{ $isPriority ? 'border-l-[#00232c]' : 'border-l-[#8a252c]' }} rounded p-4 sm:p-5 hover:border-[#0b4a57] transition-all">
                     
                     <!-- Fila Superior: Badges a la izquierda y Presupuesto a la derecha -->
                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
                         
                         <!-- Badges con ancho seguro y whitespace-nowrap para evitar desbordes -->
                         <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-w-0 flex-1">
+                            @if($isPriority)
+                                <span class="px-2 py-0.5 rounded bg-[#fbfb75] text-[#00232c] border border-[#d4d455] font-bold whitespace-nowrap shrink-0 flex items-center gap-1 shadow-2xs" title="Entidad Prioritaria del Radar">
+                                    <svg class="w-3 h-3 text-[#00232c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="M3 21h18M3 7v14M21 7v14M6 7V3h12v4M9 11h2M9 15h2M13 11h2M13 15h2"></path>
+                                    </svg>
+                                    <span>FOCO PRIORITARIO</span>
+                                </span>
+                            @endif
+
                             <!-- Badge de Vencimiento: Cierra hoy / Cierra en X días -->
                             <span class="px-2 py-0.5 rounded {{ $urgency['class'] }} font-medium whitespace-nowrap shrink-0">
                                 {{ $urgency['badge'] }}
@@ -497,59 +427,8 @@
 </div>
 
 <!-- Modal para Editar Palabra Clave -->
-<div id="modal-edit-keyword" class="fixed inset-0 z-50 bg-[#00232c]/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-[#e3dbc2]">
-            <h3 class="font-['Instrument_Serif',serif] text-xl text-[#00232c]">Editar Palabra Clave</h3>
-            <button type="button" onclick="closeEditKeywordModal()" class="text-[#56686b] hover:text-[#00232c] text-lg font-mono">✕</button>
-        </div>
-        <form action="{{ route('radar.keywords.update') }}" method="POST" class="space-y-4">
-            @csrf
-            <input type="hidden" name="old_keyword" id="edit-old-keyword" value="">
-            <div>
-                <label class="block text-xs font-mono text-[#56686b] mb-1">TÉRMINO O FRASE</label>
-                <input type="text" name="keyword" id="edit-new-keyword" required
-                    class="w-full px-3 py-2 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] font-sans">
-            </div>
-            <div class="flex items-center justify-end gap-2 pt-2">
-                <button type="button" onclick="closeEditKeywordModal()" class="px-3.5 py-2 border border-[#e3dbc2] bg-white rounded text-xs font-mono text-[#56686b] hover:bg-[#f7f2df] cursor-pointer">
-                    Cancelar
-                </button>
-                <button type="submit" class="px-4 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold cursor-pointer">
-                    Guardar Cambios
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
 window.licitacionesStore = @json($licitaciones->keyBy('id'));
-
-function toggleAccordion(contentId, chevronId) {
-    const content = document.getElementById(contentId);
-    const chevron = document.getElementById(chevronId);
-    if (!content) return;
-    
-    if (content.classList.contains('hidden')) {
-        content.classList.remove('hidden');
-        if (chevron) chevron.style.transform = 'rotate(180deg)';
-    } else {
-        content.classList.add('hidden');
-        if (chevron) chevron.style.transform = 'rotate(0deg)';
-    }
-}
-
-function openEditKeywordModal(keyword) {
-    document.getElementById('edit-old-keyword').value = keyword;
-    document.getElementById('edit-new-keyword').value = keyword;
-    document.getElementById('modal-edit-keyword').classList.remove('hidden');
-    document.getElementById('edit-new-keyword').focus();
-}
-
-function closeEditKeywordModal() {
-    document.getElementById('modal-edit-keyword').classList.add('hidden');
-}
 </script>
 
 @include('partials.ficha-drawer')

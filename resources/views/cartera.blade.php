@@ -36,15 +36,16 @@
                 <span>Sincronizar Calendario (.ics)</span>
             </a>
 
-            <!-- Exportar CSV -->
+            <!-- Exportar Excel -->
             <a href="{{ route('cartera.export') }}" 
-                class="px-3.5 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                class="px-3.5 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs"
+                title="Descargar informe ejecutivo en Excel (.xlsx de 3 hojas)">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                <span>Exportar Cartera</span>
+                <span>Exportar Excel</span>
             </a>
         </div>
     </div>

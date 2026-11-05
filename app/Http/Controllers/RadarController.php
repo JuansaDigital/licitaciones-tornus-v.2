@@ -17,10 +17,11 @@ class RadarController extends Controller
         $currentMarket = MarketService::current();
         $query = Licitacion::on($connection);
 
-        // 0. Cargar palabras clave y exclusiones activas
+        // 0. Cargar palabras clave, exclusiones y entidades prioritarias activas
         $filters = RadarFilterService::getData($currentMarket);
         $keywords = $filters['keywords'];
         $exclusions = $filters['exclusions'];
+        $priorityEntities = $filters['priority_entities'] ?? [];
 
         // 1. REGLA ESTRICTA DE VIGENCIA: Excluir propuestas vencidas y canceladas
         $today = now()->toDateString();
@@ -59,6 +60,23 @@ class RadarController extends Controller
                               ->orWhere('referencia', 'not like', "%{$exTrim}%");
                       });
             }
+        }
+
+        // 3b. Filtro de Foco Prioritario (Solo entidades estratégicas)
+        $selectedPriorityOnly = $request->boolean('priority_only');
+        if ($selectedPriorityOnly && !empty($priorityEntities)) {
+            $query->where(function ($q) use ($priorityEntities) {
+                foreach ($priorityEntities as $idx => $pEnt) {
+                    $pTrim = trim($pEnt);
+                    if (!empty($pTrim)) {
+                        if ($idx === 0) {
+                            $q->where('entidad', 'like', "%{$pTrim}%");
+                        } else {
+                            $q->orWhere('entidad', 'like', "%{$pTrim}%");
+                        }
+                    }
+                }
+            });
         }
 
         // 4. Filtro territorial
@@ -186,6 +204,8 @@ class RadarController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $priorityEntityCounts = RadarFilterService::getPriorityEntityCounts($connection, $priorityEntities);
+
         return view('radar', compact(
             'licitaciones',
             'regions',
@@ -195,14 +215,18 @@ class RadarController extends Controller
             'search',
             'totalCount',
             'keywords',
-            'exclusions'
+            'exclusions',
+            'priorityEntities',
+            'priorityEntityCounts',
+            'selectedPriorityOnly'
         ));
     }
 
     public function addKeyword(Request $request)
     {
         $request->validate(['keyword' => 'required|string|max:100']);
-        RadarFilterService::addKeyword(MarketService::current(), $request->input('keyword'));
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::addKeyword($market, $request->input('keyword'));
         return back()->with('status', "Palabra clave '{$request->input('keyword')}' agregada al Radar.");
     }
 
@@ -212,9 +236,10 @@ class RadarController extends Controller
             'old_keyword' => 'required|string',
             'keyword' => 'required|string|max:100'
         ]);
+        $market = $request->input('market', MarketService::current());
 
         RadarFilterService::updateKeyword(
-            MarketService::current(),
+            $market,
             $request->input('old_keyword'),
             $request->input('keyword')
         );
@@ -225,28 +250,55 @@ class RadarController extends Controller
     public function removeKeyword(Request $request)
     {
         $request->validate(['keyword' => 'required|string']);
-        RadarFilterService::removeKeyword(MarketService::current(), $request->input('keyword'));
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::removeKeyword($market, $request->input('keyword'));
         return back()->with('status', "Palabra clave '{$request->input('keyword')}' eliminada.");
     }
 
     public function addExclusion(Request $request)
     {
         $request->validate(['exclusion' => 'required|string|max:100']);
-        RadarFilterService::addExclusion(MarketService::current(), $request->input('exclusion'));
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::addExclusion($market, $request->input('exclusion'));
         return back()->with('status', "Término de exclusión '{$request->input('exclusion')}' agregado.");
     }
 
     public function removeExclusion(Request $request)
     {
         $request->validate(['exclusion' => 'required|string']);
-        RadarFilterService::removeExclusion(MarketService::current(), $request->input('exclusion'));
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::removeExclusion($market, $request->input('exclusion'));
         return back()->with('status', "Término de exclusión eliminado.");
+    }
+
+    public function addPriorityEntity(Request $request)
+    {
+        $request->validate(['entity' => 'required|string|max:150']);
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::addPriorityEntity($market, $request->input('entity'));
+        return back()->with('status', "Entidad prioritaria '{$request->input('entity')}' agregada al Radar.");
+    }
+
+    public function removePriorityEntity(Request $request)
+    {
+        $request->validate(['entity' => 'required|string']);
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::removePriorityEntity($market, $request->input('entity'));
+        return back()->with('status', "Entidad prioritaria eliminada del Radar.");
+    }
+
+    public function resetPriorityEntities(Request $request)
+    {
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::resetPriorityEntities($market);
+        return back()->with('status', "Entidades prioritarias restablecidas a los valores oficiales de " . MarketService::marketName($market) . ".");
     }
 
     public function resetFilters(Request $request)
     {
-        RadarFilterService::resetDefaults(MarketService::current());
-        return back()->with('status', 'Palabras clave y términos de exclusión restablecidos a los valores predeterminados.');
+        $market = $request->input('market', MarketService::current());
+        RadarFilterService::resetDefaults($market);
+        return back()->with('status', "Palabras clave, exclusiones y entidades prioritarias restablecidas a los valores predeterminados de " . MarketService::marketName($market) . ".");
     }
 
     public function toggleCartera(Request $request, $id)
@@ -287,5 +339,10 @@ class RadarController extends Controller
         }
 
         return back()->with('status', "Radar sincronizado con éxito (ventana de los últimos 5 meses hasta hoy). Se actualizaron {$synced} procesos en vivo y se depuraron {$purged} licitaciones vencidas no guardadas.");
+    }
+
+    public function exportExcel()
+    {
+        return \App\Services\Export\ExcelExportService::download('radar');
     }
 }

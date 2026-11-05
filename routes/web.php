@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
     // Módulo A & B: Radar en Vivo y Filtros
     Route::get('/radar', [RadarController::class, 'index'])->name('radar');
+    Route::get('/radar/export', [RadarController::class, 'exportExcel'])->name('radar.export');
     Route::post('/radar/sync', [RadarController::class, 'sync'])->name('radar.sync');
     Route::post('/radar/{id}/cartera', [RadarController::class, 'toggleCartera'])->name('radar.cartera');
     Route::post('/radar/keywords', [RadarController::class, 'addKeyword'])->name('radar.keywords.add');
@@ -54,12 +55,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/radar/keywords/remove', [RadarController::class, 'removeKeyword'])->name('radar.keywords.remove');
     Route::post('/radar/exclusions', [RadarController::class, 'addExclusion'])->name('radar.exclusions.add');
     Route::post('/radar/exclusions/remove', [RadarController::class, 'removeExclusion'])->name('radar.exclusions.remove');
+    Route::post('/radar/priority-entities', [RadarController::class, 'addPriorityEntity'])->name('radar.priority_entities.add');
+    Route::post('/radar/priority-entities/remove', [RadarController::class, 'removePriorityEntity'])->name('radar.priority_entities.remove');
+    Route::post('/radar/priority-entities/reset', [RadarController::class, 'resetPriorityEntities'])->name('radar.priority_entities.reset');
     Route::post('/radar/filters/reset', [RadarController::class, 'resetFilters'])->name('radar.filters.reset');
 
     // Módulo E: Mi Cartera (Tablero Comercial)
     Route::get('/cartera', [CarteraController::class, 'index'])->name('cartera');
     Route::post('/cartera/{id}/status', [CarteraController::class, 'updateStatus'])->name('cartera.status');
-    Route::get('/cartera/export', [CarteraController::class, 'exportCsv'])->name('cartera.export');
+    Route::get('/cartera/export', [CarteraController::class, 'exportExcel'])->name('cartera.export');
+    Route::get('/cartera/export-csv', [CarteraController::class, 'exportCsv'])->name('cartera.export_csv');
 
     // Módulo D: Propuestas Analizadas con IA (Gemini)
     Route::get('/afinidad', [AfinidadController::class, 'index'])->name('afinidad');

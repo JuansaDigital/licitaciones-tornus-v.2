@@ -49,9 +49,10 @@ class MarketService
         return self::isPeru() ? 'S/' : '$';
     }
 
-    public static function marketName(): string
+    public static function marketName(?string $market = null): string
     {
-        return self::isPeru() ? 'Perú' : 'Colombia';
+        $m = $market ? strtoupper($market) : self::current();
+        return $m === self::MARKET_PERU ? 'Perú' : 'Colombia';
     }
 
     public static function sourceName(): string
