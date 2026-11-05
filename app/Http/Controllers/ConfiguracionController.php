@@ -21,12 +21,41 @@ class ConfiguracionController extends Controller
         $administradores = $users->where('rol', 'administrador')->count();
         $conAlertasEmail = $users->where('notificar_email', true)->count();
 
+        // Métricas de Consumo de Inteligencia Artificial (Tokens y Costos Gemini)
+        $todayStr = now()->toDateString();
+        $thirtyDaysAgo = now()->subDays(30)->toDateString();
+
+        $tokensHoy = \App\Models\AiTokenUsage::whereDate('date', $todayStr)->sum('total_tokens');
+        $costoHoy = \App\Models\AiTokenUsage::whereDate('date', $todayStr)->sum('cost_usd');
+        $llamadasHoy = \App\Models\AiTokenUsage::whereDate('date', $todayStr)->count();
+
+        $tokensMes = \App\Models\AiTokenUsage::where('date', '>=', $thirtyDaysAgo)->sum('total_tokens');
+        $costoMes = \App\Models\AiTokenUsage::where('date', '>=', $thirtyDaysAgo)->sum('cost_usd');
+        $llamadasMes = \App\Models\AiTokenUsage::where('date', '>=', $thirtyDaysAgo)->count();
+
+        // Desglose diario de los últimos 7 días
+        $historialDiario = \App\Models\AiTokenUsage::where('date', '>=', now()->subDays(7)->toDateString())
+            ->selectRaw('date, count(*) as llamadas, sum(prompt_tokens) as prompt_tokens, sum(candidate_tokens) as candidate_tokens, sum(total_tokens) as total_tokens, sum(cost_usd) as cost_usd')
+            ->groupBy('date')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $aiModel = env('GEMINI_MODEL', 'gemini-3.8-flash');
+
         return view('configuracion', compact(
             'users',
             'totalMiembros',
             'usuariosActivos',
             'administradores',
-            'conAlertasEmail'
+            'conAlertasEmail',
+            'tokensHoy',
+            'costoHoy',
+            'llamadasHoy',
+            'tokensMes',
+            'costoMes',
+            'llamadasMes',
+            'historialDiario',
+            'aiModel'
         ));
     }
 

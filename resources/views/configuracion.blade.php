@@ -394,6 +394,139 @@
 
         </div>
 
+        <!-- SECCIÓN 3: CONSUMO Y MÉTRICAS DE INTELIGENCIA ARTIFICIAL (GEMINI 3.8 FLASH) -->
+        <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-xl p-6 sm:p-8 shadow-xs space-y-6">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#f2ece0]">
+                <div>
+                    <span class="text-[11px] font-mono uppercase tracking-wider text-[#56686b] block">
+                        INTELIGENCIA ARTIFICIAL & RECURSOS CLOUD
+                    </span>
+                    <h2 class="font-['Instrument_Serif',serif] text-2xl sm:text-3xl text-[#00232c] font-normal tracking-tight uppercase mt-1">
+                        CONSUMO DIARIO DE TOKENS IA
+                    </h2>
+                    <p class="text-xs font-mono text-[#56686b] mt-1">
+                        Monitoreo en tiempo real del uso de la API de Google Gemini para auto-triage y dictámenes estratégicos.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="px-3 py-1.5 rounded bg-indigo-50 border border-indigo-200 text-indigo-900 font-mono text-xs flex items-center gap-2">
+                        <svg class="w-3.5 h-3.5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                        </svg>
+                        <span class="font-bold">{{ $aiModel }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rejilla de 4 Métricas de Tokens y Costos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- Tarjeta 1: Tokens Hoy -->
+                <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-1">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Tokens Consumidos Hoy</span>
+                    <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-[#00232c]">
+                        {{ number_format($tokensHoy) }}
+                    </div>
+                    <p class="text-[11px] font-mono text-[#56686b]">
+                        {{ number_format($llamadasHoy) }} evaluaciones procesadas hoy
+                    </p>
+                </div>
+
+                <!-- Tarjeta 2: Costo Hoy -->
+                <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-1">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Costo Estimado Hoy (USD)</span>
+                    <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-emerald-800">
+                        ${{ number_format($costoHoy, 4) }}
+                    </div>
+                    <p class="text-[11px] font-mono text-[#56686b]">
+                        Tarifa: $0.075 in / $0.30 out (por 1M)
+                    </p>
+                </div>
+
+                <!-- Tarjeta 3: Tokens Mes -->
+                <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-1">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Tokens Últimos 30 Días</span>
+                    <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-[#00232c]">
+                        {{ number_format($tokensMes) }}
+                    </div>
+                    <p class="text-[11px] font-mono text-[#56686b]">
+                        {{ number_format($llamadasMes) }} evaluaciones en el período
+                    </p>
+                </div>
+
+                <!-- Tarjeta 4: Costo Mes -->
+                <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-1">
+                    <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b]">Costo 30 Días (USD)</span>
+                    <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-emerald-800">
+                        ${{ number_format($costoMes, 4) }}
+                    </div>
+                    <p class="text-[11px] font-mono text-[#56686b]">
+                        Facturación estimada acumulada
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Tabla de Historial Diario (Últimos 7 Días) -->
+            <div class="pt-2">
+                <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-[#00232c] mb-3 flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Registro Detallado por Día (Últimos 7 Días)</span>
+                </h3>
+
+                @if($historialDiario->isEmpty())
+                    <div class="p-6 bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg text-center text-xs font-mono text-[#56686b]">
+                        No se registran llamadas externas directas a la API de Gemini en los últimos 7 días. Las evaluaciones que coinciden con criterios de descarte total se resuelven en el motor heurístico local sin costo de tokens.
+                    </div>
+                @else
+                    <div class="overflow-x-auto border border-[#e3dbc2] rounded-lg bg-white">
+                        <table class="w-full text-left text-xs font-mono">
+                            <thead class="bg-[#f2ece0] text-[#00232c] border-b border-[#e3dbc2]">
+                                <tr>
+                                    <th class="px-4 py-2.5 font-bold">Fecha</th>
+                                    <th class="px-4 py-2.5 font-bold">Llamadas API</th>
+                                    <th class="px-4 py-2.5 font-bold">Tokens Entrada (Prompt)</th>
+                                    <th class="px-4 py-2.5 font-bold">Tokens Salida (Dictamen)</th>
+                                    <th class="px-4 py-2.5 font-bold">Total Tokens</th>
+                                    <th class="px-4 py-2.5 font-bold text-right">Costo Estimado</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#f2ece0]">
+                                @foreach($historialDiario as $dia)
+                                    <tr class="hover:bg-[#fcfaf2]">
+                                        <td class="px-4 py-2.5 font-semibold text-[#00232c]">
+                                            {{ \Carbon\Carbon::parse($dia->date)->translatedFormat('d M, Y') }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-[#56686b]">
+                                            {{ number_format($dia->llamadas) }} req
+                                        </td>
+                                        <td class="px-4 py-2.5 text-[#56686b]">
+                                            {{ number_format($dia->prompt_tokens) }}
+                                        </td>
+                                        <td class="px-4 py-2.5 text-[#56686b]">
+                                            {{ number_format($dia->candidate_tokens) }}
+                                        </td>
+                                        <td class="px-4 py-2.5 font-bold text-[#00232c]">
+                                            {{ number_format($dia->total_tokens) }}
+                                        </td>
+                                        <td class="px-4 py-2.5 font-bold text-emerald-800 text-right">
+                                            ${{ number_format($dia->cost_usd, 4) }} USD
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+
+        </div>
+
         </div>
 
     </main>

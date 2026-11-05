@@ -212,7 +212,7 @@ class SecopColombiaService
                         $cuantia = (float)($row['precio_base'] ?? 0);
                         $hasAdjudicacion = !empty($row['fecha_de_adjudicacion']);
 
-                        Licitacion::on('colombia')->updateOrCreate(
+                        $lic = Licitacion::on('colombia')->updateOrCreate(
                             ['external_id' => $extId],
                             [
                                 'referencia' => $row['referencia'] ?? $extId,
@@ -239,6 +239,16 @@ class SecopColombiaService
                                 'url_proceso' => $row['urlproceso'] ?? null,
                             ]
                         );
+
+                        // Auto-evaluación inmediata con IA: ninguna propuesta queda sin score
+                        if ($lic->score === null) {
+                            try {
+                                app(\App\Services\GeminiAffinityService::class)->evaluate($lic);
+                            } catch (\Throwable $e) {
+                                Log::warning("Error en auto-evaluación inmediata #{$lic->id}: " . $e->getMessage());
+                            }
+                        }
+
                         $count++;
                     }
                 }

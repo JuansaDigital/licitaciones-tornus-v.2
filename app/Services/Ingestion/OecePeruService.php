@@ -300,6 +300,16 @@ class OecePeruService
                     'url_proceso' => !empty($release['ocid']) ? "https://contratacionesabiertas.oece.gob.pe/licitacion/{$release['ocid']}" : null,
                 ]
             );
+
+            // Auto-evaluación inmediata con IA: ninguna propuesta queda sin score
+            if ($lic->score === null) {
+                try {
+                    app(\App\Services\GeminiAffinityService::class)->evaluate($lic);
+                } catch (\Throwable $e) {
+                    Log::warning("Error en auto-evaluación inmediata Perú #{$lic->id}: " . $e->getMessage());
+                }
+            }
+
             $count++;
         }
 

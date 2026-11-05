@@ -133,6 +133,25 @@ EOT;
 
                 if ($response->successful()) {
                     $json = $response->json();
+
+                    // Registro automático de consumo real de tokens desde Google Gemini
+                    $usage = $json['usageMetadata'] ?? [];
+                    $promptTokens = (int)($usage['promptTokenCount'] ?? 0);
+                    $candidateTokens = (int)($usage['candidatesTokenCount'] ?? 0);
+                    if ($promptTokens > 0 || $candidateTokens > 0) {
+                        try {
+                            \App\Models\AiTokenUsage::recordUsage(
+                                model: $this->model,
+                                promptTokens: $promptTokens,
+                                candidateTokens: $candidateTokens,
+                                licitacionId: $licitacion->id,
+                                market: MarketService::current()
+                            );
+                        } catch (\Throwable $e) {
+                            Log::warning("No se pudo registrar AiTokenUsage: " . $e->getMessage());
+                        }
+                    }
+
                     $text = $json['candidates'][0]['content']['parts'][0]['text'] ?? '';
                     $cleanJson = trim($text);
                     if (str_starts_with($cleanJson, '```json')) {
