@@ -60,9 +60,23 @@
                                         $entidad = is_object($lic) ? ($lic->entidad ?? 'Entidad Pública') : ($lic['entidad'] ?? 'Entidad Pública');
                                         $referencia = is_object($lic) ? ($lic->referencia ?? $lic->external_id ?? '') : ($lic['referencia'] ?? $lic['external_id'] ?? '');
                                         $url = is_object($lic) ? ($lic->url_proceso ?? '') : ($lic['url_proceso'] ?? '');
+                                        if (empty($url) && !empty($referencia)) {
+                                            if ($market === 'CO') {
+                                                $url = 'https://community.secop.gov.co/Public/Tendering/ContractNoticeManagement/Index?numConstancia=' . urlencode($referencia);
+                                            } elseif ($market === 'PE') {
+                                                $url = 'https://prodapp2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml';
+                                            }
+                                        }
                                         $cierre = is_object($lic) ? ($lic->fecha_cierre ?? '') : ($lic['fecha_cierre'] ?? '');
                                         $departamento = is_object($lic) ? ($lic->departamento ?? '') : ($lic['departamento'] ?? '');
                                         $score = is_object($lic) ? ($lic->score ?? null) : ($lic['score'] ?? null);
+                                        $estrategia = is_object($lic) ? ($lic->estrategia_postulacion ?? '') : ($lic['estrategia_postulacion'] ?? '');
+                                        $resumenIa = is_object($lic) ? ($lic->resumen_ia ?? '') : ($lic['resumen_ia'] ?? '');
+                                        $puntoClave = is_object($lic) ? ($lic->punto_clave ?? '') : ($lic['punto_clave'] ?? '');
+                                        
+                                        $baseUrl = rtrim(config('app.url', 'https://radar.tornus.agency'), '/');
+                                        $radarSearchUrl = "{$baseUrl}/radar?buscar=" . urlencode($referencia);
+                                        $portalName = ($market === 'PE') ? 'SEACE' : (($market === 'CO') ? 'SECOP II' : 'SECOP / SEACE');
                                     @endphp
                                     <tr>
                                         <td style="padding: 16px; margin-bottom: 12px; background-color: #faf8f0; border: 1px solid #e3dbc2; border-left: 4px solid #00232c; border-radius: 6px;">
@@ -103,18 +117,37 @@
                                                 {{ mb_strimwidth($objeto, 0, 240, '...') }}
                                             </div>
 
-                                            <!-- Pie de tarjeta: Fecha y Enlace -->
+                                            <!-- Dictamen Estratégico IA (si fue analizada) -->
+                                            @if($estrategia || $resumenIa || $puntoClave)
+                                                <div style="margin: 8px 0 12px 0; padding: 8px 12px; background-color: #ffffff; border-left: 3px solid #0b4a57; border: 1px solid #e3dbc2; border-left-width: 3px; border-radius: 4px; font-size: 11px; color: #15424d; line-height: 1.4;">
+                                                    @if($estrategia)
+                                                        <span style="color: #00232c; font-family: monospace; font-weight: bold; text-transform: uppercase;">
+                                                            DICTAMEN IA: {{ $estrategia }}
+                                                        </span>
+                                                        &middot; 
+                                                    @endif
+                                                    <span>{{ $resumenIa ?: ($puntoClave ?: 'Oportunidad evaluada y validada como viable para el portafolio institucional.') }}</span>
+                                                </div>
+                                            @endif
+
+                                            <!-- Pie de tarjeta: Fecha y Enlaces duales (Radar Tornus + SECOP/SEACE) -->
                                             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                                                 <tr>
-                                                    <td style="font-size: 11px; font-family: monospace; color: #56686b;">
+                                                    <td style="font-size: 11px; font-family: monospace; color: #56686b; vertical-align: middle;">
                                                         @if($cierre)
                                                             Cierre: <strong>{{ substr($cierre, 0, 16) }}</strong>
                                                         @endif
                                                     </td>
-                                                    <td align="right">
+                                                    <td align="right" style="vertical-align: middle; white-space: nowrap;">
+                                                        <!-- Botón 1: Ver en Radar Tornus -->
+                                                        <a href="{{ $radarSearchUrl }}" target="_blank" style="display: inline-block; font-family: monospace; font-size: 11px; font-weight: bold; color: #fbfb75; text-decoration: none; padding: 5px 11px; background-color: #00232c; border-radius: 3px; border: 1px solid #00232c; margin-right: 6px;">
+                                                            Ver en Radar &rarr;
+                                                        </a>
+
+                                                        <!-- Botón 2: Ver en Portal Oficial -->
                                                         @if(!empty($url))
-                                                            <a href="{{ $url }}" target="_blank" style="display: inline-block; font-family: monospace; font-size: 11px; font-weight: bold; color: #00232c; text-decoration: none; padding: 4px 10px; background-color: #fbfb75; border-radius: 3px; border: 1px solid #e3dbc2;">
-                                                                Ver en SECOP / SEACE &rarr;
+                                                            <a href="{{ $url }}" target="_blank" style="display: inline-block; font-family: monospace; font-size: 11px; font-weight: bold; color: #00232c; text-decoration: none; padding: 5px 11px; background-color: #fbfb75; border-radius: 3px; border: 1px solid #d4cba8;">
+                                                                Ver en {{ $portalName }} &rarr;
                                                             </a>
                                                         @endif
                                                     </td>

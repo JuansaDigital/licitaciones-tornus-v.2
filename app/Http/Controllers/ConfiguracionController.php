@@ -119,6 +119,25 @@ class ConfiguracionController extends Controller
     }
 
     /**
+     * Despachar las propuestas analizadas actuales por correo según preferencias de mercado
+     */
+    public function sendCurrentProposalsEmail(Request $request)
+    {
+        try {
+            $result = \App\Services\AlertNotificationService::sendCurrentAnalyzedTendersAlert(Auth::user());
+
+            if (!$result['success'] || $result['sent_count'] === 0) {
+                return back()->with('status', 'No se encontraron propuestas viables para despacho o ningún usuario tiene alertas activas.');
+            }
+
+            $recipientsStr = implode(', ', $result['recipients']);
+            return back()->with('status', "Boletín de propuestas analizadas despachado exitosamente a {$result['sent_count']} destinatario(s) ({$recipientsStr}) según sus preferencias de mercado.");
+        } catch (\Throwable $e) {
+            return back()->withErrors(['error' => 'Error al despachar propuestas por correo: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Actualizar parámetros de frecuencia y cuota de consultas a SECOP II / OECE
      */
     public function updateSyncConfig(Request $request)

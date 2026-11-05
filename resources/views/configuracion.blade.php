@@ -308,7 +308,21 @@
                     </p>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Botón 1: Enviar Propuestas Actuales Analizadas -->
+                    <form action="{{ route('configuracion.alertas.despachar_actuales') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="px-3.5 py-2 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-2xs cursor-pointer"
+                            title="Despachar de inmediato las propuestas viables analizadas por correo según las preferencias de mercado de cada usuario">
+                            <svg class="w-3.5 h-3.5 text-[#fbfb75]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                            <span>ENVIAR PROPUESTAS ACTUALES POR CORREO</span>
+                        </button>
+                    </form>
+
+                    <!-- Botón 2: Enviar Correo de Prueba Simulada -->
                     <form action="{{ route('configuracion.alertas.test') }}" method="POST" class="inline">
                         @csrf
                         <button type="submit" class="px-3.5 py-2 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] text-[#00232c] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-2xs cursor-pointer"
@@ -317,7 +331,7 @@
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                                 <polyline points="22,6 12,13 2,6"></polyline>
                             </svg>
-                            <span>ENVIAR CORREO DE PRUEBA</span>
+                            <span>CORREO DE PRUEBA</span>
                         </button>
                     </form>
                 </div>

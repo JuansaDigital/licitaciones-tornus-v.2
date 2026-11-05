@@ -271,5 +271,137 @@ class AlertNotificationService
             return true;
         }));
     }
+
+    /**
+     * Obtiene las propuestas analizadas actuales y viables para despacho por correo
+     */
+    public static function getCurrentAnalyzedTenders(string $market = 'CO', int $limit = 15): array
+    {
+        $connection = strtolower($market) === 'pe' ? 'peru' : 'colombia';
+        $today = now()->toDateString();
+
+        $query = \App\Models\Licitacion::on($connection);
+
+        // Excluir canceladas o cerradas
+        $query->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
+              ->where(function ($q) use ($today) {
+                  $q->whereNull('fecha_cierre')
+                    ->orWhere('fecha_cierre', '>=', $today);
+              });
+
+        // 1. Obtener propuestas analizadas viables (score >= 40 sin descarte)
+        $tenders = (clone $query)
+            ->whereNotNull('score')
+            ->where('score', '>=', 40)
+            ->where(function ($s) {
+                $s->whereNull('estrategia_postulacion')
+                  ->orWhere('estrategia_postulacion', '!=', 'Descartar');
+            })
+            ->orderBy('score', 'desc')
+            ->orderBy('fecha_publicacion', 'desc')
+            ->limit($limit)
+            ->get()
+            ->all();
+
+        // 2. Si hay menos de 5 analizadas viables, complementar con propuestas activas no descartadas
+        if (count($tenders) < 5) {
+            $existingIds = array_map(fn($t) => $t->id, $tenders);
+            $additional = $query->whereNotIn('id', $existingIds)
+                ->where(function ($s) {
+                    $s->whereNull('score')
+                      ->orWhere('score', '>=', 40);
+                })
+                ->where(function ($s) {
+                    $s->whereNull('estrategia_postulacion')
+                      ->orWhere('estrategia_postulacion', '!=', 'Descartar');
+                })
+                ->orderBy('fecha_publicacion', 'desc')
+                ->limit($limit - count($tenders))
+                ->get()
+                ->all();
+
+            $tenders = array_merge($tenders, $additional);
+        }
+
+        return $tenders;
+    }
+
+    /**
+     * Despacha el boletín con las propuestas analizadas actuales a los miembros suscritos
+     * respetando sus preferencias de mercado (CO, PE o TODOS) y criterios configurados.
+     */
+    public static function sendCurrentAnalyzedTendersAlert(?User $triggerUser = null): array
+    {
+        // 1. Obtener usuarios suscritos activos
+        $users = User::where('activo', true)
+            ->where('notificar_email', true)
+            ->get();
+
+        // Si el usuario que disparó la acción no estaba suscrito, incluirlo para que reciba una copia
+        if ($triggerUser && !$users->contains('id', $triggerUser->id)) {
+            $users->push($triggerUser);
+        }
+
+        if ($users->isEmpty()) {
+            return [
+                'success' => false,
+                'message' => 'No hay miembros del equipo con alertas por correo activadas.',
+                'sent_count' => 0,
+                'recipients' => []
+            ];
+        }
+
+        // Obtener propuestas analizadas actuales por mercado
+        $coTenders = self::getCurrentAnalyzedTenders('CO', 15);
+        $peTenders = self::getCurrentAnalyzedTenders('PE', 15);
+
+        $sentCount = 0;
+        $recipients = [];
+
+        foreach ($users as $user) {
+            $userMarket = strtoupper($user->notificar_mercado ?? 'TODOS');
+
+            $tendersToSend = [];
+            if ($userMarket === 'CO') {
+                $tendersToSend = self::filterTendersForUser($coTenders, $user, 'CO');
+                $marketLabel = 'CO';
+            } elseif ($userMarket === 'PE') {
+                $tendersToSend = self::filterTendersForUser($peTenders, $user, 'PE');
+                $marketLabel = 'PE';
+            } else {
+                $coFiltered = self::filterTendersForUser($coTenders, $user, 'CO');
+                $peFiltered = self::filterTendersForUser($peTenders, $user, 'PE');
+                $tendersToSend = array_merge($coFiltered, $peFiltered);
+                $marketLabel = 'TODOS';
+            }
+
+            if (empty($tendersToSend)) {
+                continue;
+            }
+
+            try {
+                Mail::to($user->email)->send(
+                    new NuevasLicitacionesMail(
+                        licitaciones: $tendersToSend,
+                        market: $marketLabel,
+                        totalCount: count($tendersToSend),
+                        recipientName: $user->name
+                    )
+                );
+                $sentCount++;
+                $recipients[] = $user->email;
+                Log::info("Boletín de propuestas analizadas enviado a {$user->email} ({$marketLabel}, " . count($tendersToSend) . " propuestas)");
+            } catch (\Throwable $e) {
+                Log::error("Error despachando propuestas analizadas a {$user->email}: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'success' => true,
+            'sent_count' => $sentCount,
+            'recipients' => $recipients,
+            'total_users' => $users->count()
+        ];
+    }
 }
 

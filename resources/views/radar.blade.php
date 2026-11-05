@@ -34,6 +34,18 @@
                     <span>Exportar Excel</span>
                 </a>
 
+                <!-- Botón de Despachar Propuestas Actuales por Correo -->
+                <form action="{{ route('configuracion.alertas.despachar_actuales') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-3.5 py-2 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] text-[#00232c] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer" title="Despachar las propuestas analizadas actuales por correo al equipo según sus preferencias">
+                        <svg class="w-3.5 h-3.5 text-blue-800" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span>Enviar por Correo</span>
+                    </button>
+                </form>
+
                 <!-- Botón de Auto-Triage con IA -->
                 <form action="{{ route('radar.auto_triage') }}" method="POST">
                     @csrf
