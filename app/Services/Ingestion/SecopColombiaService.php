@@ -87,7 +87,7 @@ class SecopColombiaService
                         'fase' => $row['fase'] ?? 'Presentación de ofertas',
                         'fecha_publicacion' => $this->parseSecopDate($row['fecha_publicacion'] ?? null),
                         'fecha_cierre' => $this->parseSecopDate($row['fecha_cierre'] ?? null),
-                        'url_proceso' => $row['url_proceso'] ?? null,
+                        'url_proceso' => is_array($row['url_proceso'] ?? null) ? ($row['url_proceso']['url'] ?? null) : ($row['url_proceso'] ?? null),
                         'prov_unicos' => (int)($row['prov_unicos'] ?? 0),
                         'fase2_fecha' => $this->parseSecopDate($row['fase2_fecha'] ?? null),
                         'adenda_fecha' => $this->parseSecopDate($row['adenda_fecha'] ?? null),
@@ -236,7 +236,7 @@ class SecopColombiaService
                                 'fecha_apertura_ofertas' => $this->parseSecopDate($row['fecha_de_apertura_efectiva'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
                                 'adenda_fecha' => $this->parseSecopDate($row['fecha_de_ultima_publicacion'] ?? null),
                                 'fase2_fecha' => $this->parseSecopDate($row['fecha_de_adjudicacion'] ?? null),
-                                'url_proceso' => $row['urlproceso'] ?? null,
+                                'url_proceso' => is_array($row['urlproceso'] ?? null) ? ($row['urlproceso']['url'] ?? null) : ($row['urlproceso'] ?? null),
                             ]
                         );
 
