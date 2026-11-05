@@ -26,3 +26,4 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 scripts/remote_*.py
+scripts/deploy_*.py
