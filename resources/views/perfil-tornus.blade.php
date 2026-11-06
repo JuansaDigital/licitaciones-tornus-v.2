@@ -59,35 +59,35 @@
             </div>
         </div>
 
-        <!-- Barra de Navegación de Pestañas -->
-        <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto border-b border-[#e3dbc2] pt-4 pb-0 text-xs font-mono scrollbar-none" id="profileTabsNav">
-            <button type="button" onclick="showProfileTab('juridica')" id="tabBtn-juridica" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-[#00232c] text-[#00232c] font-bold bg-[#fbf9f1]">
+        <!-- Barra de Navegación de Pestañas Adaptable (Sin cortes ni desbordamientos) -->
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 border-b border-[#e3dbc2] pb-3 text-xs font-mono" id="profileTabsNav">
+            <button type="button" onclick="showProfileTab('juridica')" id="tabBtn-juridica" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#00232c] bg-[#00232c] text-[#fbfb75] font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-2xs">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><line x1="7" y1="8" x2="17" y2="8"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="13" y2="16"></line></svg>
                 <span>Ficha Jurídica & RUP</span>
             </button>
-            <button type="button" onclick="showProfileTab('lineas')" id="tabBtn-lineas" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
+            <button type="button" onclick="showProfileTab('lineas')" id="tabBtn-lineas" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
                 <span>9 Líneas de Servicio (A-I)</span>
             </button>
-            <button type="button" onclick="showProfileTab('experiencia')" id="tabBtn-experiencia" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
+            <button type="button" onclick="showProfileTab('experiencia')" id="tabBtn-experiencia" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 <span>Experiencia RUP (11.998 SMMLV)</span>
             </button>
-            <button type="button" onclick="showProfileTab('portafolio')" id="tabBtn-portafolio" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
+            <button type="button" onclick="showProfileTab('portafolio')" id="tabBtn-portafolio" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
                 <span>Portafolio & Clientes</span>
             </button>
-            <button type="button" onclick="showProfileTab('equipo')" id="tabBtn-equipo" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
+            <button type="button" onclick="showProfileTab('equipo')" id="tabBtn-equipo" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <span>Equipo Senior</span>
             </button>
             @if(Auth::user()->isAdmin())
-            <button type="button" onclick="showProfileTab('filtros')" id="tabBtn-filtros" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
+            <button type="button" onclick="showProfileTab('filtros')" id="tabBtn-filtros" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="font-bold">Filtros de Rastreo (Por País)</span>
             </button>
             @endif
-            <button type="button" onclick="showProfileTab('evaluador')" id="tabBtn-evaluador" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
+            <button type="button" onclick="showProfileTab('evaluador')" id="tabBtn-evaluador" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 <span>Parámetros & Rúbrica IA</span>
             </button>
@@ -962,16 +962,16 @@ function showProfileTab(tabName) {
     sessionStorage.setItem('activeProfileTab', target);
     document.querySelectorAll('.profile-tab-pane').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.profile-tab-btn').forEach(btn => {
-        btn.classList.remove('border-[#00232c]', 'text-[#00232c]', 'font-bold', 'bg-[#fbf9f1]');
-        btn.classList.add('border-transparent', 'text-[#56686b]');
+        btn.classList.remove('bg-[#00232c]', 'text-[#fbfb75]', 'border-[#00232c]', 'font-bold', 'shadow-2xs');
+        btn.classList.add('bg-white', 'text-[#56686b]', 'border-[#e3dbc2]');
     });
 
     if (activePane) activePane.classList.remove('hidden');
 
     const activeBtn = document.getElementById('tabBtn-' + target);
     if (activeBtn) {
-        activeBtn.classList.remove('border-transparent', 'text-[#56686b]');
-        activeBtn.classList.add('border-[#00232c]', 'text-[#00232c]', 'font-bold', 'bg-[#fbf9f1]');
+        activeBtn.classList.remove('bg-white', 'text-[#56686b]', 'border-[#e3dbc2]');
+        activeBtn.classList.add('bg-[#00232c]', 'text-[#fbfb75]', 'border-[#00232c]', 'font-bold', 'shadow-2xs');
     }
 }
 
