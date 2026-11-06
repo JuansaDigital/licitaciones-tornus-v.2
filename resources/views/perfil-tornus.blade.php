@@ -89,7 +89,7 @@
             @endif
             <button type="button" onclick="showProfileTab('evaluador')" id="tabBtn-evaluador" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                <span>Parámetros & Rúbrica IA</span>
+                <span>Metodología & Rúbrica IA</span>
             </button>
         </div>
 
@@ -730,9 +730,90 @@
         @endif
 
         <!-- ========================================== -->
-        <!-- TAB 7: PARÁMETROS & RÚBRICA DEL EVALUADOR  -->
+        <!-- TAB 7: METODOLOGÍA & RÚBRICA DEL EVALUADOR -->
         <!-- ========================================== -->
         <div id="tabContent-evaluador" class="profile-tab-pane pt-6 space-y-6 hidden">
+            
+            <!-- Bloque 1: Framework Metodológico Institucional -->
+            <div class="bg-white border border-[#e3dbc2] rounded-lg p-5 sm:p-6 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#e3dbc2]">
+                    <div>
+                        <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b] block">FRAMEWORK METODOLÓGICO INSTITUCIONAL</span>
+                        <h3 class="font-['Instrument_Serif',serif] text-2xl text-[#00232c] font-normal tracking-tight">
+                            Metodología Operativa de Detección, Evaluación y Postulación
+                        </h3>
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#0b4a57] text-[#fbfb75] text-[11px] font-mono font-semibold self-start sm:self-auto">
+                        Ciclo de 4 Fases Metodológicas
+                    </span>
+                </div>
+
+                <p class="text-xs font-mono text-[#56686b] leading-relaxed">
+                    Tornus opera bajo una metodología analítica de 4 etapas para transformar el flujo masivo de datos contractuales abiertos de SECOP II (Colombia) y SEACE/OECE (Perú) en decisiones comerciales estructuradas de alta rentabilidad.
+                </p>
+
+                <!-- 4 Fases Metodológicas en Rejilla -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+                    
+                    <!-- Fase 1 -->
+                    <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-[10px] font-bold text-[#00232c] px-2 py-0.5 rounded bg-[#f7f2df] border border-[#e3dbc2]">
+                                FASE 1
+                            </span>
+                            <span class="font-mono text-[10px] text-[#56686b]">Ingesta</span>
+                        </div>
+                        <h4 class="font-mono text-xs font-bold text-[#00232c] uppercase">Detección & Anti-Ruido</h4>
+                        <p class="text-[11px] font-mono text-[#56686b] leading-normal">
+                            Monitoreo automatizado con filtrado temático por palabras clave y exclusión algorítmica de falsos positivos ajenos al RUP (obras civiles, alimentación, insumos médicos).
+                        </p>
+                    </div>
+
+                    <!-- Fase 2 -->
+                    <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-[10px] font-bold text-[#00232c] px-2 py-0.5 rounded bg-[#f7f2df] border border-[#e3dbc2]">
+                                FASE 2
+                            </span>
+                            <span class="font-mono text-[10px] text-[#56686b]">Triage IA</span>
+                        </div>
+                        <h4 class="font-mono text-xs font-bold text-[#00232c] uppercase">Evaluación Gemini 3.8</h4>
+                        <p class="text-[11px] font-mono text-[#56686b] leading-normal">
+                            Cálculo de afinidad (0-100) contra el portafolio institucional bajo la rúbrica ponderada (35/35/20/10), emitiendo dictamen estratégico de postulación o consorcio.
+                        </p>
+                    </div>
+
+                    <!-- Fase 3 -->
+                    <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-[10px] font-bold text-[#00232c] px-2 py-0.5 rounded bg-[#f7f2df] border border-[#e3dbc2]">
+                                FASE 3
+                            </span>
+                            <span class="font-mono text-[10px] text-[#56686b]">Control</span>
+                        </div>
+                        <h4 class="font-mono text-xs font-bold text-[#00232c] uppercase">Semáforo de Plazos</h4>
+                        <p class="text-[11px] font-mono text-[#56686b] leading-normal">
+                            Monitoreo en tiempo real de tiempos de cierre. Clasificación de criticidad: &lt;48h (Crítico con horas exactas), 3-7 días (Tiempo Justo) y &gt;7 días (Ideal para estructuración).
+                        </p>
+                    </div>
+
+                    <!-- Fase 4 -->
+                    <div class="bg-[#fcfaf2] border border-[#e3dbc2] rounded-lg p-4 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-[10px] font-bold text-[#00232c] px-2 py-0.5 rounded bg-[#f7f2df] border border-[#e3dbc2]">
+                                FASE 4
+                            </span>
+                            <span class="font-mono text-[10px] text-[#56686b]">Comercial</span>
+                        </div>
+                        <h4 class="font-mono text-xs font-bold text-[#00232c] uppercase">Gestión & Alertas</h4>
+                        <p class="text-[11px] font-mono text-[#56686b] leading-normal">
+                            Seguimiento en embudo Kanban de 5 etapas (Identificada &rarr; En Preparación &rarr; Presentada &rarr; Adjudicada) y boletines por correo según preferencias de mercado.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- Rúbrica Oficial de Calificación -->
             <div class="bg-white border border-[#e3dbc2] rounded-lg p-5">
                 <h3 class="font-mono text-xs font-bold uppercase tracking-wider text-[#00232c] mb-3 flex items-center gap-2">
