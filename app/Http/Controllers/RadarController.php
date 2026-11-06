@@ -8,6 +8,7 @@ use App\Services\Ingestion\SecopColombiaService;
 use App\Services\MarketService;
 use App\Services\RadarFilterService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RadarController extends Controller
 {
@@ -308,6 +309,9 @@ class RadarController extends Controller
 
     public function addKeyword(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $request->validate(['keyword' => 'required|string|max:100']);
         $market = $request->input('market', MarketService::current());
         RadarFilterService::addKeyword($market, $request->input('keyword'));
@@ -316,6 +320,9 @@ class RadarController extends Controller
 
     public function updateKeyword(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $request->validate([
             'old_keyword' => 'required|string',
             'keyword' => 'required|string|max:100'
@@ -333,6 +340,9 @@ class RadarController extends Controller
 
     public function removeKeyword(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $request->validate(['keyword' => 'required|string']);
         $market = $request->input('market', MarketService::current());
         RadarFilterService::removeKeyword($market, $request->input('keyword'));
@@ -341,6 +351,9 @@ class RadarController extends Controller
 
     public function addExclusion(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $request->validate(['exclusion' => 'required|string|max:100']);
         $market = $request->input('market', MarketService::current());
         RadarFilterService::addExclusion($market, $request->input('exclusion'));
@@ -349,6 +362,9 @@ class RadarController extends Controller
 
     public function removeExclusion(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $request->validate(['exclusion' => 'required|string']);
         $market = $request->input('market', MarketService::current());
         RadarFilterService::removeExclusion($market, $request->input('exclusion'));
@@ -357,6 +373,9 @@ class RadarController extends Controller
 
     public function addPriorityEntity(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $request->validate(['entity' => 'required|string|max:150']);
         $market = $request->input('market', MarketService::current());
         RadarFilterService::addPriorityEntity($market, $request->input('entity'));
@@ -365,6 +384,9 @@ class RadarController extends Controller
 
     public function removePriorityEntity(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $request->validate(['entity' => 'required|string']);
         $market = $request->input('market', MarketService::current());
         RadarFilterService::removePriorityEntity($market, $request->input('entity'));
@@ -373,6 +395,9 @@ class RadarController extends Controller
 
     public function resetPriorityEntities(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $market = $request->input('market', MarketService::current());
         RadarFilterService::resetPriorityEntities($market);
         return back()->with('status', "Entidades prioritarias restablecidas a los valores oficiales de " . MarketService::marketName($market) . ".");
@@ -380,6 +405,9 @@ class RadarController extends Controller
 
     public function resetFilters(Request $request)
     {
+        if (!Auth::check() || !Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los filtros de rastreo.']);
+        }
         $market = $request->input('market', MarketService::current());
         RadarFilterService::resetDefaults($market);
         return back()->with('status', "Palabras clave, exclusiones y entidades prioritarias restablecidas a los valores predeterminados de " . MarketService::marketName($market) . ".");

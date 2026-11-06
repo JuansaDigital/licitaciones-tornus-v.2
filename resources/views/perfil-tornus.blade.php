@@ -81,10 +81,12 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <span>Equipo Senior</span>
             </button>
+            @if(Auth::user()->isAdmin())
             <button type="button" onclick="showProfileTab('filtros')" id="tabBtn-filtros" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
                 <svg class="w-3.5 h-3.5 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="font-bold">Filtros de Rastreo (Por País)</span>
             </button>
+            @endif
             <button type="button" onclick="showProfileTab('evaluador')" id="tabBtn-evaluador" class="profile-tab-btn px-3.5 py-2.5 border-b-2 rounded-t transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer border-transparent text-[#56686b] hover:text-[#00232c]">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 <span>Parámetros & Rúbrica IA</span>
@@ -423,6 +425,7 @@
             </div>
         </div>
 
+        @if(Auth::user()->isAdmin())
         <!-- ========================================================================= -->
         <!-- TAB 6: FILTROS DE RASTREO POR PAÍS (COLOMBIA VS PERÚ - MULTI-TENANT)     -->
         <!-- ========================================================================= -->
@@ -724,6 +727,7 @@
             </div>
 
         </div>
+        @endif
 
         <!-- ========================================== -->
         <!-- TAB 7: PARÁMETROS & RÚBRICA DEL EVALUADOR  -->
@@ -912,6 +916,7 @@
 
 </div>
 
+@if(Auth::user()->isAdmin())
 <!-- Modal para Editar Palabra Clave -->
 <div id="modal-edit-keyword" class="fixed inset-0 z-50 flex items-center justify-center bg-[#00232c]/60 backdrop-blur-xs p-4 hidden">
     <div class="bg-[#fffdf6] border border-[#e3dbc2] rounded-lg max-w-md w-full p-6 shadow-xl space-y-4">
@@ -944,20 +949,26 @@
         </form>
     </div>
 </div>
+@endif
 
 <script>
 function showProfileTab(tabName) {
-    sessionStorage.setItem('activeProfileTab', tabName);
+    let target = tabName;
+    let activePane = document.getElementById('tabContent-' + target);
+    if (!activePane) {
+        target = 'juridica';
+        activePane = document.getElementById('tabContent-juridica');
+    }
+    sessionStorage.setItem('activeProfileTab', target);
     document.querySelectorAll('.profile-tab-pane').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.profile-tab-btn').forEach(btn => {
         btn.classList.remove('border-[#00232c]', 'text-[#00232c]', 'font-bold', 'bg-[#fbf9f1]');
         btn.classList.add('border-transparent', 'text-[#56686b]');
     });
 
-    const activePane = document.getElementById('tabContent-' + tabName);
     if (activePane) activePane.classList.remove('hidden');
 
-    const activeBtn = document.getElementById('tabBtn-' + tabName);
+    const activeBtn = document.getElementById('tabBtn-' + target);
     if (activeBtn) {
         activeBtn.classList.remove('border-transparent', 'text-[#56686b]');
         activeBtn.classList.add('border-[#00232c]', 'text-[#00232c]', 'font-bold', 'bg-[#fbf9f1]');
