@@ -68,6 +68,19 @@ class Licitacion extends Model
     public function getCategoriaAttribute($value): string
     {
         $val = strtolower(trim((string)$value));
+        $objUpper = mb_strtoupper($this->attributes['objeto'] ?? '', 'UTF-8');
+
+        // Filtro de integridad: evitar etiquetar como 'Planeación y Turismo' a licitaciones de mantenimiento, manufactura u obras
+        if ($val === 'plan' && !empty($objUpper)) {
+            $isTourism = preg_match('/(TURIS|TURÍST|DESTINO|MARCA CIUDAD|MARCA REGIÓN|PLACE BRANDING|RUTA TURÍSTICA|PROCOLOMBIA|FONTUR|MINCIT|ATRACTIVO|CULTURA|ARTESAN)/u', $objUpper);
+            if (!$isTourism) {
+                if (preg_match('/(MANTENIMIENTO|OBRA|CONSTRUCCI|INFRAESTRUCTURA|EQUIPO|MAQUINARIA|PUENTE|VÍA|VIA|VIVIENDA|CALZADO|CUERO|MANUFACTURA)/u', $objUpper)) {
+                    return 'Infraestructura y Dotación';
+                }
+                return 'Servicios Profesionales';
+            }
+        }
+
         $map = [
             'evt'       => 'Eventos y Logística',
             'plan'      => 'Planeación y Turismo',

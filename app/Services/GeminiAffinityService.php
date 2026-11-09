@@ -67,19 +67,21 @@ DATOS DE LA LICITACIÓN CONVOCADA:
 - Cuantía / Presupuesto Oficial: {$licitacion->formatted_cuantia} {$licitacion->moneda}
 - Modalidad de Contratación: {$licitacion->tipo_proceso}
 
-2. FILTROS PARA REDUCIR FALSOS POSITIVOS (DESCARTE O BAJA AFINIDAD):
-Asigna baja afinidad (Score 0 a 30) o descarta procesos cuyo alcance principal sea:
-- Construcción, mantenimiento de infraestructura u obra civil.
-- Suministro puro de insumos, mercancías, equipos o bienes aislados sin componente técnico, formativo ni creativo (ATENCIÓN: NO aplica a kits de herramientas o insumos de fortalecimiento empresarial entregados en el marco de programas de formación y desarrollo turístico de la Línea G).
-- Aseo, vigilancia, alimentación escolar (PAE) o transporte aislados.
+2. FILTROS PARA REDUCIR FALSOS POSITIVOS (DESCARTE O EXCLUSIÓN TOTAL):
+Asigna Score 0 (Descarte inmediato / NO APLICA) a procesos cuyo alcance sea:
+- Construcción, obras civiles, pavimentación, acueductos, alcantarillados, puentes, vías o infraestructura física.
+- Mantenimiento físico, preventivo o correctivo de maquinaria, calderas, plantas eléctricas, vehículos o equipos industriales/electromecánicos.
+- Manufactura, confección, calzado, cuero, textiles o metalmecánica.
+- Suministro puro de insumos, mercancías, ferretería, repuestos, combustibles o bienes aislados sin componente técnico, formativo ni creativo (ATENCIÓN: NO aplica a kits de herramientas o insumos de fortalecimiento empresarial entregados en el marco de programas de formación y desarrollo turístico de la Línea G).
+- Aseo, vigilancia, alimentación escolar (PAE) o transporte escolar/pasajeros aislado.
 - Venta de tiquetes, alojamiento o intermediación de viajes sin estrategia promocional.
-- Alquiler de sonido, tarimas, carpas o sillas como único servicio.
+- Alquiler de sonido, tarimas, carpas o sillas como único servicio sin montaje ni conceptualización.
 - Impresión de piezas ya diseñadas, sin estrategia ni creación de contenidos.
 - Desarrollo de software empresarial, ciberseguridad o infraestructura de TI ajenos al marketing.
-- Consultorías jurídicas, contables, clínicas o de ingeniería civil.
-- Formación genérica desvinculada de turismo, cultura o creatividad (ATENCIÓN: Toda formación en turismo, desarrollo turístico local, fortalecimiento de capacidades para prestadores o mipymes turísticas, marketing o innovación turística es ALTAMENTE AFÍN a Tornus).
+- Consultorías jurídicas, contables, clínicas o de ingeniería civil/geotécnica.
+- Formación técnica en oficios industriales ajenos a turismo, cultura o creatividad (ej. manufactura de cuero, calzado, soldadura, mecánica, etc. ATENCIÓN: Toda formación en turismo, desarrollo turístico local, fortalecimiento de capacidades para prestadores o mipymes turísticas, marketing o innovación turística es ALTAMENTE AFÍN a Tornus).
 - Servicios individuales que no permitan la participación de una persona jurídica.
-EXCEPCIÓN DE PROYECTO INTEGRAL: No descartes automáticamente un proyecto integral por contener alguna de estas actividades secundarias. Determina qué componente domina el alcance y el presupuesto. (Ej: 'Promoción y prevención en salud' solo es afín si contrata campaña de comunicación publicitaria ejecutable por Tornus; 'Producción de documental cultural' tiene alta afinidad aunque no mencione turismo; 'Operador logístico de eventos' tiene afinidad condicionada a entregables de montaje de ferias/diseño; 'Fortalecimiento turístico con insumos' es afín vía Consorcio/UT para formación).
+EXCEPCIÓN DE PROYECTO INTEGRAL: No descartes automáticamente un proyecto integral por contener alguna de estas actividades secundarias si el núcleo es turístico o creativo (ej. 'Fortalecimiento turístico con insumos' es afín vía Consorcio/UT para formación).
 
 3. EVALUACIÓN Y PONDERACIÓN EXACTA DE AFINIDAD (Score 0 a 100):
 Calcula el puntaje utilizando estrictamente estos 4 pesos oficiales:
@@ -187,7 +189,7 @@ EOT;
      */
     protected function heuristicEvaluation(Licitacion $licitacion): array
     {
-        $text = mb_strtoupper($licitacion->objeto . ' ' . $licitacion->entidad . ' ' . $licitacion->categoria . ' ' . $licitacion->departamento, 'UTF-8');
+        $text = mb_strtoupper($licitacion->objeto . ' ' . $licitacion->entidad . ' ' . $licitacion->departamento, 'UTF-8');
         
         // 0. Detección especial de proyectos de Formación, Capacitación o Fortalecimiento Turístico (Línea G)
         $isTourismCapacityBuilding = (str_contains($text, 'TURIS') || str_contains($text, 'TURÍST') || str_contains($text, 'DESTINO')) &&
@@ -201,7 +203,20 @@ EOT;
                 'ASEO', 'LIMPIEZA', 'CAFETERÍA', 'RECOLECCIÓN DE RESIDUOS',
                 'MEDICAMENTO', 'HOSPITALARIO', 'QUIRÚRGICO', 'QUIRURGICO', 'REACTIVOS',
                 'ALIMENTACIÓN ESCOLAR', 'PAE', 'COMBUSTIBLE', 'MAQUINARIA PESADA', 'PARQUE AUTOMOTOR',
-                'INTERVENTORÍA DE OBRA', 'INTERVENTORIA DE OBRA', 'SEGUROS', 'PÓLIZAS', 'POLIZAS'
+                'INTERVENTORÍA DE OBRA', 'INTERVENTORIA DE OBRA', 'SEGUROS', 'PÓLIZAS', 'POLIZAS',
+                // Mantenimiento físico, electromecánico, de equipos y maquinaria
+                'MANTENIMIENTO DE EQUIPO', 'MANTENIMIENTO DE MAQUINARIA', 'MANTENIMIENTO INDUSTRIAL',
+                'MANTENIMIENTO ELECTROMECÁNICO', 'MANTENIMIENTO ELECTROMECANICO', 'MANTENIMIENTO PREVENTIVO Y CORRECTIVO',
+                'MANTENIMIENTO CORRECTIVO', 'MANTENIMIENTO PREVENTIVO DE EQUIPO', 'MANTENIMIENTO LOCATIVO',
+                'MANTENIMIENTO DE VEHÍCULO', 'MANTENIMIENTO DE VEHICULO', 'MANTENIMIENTO DE AIRE', 'CALDERAS',
+                // Manufactura, confección, cuero, calzado, textiles, metalmecánica
+                'MANUFACTURA', 'CUERO', 'CALZADO', 'TEXTIL', 'CONFECCIÓN', 'CONFECCION', 'METALMECÁNICA', 'METALMECANICA',
+                // Ferretería, autopartes, repuestos, insumos industriales
+                'FERRETERÍA', 'FERRETERIA', 'REPUESTOS', 'LUBRICANTES', 'LLANTAS', 'INSUMOS DE LABORATORIO',
+                // Obras e infraestructura vial/geotécnica ajenas
+                'ESTUDIOS Y DISEÑOS VIALES', 'ESTUDIOS GEOTÉCNICOS', 'ESTUDIOS GEOTECNICOS', 'PUENTE PEATONAL',
+                'PUENTE VEHICULAR', 'MEJORAMIENTO DE VÍAS', 'MEJORAMIENTO DE VIAS', 'MEJORAMIENTO DE VIVIENDA',
+                'ESTUDIOS DE SUELOS', 'ALUMBRADO PÚBLICO', 'ALUMBRADO PUBLICO'
             ];
 
             foreach ($hardExclusions as $ex) {
@@ -353,9 +368,10 @@ EOT;
             $puntosClave = "No se sugiere destinar esfuerzos de costeo ni estructuración para esta convocatoria.";
         }
 
-        $servicios = !empty($matchedLines) 
+        // Si el score es bajo o no aplica, no sugerir servicios para no confundir al usuario
+        $servicios = (!empty($matchedLines) && $score >= 40 && $aplica !== 'NO APLICA')
             ? array_map(function($line) { return explode(' - ', $line)[1] ?? $line; }, $matchedLines)
-            : ['Estrategia y promoción de destinos', 'Creatividad y difusión publicitaria'];
+            : [];
 
         return [
             'score' => $score,
