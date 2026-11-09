@@ -173,63 +173,85 @@
                     </select>
                 </div>
 
-                <!-- Selector de Municipios con Buscador Integrado (1.104 Municipios Oficiales) -->
+                <!-- Selector de Municipios Condicionado por Departamento con Scroll Vertical Estricto -->
                 <div class="lg:col-span-3 sm:col-span-1 relative" id="municipioDropdownContainer">
                     <input type="hidden" name="municipio" id="municipioHiddenInput" value="{{ $selectedMunicipio }}">
 
-                    <button type="button" id="municipioDropdownBtn" onclick="toggleMunDropdown()"
-                        class="w-full h-full min-h-[42px] px-3 py-2 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] flex items-center justify-between hover:border-[#00232c] transition-colors text-left cursor-pointer">
-                        <div class="truncate flex items-center gap-1.5 mr-1">
-                            <svg class="w-3.5 h-3.5 {{ !empty($selectedMunicipio) ? 'text-emerald-700' : 'text-[#56686b]' }} shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
-                                <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                            <span id="municipioDropdownLabel" class="truncate {{ !empty($selectedMunicipio) ? 'font-bold text-[#00232c]' : 'text-[#56686b]' }}">
-                                @if(!empty($selectedMunicipio))
-                                    {{ $selectedMunicipio }}
-                                @else
-                                    Todos los municipios ({{ count($municipios) }})
-                                @endif
-                            </span>
-                        </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                            @if(!empty($selectedMunicipio))
-                                <span onclick="clearSelectedMunicipio(event)" class="text-[#56686b] hover:text-rose-600 px-1 font-bold text-xs cursor-pointer" title="Quitar filtro de municipio">
-                                    ×
-                                </span>
-                            @endif
-                            <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    @if(empty($selectedRegion))
+                        <!-- Estado 1: Sin departamento seleccionado (El usuario primero debe elegir el departamento) -->
+                        <button type="button" disabled
+                            class="w-full h-full min-h-[42px] px-3 py-2 bg-[#fbf9f1] border border-[#e3dbc2]/80 rounded text-xs font-mono text-[#9db3b4] flex items-center justify-between cursor-not-allowed select-none opacity-85"
+                            title="Primero debes seleccionar un departamento en el selector contiguo">
+                            <div class="truncate flex items-center gap-1.5 mr-1">
+                                <svg class="w-3.5 h-3.5 text-[#9db3b4] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                <span class="truncate">Primero selecciona departamento</span>
+                            </div>
+                            <svg class="w-3.5 h-3.5 text-[#9db3b4] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
-                        </div>
-                    </button>
-
-                    <!-- Menú Desplegable con Buscador en Vivo de Municipios -->
-                    <div id="municipioDropdownMenu" class="hidden absolute top-full left-0 right-0 sm:right-auto sm:w-88 mt-1 bg-white border border-[#e3dbc2] rounded-lg shadow-xl z-50 p-2.5">
-                        <!-- Campo de Búsqueda Instantánea -->
-                        <div class="relative mb-2">
-                            <input type="text" id="munSearchInput" oninput="filterMunicipiosList(this.value)"
-                                placeholder="Buscar municipio (ej: Manizales, Cali, Villeta)..."
-                                class="w-full pl-8 pr-3 py-1.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c]"
-                                autocomplete="off">
-                            <svg class="w-3.5 h-3.5 text-[#56686b] absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </div>
-
-                        <!-- Opción por Defecto: Todos los Municipios -->
-                        <button type="button" onclick="selectMunicipio('')"
-                            class="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#f7f2df] text-xs font-mono font-bold text-[#00232c] border-b border-[#f0ebd8] mb-1 flex items-center justify-between cursor-pointer">
-                            <span>Todos los municipios</span>
-                            <span class="text-[10px] text-[#56686b] font-normal" id="munCounterBadge">{{ count($municipios) }} disponibles</span>
+                        </button>
+                    @else
+                        <!-- Estado 2: Con departamento seleccionado (Muestra exclusivamente los municipios de esa región) -->
+                        <button type="button" id="municipioDropdownBtn" onclick="toggleMunDropdown()"
+                            class="w-full h-full min-h-[42px] px-3 py-2 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] flex items-center justify-between hover:border-[#00232c] transition-colors text-left cursor-pointer">
+                            <div class="truncate flex items-center gap-1.5 mr-1">
+                                <svg class="w-3.5 h-3.5 {{ !empty($selectedMunicipio) ? 'text-emerald-700' : 'text-[#56686b]' }} shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                <span id="municipioDropdownLabel" class="truncate {{ !empty($selectedMunicipio) ? 'font-bold text-[#00232c]' : 'text-[#00232c]' }}">
+                                    @if(!empty($selectedMunicipio))
+                                        {{ $selectedMunicipio }}
+                                    @else
+                                        Todos los de {{ $selectedRegion }} ({{ count($municipios) }})
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-1 shrink-0">
+                                @if(!empty($selectedMunicipio))
+                                    <span onclick="clearSelectedMunicipio(event)" class="text-[#56686b] hover:text-rose-600 px-1 font-bold text-xs cursor-pointer" title="Quitar filtro de municipio">
+                                        ×
+                                    </span>
+                                @endif
+                                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
                         </button>
 
-                        <!-- Lista de Municipios con Scroll Completo (1.104 Municipios Disponibles de la A a la Z) -->
-                        <div id="municipiosListContainer" class="max-h-80 overflow-y-auto space-y-0.5 divide-y divide-[#faf6ec] pr-1.5" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 #f7f2df;">
-                            <!-- Los municipios se inyectan dinámicamente desde el dataset oficial en memoria -->
+                        <!-- Menú Desplegable con Buscador en Vivo y Scroll Vertical Estricto (250px) -->
+                        <div id="municipioDropdownMenu" class="hidden absolute top-full left-0 right-0 sm:right-auto sm:w-88 mt-1 bg-white border border-[#e3dbc2] rounded-lg shadow-2xl z-50 p-2.5"
+                            style="max-height: 380px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 25px -5px rgba(0, 35, 44, 0.15), 0 8px 10px -6px rgba(0, 35, 44, 0.1);">
+                            
+                            <!-- Campo de Búsqueda Instantánea -->
+                            <div class="relative mb-2 shrink-0">
+                                <input type="text" id="munSearchInput" oninput="filterMunicipiosList(this.value)"
+                                    placeholder="Buscar municipio en {{ $selectedRegion }}..."
+                                    class="w-full pl-8 pr-3 py-1.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c]"
+                                    autocomplete="off">
+                                <svg class="w-3.5 h-3.5 text-[#56686b] absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+
+                            <!-- Opción por Defecto: Todos los Municipios del Departamento -->
+                            <button type="button" onclick="selectMunicipio('')"
+                                class="shrink-0 w-full text-left px-2.5 py-1.5 rounded hover:bg-[#f7f2df] text-xs font-mono font-bold text-[#00232c] border-b border-[#f0ebd8] mb-1 flex items-center justify-between cursor-pointer">
+                                <span>Todos los de {{ $selectedRegion }}</span>
+                                <span class="text-[10px] text-[#56686b] font-normal" id="munCounterBadge">{{ count($municipios) }} municipios</span>
+                            </button>
+
+                            <!-- Lista de Municipios con Scroll Vertical Obligatorio (No rompe la pantalla) -->
+                            <div id="municipiosListContainer" class="space-y-0.5 divide-y divide-[#faf6ec] pr-1.5"
+                                style="max-height: 250px; overflow-y: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f7f2df;">
+                                <!-- Los municipios de esta región se inyectan dinámicamente -->
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
 
                 <!-- Botón de Filtrar -->
