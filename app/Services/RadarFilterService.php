@@ -262,7 +262,7 @@ class RadarFilterService
                     $q->whereNull('fecha_cierre')
                       ->orWhereRaw("substr(fecha_cierre, 1, 10) >= ?", [$today]);
                 })
-                ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
+                ->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES)
                 ->pluck('entidad')
                 ->toArray();
 

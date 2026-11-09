@@ -149,7 +149,7 @@ class AlertNotificationService
                   $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$minCloseDate])
                       ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$minCloseDay]);
               })
-              ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado']);
+              ->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES);
 
         // 2. REGLA DE NOVEDAD: Propuestas recién convocadas / publicadas por primera vez
         $query->where(function ($q) use ($sinceDateTime, $sinceDate) {
@@ -282,8 +282,8 @@ class AlertNotificationService
 
         $query = \App\Models\Licitacion::on($connection);
 
-        // Excluir canceladas o cerradas
-        $query->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
+        // Excluir canceladas, cerradas o en evaluación
+        $query->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES)
               ->where(function ($q) use ($today) {
                   $q->whereNull('fecha_cierre')
                     ->orWhere('fecha_cierre', '>=', $today);

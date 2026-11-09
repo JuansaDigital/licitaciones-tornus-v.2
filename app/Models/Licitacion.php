@@ -14,6 +14,22 @@ class Licitacion extends Model
 
     protected $guarded = ['id'];
 
+    public const NON_ACTIVE_STATES = [
+        'Cancelado',
+        'Cerrado',
+        'Desierto',
+        'Adjudicado',
+        'Evaluación',
+        'En evaluación',
+        'Terminado',
+        'Celebrado',
+    ];
+
+    public function scopeActivas($query)
+    {
+        return $query->whereNotIn('estado', self::NON_ACTIVE_STATES);
+    }
+
     protected $casts = [
         'cuantia' => 'float',
         'en_cartera' => 'boolean',

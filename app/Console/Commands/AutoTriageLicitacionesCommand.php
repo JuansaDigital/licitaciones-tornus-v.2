@@ -31,7 +31,7 @@ class AutoTriageLicitacionesCommand extends Command
 
             $pendientes = Licitacion::on($connection)
                 ->whereNull('score')
-                ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
+                ->whereNotIn('estado', Licitacion::NON_ACTIVE_STATES)
                 ->orderBy('created_at', 'desc')
                 ->limit($limit)
                 ->get();

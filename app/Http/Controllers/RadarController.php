@@ -33,7 +33,7 @@ class RadarController extends Controller
                   $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
                       ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
               });
-        })->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado']);
+        })->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES);
 
         // 2. Aplicar filtro de búsqueda textual
         $search = trim($request->input('q', ''));
@@ -199,7 +199,7 @@ class RadarController extends Controller
                           ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
                   });
             })
-            ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado']);
+            ->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES);
 
         foreach ($exclusions as $ex) {
             $exTrim = trim($ex);
@@ -321,7 +321,7 @@ class RadarController extends Controller
         $connection = MarketService::connection();
         $pendientes = Licitacion::on($connection)
             ->whereNull('score')
-            ->whereNotIn('estado', ['Cancelado', 'Cerrado', 'Desierto', 'Adjudicado'])
+            ->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES)
             ->orderBy('created_at', 'desc')
             ->limit(25)
             ->get();

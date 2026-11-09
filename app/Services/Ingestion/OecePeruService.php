@@ -392,11 +392,15 @@ class OecePeruService
             // 1. Marcar como 'Cerrado' los procesos vencidos que se conservan por estar en Cartera
             Licitacion::on($connection)
                 ->where('en_cartera', true)
-                ->whereNotNull('fecha_cierre')
-                ->where('fecha_cierre', '!=', '')
                 ->where(function ($sub) use ($nowDateTime, $today) {
-                    $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
-                        ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
+                    $sub->where(function ($d) use ($nowDateTime, $today) {
+                        $d->whereNotNull('fecha_cierre')
+                          ->where('fecha_cierre', '!=', '')
+                          ->where(function ($ts) use ($nowDateTime, $today) {
+                              $ts->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
+                                 ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
+                          });
+                    })->orWhereIn('estado', ['Evaluación', 'En evaluación']);
                 })
                 ->whereNotIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
                 ->update(['estado' => 'Cerrado']);
@@ -411,7 +415,7 @@ class OecePeruService
                                $ts->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
                                   ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
                            });
-                    })->orWhereIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
+                    })->orWhereIn('estado', Licitacion::NON_ACTIVE_STATES)
                       ->orWhere(function ($sq) use ($fiveMonthsAgo) {
                         $sq->whereNotNull('fecha_publicacion')
                            ->whereRaw("substr(fecha_publicacion, 1, 10) < ?", [$fiveMonthsAgo]);

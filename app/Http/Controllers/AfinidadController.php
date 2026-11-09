@@ -29,7 +29,7 @@ class AfinidadController extends Controller
                               $dateQ->whereNull('fecha_cierre')
                                     ->orWhereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
                                     ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
-                          })->whereNotIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto']);
+                          })->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES);
                       });
                 });
         };
