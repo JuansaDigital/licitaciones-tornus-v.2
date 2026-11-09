@@ -28,6 +28,7 @@ class Licitacion extends Model
         'dias_convocatoria',
         'plazo_ejecucion_texto',
         'urgency_info',
+        'fase_badge',
     ];
 
     public function getConnectionName()
@@ -251,5 +252,57 @@ class Licitacion extends Model
                 'hours_left' => null,
             ];
         }
+    }
+
+    /**
+     * Semáforo y tipificación oficial de fase según AGENTS.md
+     */
+    public function getFaseBadgeAttribute(): array
+    {
+        $fase = mb_strtolower(trim((string)$this->fase), 'UTF-8');
+        $estado = mb_strtolower(trim((string)$this->estado), 'UTF-8');
+
+        // 1. En Observaciones / Borrador / Pre-pliego (Ámbar)
+        if (str_contains($fase, 'observacion') || str_contains($fase, 'borrador') || str_contains($estado, 'borrador') || str_contains($estado, 'observacion')) {
+            return [
+                'label' => 'En Observaciones / Pre-pliego',
+                'class' => 'bg-amber-50 text-amber-800 border-amber-200',
+                'dot'   => 'bg-amber-500',
+            ];
+        }
+
+        // 2. En Evaluación (Azul institucional)
+        if (str_contains($fase, 'evalua') || str_contains($estado, 'evalua')) {
+            return [
+                'label' => 'En Evaluación de Ofertas',
+                'class' => 'bg-blue-50 text-blue-800 border-blue-200',
+                'dot'   => 'bg-blue-500',
+            ];
+        }
+
+        // 3. Adjudicado (Neutro pizarra)
+        if (str_contains($fase, 'adjudica') || str_contains($estado, 'adjudica') || !empty($this->fase2_fecha)) {
+            return [
+                'label' => 'Adjudicado',
+                'class' => 'bg-slate-100 text-slate-700 border-slate-200',
+                'dot'   => 'bg-slate-400',
+            ];
+        }
+
+        // 4. Cancelado / Desierto
+        if (str_contains($fase, 'cancel') || str_contains($estado, 'cancel') || str_contains($estado, 'desiert')) {
+            return [
+                'label' => 'Cancelado / Desierto',
+                'class' => 'bg-slate-200 text-slate-600 border-slate-300',
+                'dot'   => 'bg-slate-500',
+            ];
+        }
+
+        // 5. Convocado / Recibiendo Ofertas (Esmeralda tenue)
+        return [
+            'label' => 'Convocado · Recibiendo Ofertas',
+            'class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+            'dot'   => 'bg-emerald-500',
+        ];
     }
 }

@@ -414,10 +414,13 @@
                                 {{ $lic->categoria ?: 'Servicios Generales' }}
                             </span>
 
-                            <!-- Estado / Fase -->
-                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 whitespace-nowrap shrink-0">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                <span>{{ $lic->fase ?: 'Convocado · Recibiendo ofertas' }}</span>
+                            <!-- Estado / Fase Oficial -->
+                            @php
+                                $faseInfo = $lic->fase_badge;
+                            @endphp
+                            <span class="px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 whitespace-nowrap shrink-0 text-xs font-semibold {{ $faseInfo['class'] }}" title="Fase oficial: {{ $lic->fase ?: $lic->estado }}">
+                                <span class="w-1.5 h-1.5 rounded-full shrink-0 {{ $faseInfo['dot'] }}"></span>
+                                <span>{{ $faseInfo['label'] }}</span>
                             </span>
 
                             <!-- Ventana de Convocatoria para Ofertar -->
@@ -453,6 +456,16 @@
                             @if($lic->fecha_publicacion)
                                 <div class="text-[10px] font-mono text-[#56686b] whitespace-nowrap">
                                     Apertura / Salida: <strong>{{ date('d M', strtotime($lic->fecha_publicacion)) }}</strong>
+                                </div>
+                            @endif
+                            @if(!empty($lic->adenda_fecha))
+                                <div class="text-[10px] font-mono text-amber-800 whitespace-nowrap" title="Última modificación o adenda registrada en el pliego">
+                                    Última adenda: <strong>{{ date('d M', strtotime($lic->adenda_fecha)) }}</strong>
+                                </div>
+                            @endif
+                            @if(!empty($lic->fecha_apertura_ofertas) && $lic->fecha_apertura_ofertas !== $lic->fecha_cierre)
+                                <div class="text-[10px] font-mono text-blue-800 whitespace-nowrap" title="Apertura pública de sobres / inicio de evaluación">
+                                    Apertura ofertas: <strong>{{ date('d M', strtotime($lic->fecha_apertura_ofertas)) }}</strong>
                                 </div>
                             @endif
                             <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5 max-w-[220px] truncate ml-auto" title="{{ $lic->codigo_proceso }}">

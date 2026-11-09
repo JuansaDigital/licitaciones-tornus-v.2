@@ -87,6 +87,11 @@
                         <div id="ficha-apertura-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
                     </div>
 
+                    <div id="ficha-crono-adenda-box" class="hidden">
+                        <span class="block text-[10px] font-mono font-bold uppercase text-amber-800 tracking-wider">ÚLTIMA MODIFICACIÓN / ADENDA</span>
+                        <div id="ficha-crono-adenda-fecha" class="text-xs font-mono font-bold text-amber-900"></div>
+                    </div>
+
                     <div>
                         <span class="block text-[10px] font-mono font-bold uppercase text-[#56686b] tracking-wider">RECEPCIÓN DE OFERTAS (DÍA QUE TERMINA)</span>
                         <div id="ficha-cierre-fecha" class="text-xs font-mono font-bold text-[#00232c]"></div>
@@ -399,7 +404,22 @@ function openFichaModal(licOrId) {
     } else {
         document.getElementById('ficha-plazo').textContent = isPeru ? 'Según Bases Administrativas (SEACE)' : 'Según pliego de condiciones';
     }
-    document.getElementById('ficha-estado').textContent = (lic.fase || lic.estado || 'Publicado') + ' · abierto';
+    // Estado / Fase Oficial
+    const estadoEl = document.getElementById('ficha-estado');
+    if (estadoEl) {
+        if (lic.fase_badge && typeof lic.fase_badge === 'object') {
+            estadoEl.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold ${lic.fase_badge.class}">
+                <span class="w-1.5 h-1.5 rounded-full ${lic.fase_badge.dot}"></span>
+                <span>${lic.fase_badge.label}</span>
+            </span>`;
+        } else {
+            const rawFase = (lic.fase || lic.estado || 'Convocado · Recibiendo Ofertas');
+            estadoEl.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold bg-emerald-50 text-emerald-800 border-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>${rawFase}</span>
+            </span>`;
+        }
+    }
     
     const vistasEl = document.getElementById('ficha-vistas');
     if (vistasEl) {
@@ -408,11 +428,22 @@ function openFichaModal(licOrId) {
     }
     const adendaBox = document.getElementById('ficha-adenda-box');
     const adendaEl = document.getElementById('ficha-adenda-fecha');
+    const cronoAdendaBox = document.getElementById('ficha-crono-adenda-box');
+    const cronoAdendaEl = document.getElementById('ficha-crono-adenda-fecha');
+
     if (lic.adenda_fecha) {
-        adendaEl.textContent = lic.adenda_fecha.substring(0, 10);
+        const adendaFormatted = lic.adenda_fecha.substring(0, 10);
+        adendaEl.textContent = adendaFormatted;
         adendaBox.classList.remove('hidden');
+        if (cronoAdendaBox && cronoAdendaEl) {
+            cronoAdendaEl.textContent = adendaFormatted;
+            cronoAdendaBox.classList.remove('hidden');
+        }
     } else {
         adendaBox.classList.add('hidden');
+        if (cronoAdendaBox) {
+            cronoAdendaBox.classList.add('hidden');
+        }
     }
     
     // Objeto Full
