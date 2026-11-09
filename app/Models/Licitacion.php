@@ -34,6 +34,7 @@ class Licitacion extends Model
         'cuantia' => 'float',
         'en_cartera' => 'boolean',
         'servicios_sugeridos' => 'array',
+        'subpuntajes' => 'array',
         'score' => 'integer',
         'evaluado_en' => 'datetime',
     ];
@@ -45,6 +46,7 @@ class Licitacion extends Model
         'plazo_ejecucion_texto',
         'urgency_info',
         'fase_badge',
+        'nivel_badge',
     ];
 
     public function getConnectionName()
@@ -319,6 +321,63 @@ class Licitacion extends Model
             'label' => 'Convocado · Recibiendo Ofertas',
             'class' => 'bg-emerald-50 text-emerald-800 border-emerald-200',
             'dot'   => 'bg-emerald-500',
+        ];
+    }
+
+    /**
+     * Semáforo y clasificación de nivel A / B / C / D según documento de calibración
+     */
+    public function getNivelBadgeAttribute(): array
+    {
+        $nivel = strtoupper(trim((string)$this->nivel));
+        $score = $this->score;
+
+        if ($score === null || $nivel === 'PENDIENTE') {
+            return [
+                'nivel'    => 'PENDIENTE',
+                'etiqueta' => 'PENDIENTE',
+                'class'    => 'bg-slate-100 text-slate-700 border-slate-200',
+                'badge'    => 'Pendiente de Análisis',
+                'dot'      => 'bg-slate-400',
+            ];
+        }
+
+        if ($nivel === 'A' || $score >= 75) {
+            return [
+                'nivel'    => 'A',
+                'etiqueta' => 'APLICA DIRECTO',
+                'class'    => 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                'badge'    => 'Nivel A · Aplica Directo',
+                'dot'      => 'bg-emerald-500',
+            ];
+        }
+
+        if ($nivel === 'B' || ($score >= 55 && $score < 75)) {
+            return [
+                'nivel'    => 'B',
+                'etiqueta' => 'APLICA CON ALIADO',
+                'class'    => 'bg-blue-50 text-blue-800 border-blue-200',
+                'badge'    => 'Nivel B · Aplica con Aliado',
+                'dot'      => 'bg-blue-500',
+            ];
+        }
+
+        if ($nivel === 'C' || ($score >= 35 && $score < 55)) {
+            return [
+                'nivel'    => 'C',
+                'etiqueta' => 'MONITOREAR',
+                'class'    => 'bg-amber-50 text-amber-800 border-amber-200',
+                'badge'    => 'Nivel C · Monitorear',
+                'dot'      => 'bg-amber-500',
+            ];
+        }
+
+        return [
+            'nivel'    => 'D',
+            'etiqueta' => 'DESCARTAR',
+            'class'    => 'bg-rose-50 text-rose-800 border-rose-200',
+            'badge'    => 'Nivel D · Descartar',
+            'dot'      => 'bg-rose-500',
         ];
     }
 }

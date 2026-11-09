@@ -389,13 +389,13 @@
                                 </span>
                             @endif
 
-                            @if($lic->score !== null && $lic->score < 20)
+                            @if($lic->score !== null && $lic->score < 35)
                                 <span class="px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200 font-bold whitespace-nowrap shrink-0 flex items-center gap-1">
                                     <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <line x1="18" y1="6" x2="6" y2="18"></line>
                                         <line x1="6" y1="6" x2="18" y2="18"></line>
                                     </svg>
-                                    <span>DESCARTADA POR IA</span>
+                                    <span>DESCARTADA (NIVEL D)</span>
                                 </span>
                             @endif
 
@@ -480,7 +480,10 @@
                     </h3>
 
                     <!-- Dictamen Estratégico de Gemini en la Tarjeta (Visible si está evaluado o al presionar Analizar) -->
-                    <div id="card-gemini-box-{{ $lic->id }}" class="{{ $lic->score !== null ? '' : 'hidden' }} my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 {{ ($lic->score ?? 0) >= 70 ? 'border-l-emerald-600' : (($lic->score ?? 0) >= 20 ? 'border-l-amber-500' : 'border-l-rose-500') }} text-xs font-mono space-y-1.5 transition-all">
+                    @php
+                        $cardBadge = $lic->nivel_badge;
+                    @endphp
+                    <div id="card-gemini-box-{{ $lic->id }}" class="{{ $lic->score !== null ? '' : 'hidden' }} my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 {{ $cardBadge['border'] }} text-xs font-mono space-y-1.5 transition-all">
                         <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-[#e3dbc2]/60">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-[#00232c] flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
@@ -488,13 +491,23 @@
                                 </svg>
                                 <span>DICTAMEN ESTRATÉGICO GEMINI IA</span>
                             </span>
-                            <span id="card-gemini-status-{{ $lic->id }}" class="text-[10px] font-bold tracking-wider {{ ($lic->score ?? 0) >= 70 ? 'text-emerald-800' : (($lic->score ?? 0) >= 20 ? 'text-amber-800' : 'text-rose-800') }}">
-                                {{ ($lic->score ?? 0) >= 70 ? 'APLICA DIRECTO' : (($lic->score ?? 0) >= 20 ? 'APLICA CON CONDICIONES' : 'NO APLICA') }}
+                            <span id="card-gemini-status-{{ $lic->id }}" class="text-[10px] font-bold tracking-wider {{ $cardBadge['text'] }}">
+                                {{ $cardBadge['label'] }}
                             </span>
                         </div>
                         <p id="card-gemini-desc-{{ $lic->id }}" class="text-[#3a4749] font-sans text-xs leading-relaxed pt-0.5">
                             {{ $lic->justificacion }}
                         </p>
+                        @if($lic->antecedente_tornus)
+                            <div class="pt-0.5 text-[11px] text-[#56686b] font-mono">
+                                <strong class="text-[#00232c]">Antecedente Tornus:</strong> <span>{{ $lic->antecedente_tornus }}</span>
+                            </div>
+                        @endif
+                        @if($lic->componente_aliado)
+                            <div class="pt-0.5 text-[11px] text-blue-900 font-mono">
+                                <strong>Aliado requerido:</strong> <span>{{ $lic->componente_aliado }}</span>
+                            </div>
+                        @endif
                         <div id="card-gemini-points-wrapper-{{ $lic->id }}" class="{{ $lic->puntos_clave ? '' : 'hidden' }} pt-1 text-[11px] text-[#56686b] font-mono">
                             <strong class="text-[#00232c]">Punto clave a revisar:</strong> <span id="card-gemini-points-{{ $lic->id }}">{{ $lic->puntos_clave }}</span>
                         </div>
@@ -511,9 +524,9 @@
                             <!-- Badge de Afinidad si ya está evaluado -->
                             <span id="card-affinity-{{ $lic->id }}" class="inline-flex">
                                 @if($lic->score !== null)
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : ($lic->score >= 20 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200') }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $lic->score >= 70 ? 'bg-emerald-600' : ($lic->score >= 20 ? 'bg-amber-600' : 'bg-rose-600') }}"></span>
-                                        <span>{{ $lic->score }}% AFINIDAD · {{ $lic->nivel }}</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $cardBadge['class'] }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $cardBadge['dot'] }}"></span>
+                                        <span>{{ $lic->score }}% AFINIDAD · {{ $cardBadge['code'] }}</span>
                                     </span>
                                 @endif
                             </span>

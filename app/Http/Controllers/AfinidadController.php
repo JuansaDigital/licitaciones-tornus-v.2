@@ -16,34 +16,42 @@ class AfinidadController extends Controller
         $nowDateTime = now()->format('Y-m-d H:i:s');
         $today = now()->toDateString();
 
-        // REGLA DE VIGENCIA Y AFINIDAD: Solo propuestas afines desde un 20% en adelante (score >= 20)
+        // REGLA DE VIGENCIA Y AFINIDAD (Nuevo Modelo): Oportunidades viables desde 35% en adelante (Niveles A, B y C)
         // que estén vigentes (abiertas) o guardadas en Cartera.
-        $baseActiveQuery = function () use ($connection, $nowDateTime, $today) {
-            return Licitacion::on($connection)
-                ->whereNotNull('score')
-                ->where('score', '>=', 20)
-                ->where(function ($q) use ($nowDateTime, $today) {
-                    $q->where('en_cartera', true)
-                      ->orWhere(function ($sub) use ($nowDateTime, $today) {
-                          $sub->where(function ($dateQ) use ($nowDateTime, $today) {
-                              $dateQ->whereNull('fecha_cierre')
-                                    ->orWhereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
-                                    ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
-                          })->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES);
-                      });
-                });
+        $filterNivel = strtoupper(trim((string)$request->input('nivel', 'all')));
+
+        $baseActiveQuery = function ($includeDiscarded = false) use ($connection, $nowDateTime, $today) {
+            $query = Licitacion::on($connection)
+                ->whereNotNull('score');
+
+            if (!$includeDiscarded) {
+                $query->where('score', '>=', 35);
+            }
+
+            return $query->where(function ($q) use ($nowDateTime, $today) {
+                $q->where('en_cartera', true)
+                  ->orWhere(function ($sub) use ($nowDateTime, $today) {
+                      $sub->where(function ($dateQ) use ($nowDateTime, $today) {
+                          $dateQ->whereNull('fecha_cierre')
+                                ->orWhereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
+                                ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
+                      })->whereNotIn('estado', \App\Models\Licitacion::NON_ACTIVE_STATES);
+                  });
+            });
         };
 
-        $query = $baseActiveQuery();
+        $includeDiscarded = ($filterNivel === 'D' || $filterNivel === 'DESCARTAR');
+        $query = $baseActiveQuery($includeDiscarded);
 
-        // Filtro por Nivel de Afinidad (ALTA >= 70, MEDIA 40-69, BAJA 20-39)
-        $filterNivel = $request->input('nivel', 'all');
-        if (strtoupper($filterNivel) === 'ALTA') {
-            $query->where('score', '>=', 70);
-        } elseif (strtoupper($filterNivel) === 'MEDIA') {
-            $query->whereBetween('score', [40, 69]);
-        } elseif (strtoupper($filterNivel) === 'BAJA') {
-            $query->whereBetween('score', [20, 39]);
+        // Filtro por Nivel de Afinidad (Rúbrica Oficial: A >= 75, B 55-74, C 35-54, D < 35)
+        if ($filterNivel === 'A' || $filterNivel === 'ALTA') {
+            $query->where('score', '>=', 75);
+        } elseif ($filterNivel === 'B' || $filterNivel === 'MEDIA') {
+            $query->whereBetween('score', [55, 74]);
+        } elseif ($filterNivel === 'C' || $filterNivel === 'BAJA') {
+            $query->whereBetween('score', [35, 54]);
+        } elseif ($filterNivel === 'D' || $filterNivel === 'DESCARTAR') {
+            $query->where('score', '<', 35);
         }
 
         // Filtro por Fecha (Período o Rango Personalizado)
@@ -74,10 +82,15 @@ class AfinidadController extends Controller
             ->withQueryString();
 
         $stats = [
-            'total_evaluadas' => $baseActiveQuery()->count(),
-            'alta' => $baseActiveQuery()->where('score', '>=', 70)->count(),
-            'media' => $baseActiveQuery()->whereBetween('score', [40, 69])->count(),
-            'baja' => $baseActiveQuery()->whereBetween('score', [20, 39])->count(),
+            'total_evaluadas' => $baseActiveQuery(false)->count(),
+            'nivel_a' => (clone $baseActiveQuery(true))->where('score', '>=', 75)->count(),
+            'nivel_b' => (clone $baseActiveQuery(true))->whereBetween('score', [55, 74])->count(),
+            'nivel_c' => (clone $baseActiveQuery(true))->whereBetween('score', [35, 54])->count(),
+            'nivel_d' => (clone $baseActiveQuery(true))->where('score', '<', 35)->count(),
+            // Claves de compatibilidad
+            'alta' => (clone $baseActiveQuery(true))->where('score', '>=', 75)->count(),
+            'media' => (clone $baseActiveQuery(true))->whereBetween('score', [55, 74])->count(),
+            'baja' => (clone $baseActiveQuery(true))->whereBetween('score', [35, 54])->count(),
         ];
 
         return view('afinidad', compact(

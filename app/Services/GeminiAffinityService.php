@@ -15,7 +15,7 @@ class GeminiAffinityService
     public function __construct()
     {
         $this->apiKey = env('GEMINI_API_KEY');
-        $this->model = env('GEMINI_MODEL', 'gemini-3.8-flash');
+        $this->model = env('GEMINI_MODEL', 'gemini-2.0-flash');
         $this->loadAgencyProfile();
     }
 
@@ -25,97 +25,158 @@ class GeminiAffinityService
     }
 
     /**
-     * Evalúa una licitación contra el perfil corporativo integral de Tornus S.A.S.
+     * Evalúa una licitación contra el modelo de 3 pasos de Tornus S.A.S.
      */
     public function evaluate(Licitacion $licitacion): array
     {
-        $profileJson = json_encode($this->agencyProfile, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $objetoUpper = mb_strtoupper(trim((string)$licitacion->objeto), 'UTF-8');
+        $modalidadUpper = mb_strtoupper(trim((string)$licitacion->tipo_proceso), 'UTF-8');
+        $cuantia = (float)($licitacion->cuantia ?? 0);
 
+        // Pre-filtro F1: Contratación directa de persona natural / apoyo a la gestión
+        $isContratacionDirecta = str_contains($modalidadUpper, 'DIRECTA');
+        $isApoyoGestion = str_contains($objetoUpper, 'APOYO A LA GESTIÓN') 
+            || str_contains($objetoUpper, 'APOYO A LA GESTION')
+            || str_contains($objetoUpper, 'PRESTACIÓN DE SERVICIOS PROFESIONALES DE APOYO')
+            || str_contains($objetoUpper, 'PRESTACION DE SERVICIOS PROFESIONALES DE APOYO')
+            || str_contains($objetoUpper, 'HONORARIOS');
+
+        if ($isContratacionDirecta && $isApoyoGestion) {
+            $discard = [
+                'filtro_descarte' => 'F1',
+                'puntajes' => [
+                    'encaje_linea' => 0,
+                    'experiencia' => 0,
+                    'entidad' => 0,
+                    'escala' => 0,
+                    'territorio_tiempo' => 0
+                ],
+                'score' => 0,
+                'nivel' => 'D',
+                'etiqueta' => 'DESCARTAR',
+                'lineas_tornus' => [],
+                'antecedente_tornus' => null,
+                'componente_aliado' => null,
+                'categoria' => 'Otro',
+                'dictamen' => 'Proceso de contratación directa dirigido a persona natural para apoyo a la gestión. Incompatible con la figura corporativa de Tornus S.A.S.',
+                'punto_clave' => 'Filtro F1: Contratación de persona natural.',
+                'estrategia_postulacion' => 'Descartar'
+            ];
+            $this->saveEvaluation($licitacion, $discard);
+            return $discard;
+        }
+
+        // Pre-filtro F3: Cuantía conocida menor a $100M COP
+        if ($cuantia > 0 && $cuantia < 100000000) {
+            $discard = [
+                'filtro_descarte' => 'F3',
+                'puntajes' => [
+                    'encaje_linea' => 0,
+                    'experiencia' => 0,
+                    'entidad' => 0,
+                    'escala' => 0,
+                    'territorio_tiempo' => 0
+                ],
+                'score' => 0,
+                'nivel' => 'D',
+                'etiqueta' => 'DESCARTAR',
+                'lineas_tornus' => [],
+                'antecedente_tornus' => null,
+                'componente_aliado' => null,
+                'categoria' => 'Otro',
+                'dictamen' => 'Cuantía presupuestada de ' . $licitacion->formatted_cuantia . ' inferior al umbral mínimo corporativo de $100M COP establecido por Tornus.',
+                'punto_clave' => 'Filtro F3: Cuantía menor al mínimo de $100M COP.',
+                'estrategia_postulacion' => 'Descartar'
+            ];
+            $this->saveEvaluation($licitacion, $discard);
+            return $discard;
+        }
+
+        // Prompt Oficial Estructurado de 3 Pasos
         $prompt = <<<EOT
-Actúa como analista de inteligencia comercial especializado en identificar y evaluar oportunidades de contratación para TORNUS en SECOP II y otros sistemas de contratación pública, portales de convocatorias y plataformas de organismos nacionales e internacionales.
-Tu objetivo es encontrar oportunidades con alta afinidad real con el portafolio de Tornus. Analiza el propósito de la contratación, las actividades, los entregables y el alcance técnico; no te limites a coincidencias de palabras en el título.
+ROL:
+Eres el analista de nuevos negocios de Tornus S.A.S., agencia colombiana de placebranding y marketing de destinos. Evalúas procesos de contratación pública de SECOP II para decidir si Tornus debe presentarse. Eres estricto: es preferible descartar un proceso dudoso que hacer perder tiempo al equipo comercial. Nunca asignes un puntaje por defecto.
 
-1. CONTEXTO EMPRESARIAL DE TORNUS:
-TORNUS es una agencia creativa especializada en promoción de destinos, construcción y posicionamiento de marcas territoriales, y producción de contenidos de marca —place branding y branded content—.
-Combina estrategia, creatividad, producción audiovisual, comunicación, promoción comercial, inteligencia de mercados y herramientas digitales para fortalecer la visibilidad, el posicionamiento y la competitividad de destinos y organizaciones.
-REGLA MANDATORIA DE ALCANCE SECTORIAL: El turismo es su especialidad central, pero sus capacidades creativas, audiovisuales, publicitarias y de contenido también son aplicables a otros sectores. Por tanto, NO descartes una oportunidad de comunicación o producción audiovisual únicamente porque no mencione turismo.
+PERFIL DE TORNUS:
+Líneas de servicio:
+1. Branding y marca de destino o territorio
+2. Inteligencia de mercados y estrategia de datos turísticos
+3. Planeación estratégica de turismo y marketing territorial
+4. Desarrollo creativo y producción de contenido
+5. Activación táctica, campañas, plan de medios y comunicaciones
+6. Fortalecimiento de capacidades (formación a prestadores, empresarios y entidades)
 
-LÍNEAS DE SERVICIO QUE DEBES RECONOCER:
-- A. Estrategia y promoción turística: Planes de marketing de destinos, campañas de demanda turística, promoción de nichos.
-- B. Marca territorial y de destino: Place branding, identidad visual, narrativa territorial, marcas ciudad y región.
-- C. Creatividad, publicidad y comunicación: Campañas 360°, comunicación institucional, relaciones públicas, pauta digital y exterior, activaciones de marca.
-- D. Producción audiovisual y branded content: Videos promocionales, documentales, series de contenido, fotografía y bancos de imágenes, cobertura en tiempo real, storytelling.
-- E. Promoción comercial y activaciones internacionales: Ferias (ANATO, FITUR), lanzamientos BTL, ruedas de negocios, FamTrips/PressTrips. (Nota: Evalúa la logística como componente de estas estrategias; no asumas que cualquier contrato puramente logístico tiene alta afinidad).
-- F. Desarrollo de producto y contenidos turísticos especializados: Rutas, circuitos, guías turísticas, aviturismo, senderismo, turismo cultural/comunitario, señalética interpretativa.
-- G. Competitividad, formación y fortalecimiento de capacidades en el sector turístico:
-  Estrategias de fortalecimiento empresarial y desarrollo de capacidades locales para la gestión y el desarrollo turístico, programas de formación, talleres, asistencia técnica, mentoría y fortalecimiento a mipymes, emprendimientos y prestadores turísticos.
-  REGLA OBLIGATORIA PARA FORMACIÓN Y FORTALECIMIENTO TURÍSTICO:
-  Todo proyecto orientado a formar, capacitar, transferir metodologías o fortalecer capacidades de actores, prestadores o mipymes turísticas tiene ALTA AFINIDAD con Tornus (Línea G y Línea F). Pondera estos proyectos con puntuación positiva (Score 65 a 85).
-  Si el proyecto incluye como componente complementario la entrega de bienes, dotaciones, insumos o kits de fortalecimiento a las mipymes/emprendimientos turísticos, NO LO DESCARTES: clasifícalo como Viable y sugiere "Consorcio / UT" (para que un aliado logístico o de suministros asuma la compra/entrega mientras Tornus lidera el componente técnico, formativo y metodológico).
-- H. Inteligencia de mercados y analítica: Captación, procesamiento y análisis de datos turísticos, diagnóstico de demanda y sentimiento. (Nota: Valida el alcance antes de atribuir capacidades en estadística o sistemas de información ajenos).
-- I. Herramientas y presencia digital para destinos: Portales y ecosistemas digitales orientados a promoción turística y digitalización de oferta. (Nota: No generalices estas capacidades como experiencia en software empresarial, ciberseguridad o ERP).
+Contratos acreditables:
+- Promoción y posicionamiento turístico de La Guajira (Descubre La Guajira) - LP-006-2025 Gobernación de La Guajira ($6.355M COP)
+- Promoción turística del Valle del Cauca (Visit Valle del Cauca) - Cali-Valle Bureau ($2.380M COP)
+- Fortalecimiento de la competitividad y estrategia turística del Magdalena - Cámara de Comercio de Santa Marta ($2.170M COP)
+- Campaña y posicionamiento de destino Armenia y ruedas de negocios - Alcaldía de Armenia ($1.450M COP)
+- Estrategia y producción de contenidos Colombia El País de la Belleza
 
-CASOS Y REFERENCIAS DEL PORTAFOLIO:
-Colombia El País de la Belleza, Descubre La Guajira, Visit Valle del Cauca, Armenia (campaña y ruedas de negocios), Atlántico es más, Santa Marta naturalmente mágica, Cartagena (marca y conectividad), Perú / Inti Raymi, Corona, Aeroméxico y Stella Artois.
-(Nota: Utiliza estos casos como evidencia de afinidad temática y funcional. No inventes experiencia contractual ni facturación no verificada).
+Mercados prioritarios: región Caribe, Bogotá, Medellín, Cali y los principales destinos turísticos de Colombia.
+Rango de cuantía óptimo: $200M a $3.000M COP. Cuantía mínima: $100M COP.
 
-DATOS DE LA LICITACIÓN CONVOCADA:
-- Identificador / Referencia: {$licitacion->referencia}
-- Entidad Convocante: {$licitacion->entidad}
-- Departamento / Región: {$licitacion->departamento}
-- Objeto del Contrato: {$licitacion->objeto}
-- Cuantía / Presupuesto Oficial: {$licitacion->formatted_cuantia} {$licitacion->moneda}
-- Modalidad de Contratación: {$licitacion->tipo_proceso}
+DATOS DEL PROCESO A EVALUAR:
+Entidad: {$licitacion->entidad}
+Objeto: {$licitacion->objeto}
+Modalidad: {$licitacion->tipo_proceso}
+Tipo de contrato: {$licitacion->tipo_contrato}
+Cuantía: {$licitacion->formatted_cuantia} {$licitacion->moneda}
+Departamento / municipio: {$licitacion->departamento} / {$licitacion->municipio}
+Fecha de cierre: {$licitacion->fecha_cierre}
+Etapa: {$licitacion->fase} {$licitacion->estado}
 
-2. FILTROS PARA REDUCIR FALSOS POSITIVOS (DESCARTE O EXCLUSIÓN TOTAL):
-Asigna Score 0 (Descarte inmediato / NO APLICA) a procesos cuyo alcance sea:
-- Construcción, obras civiles, pavimentación, acueductos, alcantarillados, puentes, vías o infraestructura física.
-- Mantenimiento físico, preventivo o correctivo de maquinaria, calderas, plantas eléctricas, vehículos o equipos industriales/electromecánicos.
-- Manufactura, confección, calzado, cuero, textiles o metalmecánica.
-- Suministro puro de insumos, mercancías, ferretería, repuestos, combustibles o bienes aislados sin componente técnico, formativo ni creativo (ATENCIÓN: NO aplica a kits de herramientas o insumos de fortalecimiento empresarial entregados en el marco de programas de formación y desarrollo turístico de la Línea G).
-- Aseo, vigilancia, alimentación escolar (PAE) o transporte escolar/pasajeros aislado.
-- Venta de tiquetes, alojamiento o intermediación de viajes sin estrategia promocional.
-- Alquiler de sonido, tarimas, carpas o sillas como único servicio sin montaje ni conceptualización.
-- Impresión de piezas ya diseñadas, sin estrategia ni creación de contenidos.
-- Desarrollo de software empresarial, ciberseguridad o infraestructura de TI ajenos al marketing.
-- Consultorías jurídicas, contables, clínicas o de ingeniería civil/geotécnica.
-- Formación técnica en oficios industriales ajenos a turismo, cultura o creatividad (ej. manufactura de cuero, calzado, soldadura, mecánica, etc. ATENCIÓN: Toda formación en turismo, desarrollo turístico local, fortalecimiento de capacidades para prestadores o mipymes turísticas, marketing o innovación turística es ALTAMENTE AFÍN a Tornus).
-- Servicios individuales que no permitan la participación de una persona jurídica.
-EXCEPCIÓN DE PROYECTO INTEGRAL: No descartes automáticamente un proyecto integral por contener alguna de estas actividades secundarias si el núcleo es turístico o creativo (ej. 'Fortalecimiento turístico con insumos' es afín vía Consorcio/UT para formación).
+PROCEDIMIENTO DE EVALUACIÓN (Síguelo estrictamente en orden):
+Paso 1. Filtros de descarte. Si se cumple cualquiera, score = 0, nivel = D, y no evalúes el resto:
+- F1: contratación directa de prestación de servicios profesionales o de apoyo a la gestión dirigida a persona natural.
+- F2: el objeto no incluye marca, promoción, mercadeo, comunicación, medios, contenido, estrategia, inteligencia de mercados ni formación. La palabra "turismo" en el nombre de la entidad, de un edificio o de un proyecto NO cuenta como encaje.
+- F3: cuantía conocida menor a $100M COP.
 
-3. EVALUACIÓN Y PONDERACIÓN EXACTA DE AFINIDAD (Score 0 a 100):
-Calcula el puntaje utilizando estrictamente estos 4 pesos oficiales:
-- Criterio 1: Correspondencia del objeto y alcance con las líneas de servicio A-I (35 puntos max).
-- Criterio 2: Correspondencia de actividades y entregables (35 puntos max).
-- Criterio 3: Similitud con casos del portafolio (20 puntos max).
-- Criterio 4: Correspondencia con sectores, públicos y mercados atendidos (10 puntos max).
-Valora cada criterio de 0 a 5 (0=sin correspondencia, 1=marginal, 2=parcial, 3=relevante, 4=alta, 5=directa).
-Multiplica la valoración dividida entre 5 por el peso respectivo y suma los 4 factores.
+Paso 2. Rúbrica (suma de 0 a 100). Evalúa solo lo que dice el objeto y los documentos, no la entidad:
+- Encaje con líneas de servicio (0-35): 35 promoción/posicionamiento de destino, branding territorial, estrategia de marketing turístico o inteligencia turística; 25 plan de medios con estrategia, campañas, contenido o formación a prestadores/empresarios; 15 famtrips, ferias, activaciones o eventos promocionales; 0-5 logística o suministro puro.
+- Experiencia acreditable (0-25): 25 contratos similares en objeto y cuantía; 15 experiencia parcial o de menor cuantía; 5 solo con aliado; 0 sin experiencia relacionada.
+- Tipo de entidad (0-15): 15 entidad de turismo, FONTUR, gobernación o alcaldía con objeto turístico; 8 entidad pública con objeto de comunicación institucional; 3 otra.
+- Escala y capacidad (0-15): 15 dentro del rango óptimo ($200M a $3.000M); 8 por encima (requiere consorcio) o entre el mínimo y el rango óptimo; 3 cerca del mínimo.
+- Territorio y tiempo (0-10): +5 mercado prioritario; +5 más de 10 días hábiles para ofertar o etapa de RFI.
 
-BANDAS OFICIALES DE CLASIFICACIÓN:
-- 85 a 100: Afinidad muy alta (Nivel: "ALTA"). Prioridad comercial inmediata.
-- 70 a 84: Afinidad alta (Nivel: "ALTA"). Viable y estratégica.
-- 50 a 69: Afinidad media (Nivel: "MEDIA"). Requiere revisión de alcance o conformación de Consorcio / UT.
-- 0 a 49: Afinidad baja (Nivel: "BAJA"). Descartar del radar.
+Paso 3. Nivel:
+- A (75-100): APLICA DIRECTO
+- B (55-74): APLICA CON ALIADO
+- C (35-54): MONITOREAR
+- D (0-34): DESCARTAR
+Regla de corte: si Tornus no cumple la experiencia habilitante ni con un aliado, el nivel máximo es C.
+Si la información no alcanza para evaluar, devuelve nivel "PENDIENTE" y score null.
 
-4. EVALUACIÓN SEPARADA DE VIABILIDAD PARA PARTICIPAR:
-Clasifica la viabilidad en una de estas 4 categorías oficiales:
-- "Por verificar"
-- "Potencialmente viable, con los soportes disponibles"
-- "Requiere aliado o estructura de participación permitida"
-- "No viable por una restricción confirmada"
-(Nota financiera: Tornus posee Capital de Trabajo RUP de $5.058M COP, Liquidez 8,17, Endeudamiento 0,11. Respalda postulación directa hasta $12.600M COP. Si supera ese valor o exige logística pesada, debe clasificarse como 'Requiere aliado o estructura de participación permitida').
+Paso 4. Dictamen:
+Debe ser coherente con el nivel: un nivel A o B nunca dice "no destinar esfuerzos" y un nivel D nunca dice "aplica". Menciona por nombre el contrato de Tornus que sirve de antecedente, si existe. Si el nivel es B, di qué componente debe cubrir el aliado.
 
-ESTRUCTURA DE RESPUESTA REQUERIDA (ESTRICTAMENTE JSON VÁLIDO, SIN BLOQUES MARKDOWN NI TEXTO ADICIONAL):
+EJEMPLOS DE CALIBRACIÓN:
+- "Estrategia integral de promoción turística nacional y marketing de destinos", FONTUR, $850M -> A (líneas 1-3, entidad de turismo, cuantía en rango).
+- "Plan de medios y generación de contenidos institucionales", Municipio de Cúcuta, $1.440M -> B (línea 5, entidad con comunicación institucional, requiere validar experiencia en compra de medios).
+- "Fortalecimiento de capacidades turísticas de mipymes con formación y suministro de insumos", FDL La Candelaria -> B (línea 6, aliado logístico para el suministro).
+- "Logística de famtrip en Bahía Málaga", FONTUR -> C (activación, pero el objeto es logístico).
+- "Revisión energética del Centro para la Biodiversidad y el Turismo", SENA -> D por F2.
+- "Apoyo a la gestión en la Secretaría de Turismo", contratación directa, $8M -> D por F1.
+
+FORMATO DE RESPUESTA (ESTRICTAMENTE JSON VÁLIDO, SIN BLOQUES MARKDOWN NI TEXTO ADICIONAL):
 {
-  "score": (entero entre 0 y 100 resultante de la suma ponderada),
-  "nivel": ("ALTA" si score >= 70, "MEDIA" si score entre 50 y 69, "BAJA" si score < 50),
-  "lineas_afines": ["Línea A - Estrategia y promoción turística", "Línea D - Producción audiovisual..."],
-  "viabilidad_participacion": "Potencialmente viable, con los soportes disponibles" | "Requiere aliado o estructura de participación permitida" | "Por verificar" | "No viable por una restricción confirmada",
-  "justificacion": "Explicación clara de por qué encaja o no con Tornus, qué actividades y entregables sustentan la afinidad y qué caso del portafolio guarda mayor relación.",
-  "servicios_sugeridos": ["Servicio o entregable clave 1", "Servicio o entregable clave 2"],
-  "estrategia_postulacion": "Postulación Directa" | "Consorcio / UT" | "Descartar",
-  "puntos_clave": "Requisitos críticos, aspectos por verificar (experiencia, RUP, plazos) y necesidad eventual de aliados."
+  "filtro_descarte": null,
+  "puntajes": {
+    "encaje_linea": 0,
+    "experiencia": 0,
+    "entidad": 0,
+    "escala": 0,
+    "territorio_tiempo": 0
+  },
+  "score": 0,
+  "nivel": "A",
+  "etiqueta": "APLICA DIRECTO",
+  "lineas_tornus": [1, 3],
+  "antecedente_tornus": "Nombre del contrato o null",
+  "componente_aliado": "Componente a cubrir por aliado o null",
+  "categoria": "Promoción de destino",
+  "dictamen": "Máximo 3 frases coherentes con el nivel.",
+  "punto_clave": "La única cosa crítica que el equipo comercial debe verificar antes de decidir."
 }
 EOT;
 
@@ -123,7 +184,7 @@ EOT;
             try {
                 $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
 
-                $response = Http::withoutVerifying()->timeout(25)->post($endpoint, [
+                $response = Http::withoutVerifying()->timeout(30)->post($endpoint, [
                     'contents' => [
                         [
                             'parts' => [
@@ -132,7 +193,7 @@ EOT;
                         ]
                     ],
                     'generationConfig' => [
-                        'temperature' => 0.2,
+                        'temperature' => 0.1,
                         'responseMimeType' => 'application/json'
                     ]
                 ]);
@@ -140,7 +201,7 @@ EOT;
                 if ($response->successful()) {
                     $json = $response->json();
 
-                    // Registro automático de consumo real de tokens desde Google Gemini
+                    // Registro de consumo de tokens
                     $usage = $json['usageMetadata'] ?? [];
                     $promptTokens = (int)($usage['promptTokenCount'] ?? 0);
                     $candidateTokens = (int)($usage['candidatesTokenCount'] ?? 0);
@@ -154,7 +215,7 @@ EOT;
                                 market: MarketService::current()
                             );
                         } catch (\Throwable $e) {
-                            Log::warning("No se pudo registrar AiTokenUsage: " . $e->getMessage());
+                            Log::warning("AiTokenUsage record error: " . $e->getMessage());
                         }
                     }
 
@@ -168,242 +229,105 @@ EOT;
                     }
                     $result = json_decode(trim($cleanJson), true);
 
-                    if (is_array($result) && isset($result['score'])) {
+                    if (is_array($result) && (isset($result['score']) || isset($result['nivel']))) {
+                        // Consistencia de subpuntajes
+                        if (isset($result['puntajes']) && is_array($result['puntajes'])) {
+                            $calcScore = array_sum($result['puntajes']);
+                            if ($result['score'] === null && $result['nivel'] !== 'PENDIENTE') {
+                                $result['score'] = $calcScore;
+                            }
+                        }
+
+                        // Consistencia de nivel y etiqueta
+                        $score = $result['score'];
+                        if ($result['nivel'] === 'PENDIENTE' || $score === null) {
+                            $result['nivel'] = 'PENDIENTE';
+                            $result['etiqueta'] = 'PENDIENTE';
+                        } elseif ($score >= 75) {
+                            $result['nivel'] = 'A';
+                            $result['etiqueta'] = 'APLICA DIRECTO';
+                        } elseif ($score >= 55) {
+                            $result['nivel'] = 'B';
+                            $result['etiqueta'] = 'APLICA CON ALIADO';
+                        } elseif ($score >= 35) {
+                            $result['nivel'] = 'C';
+                            $result['etiqueta'] = 'MONITOREAR';
+                        } else {
+                            $result['nivel'] = 'D';
+                            $result['etiqueta'] = 'DESCARTAR';
+                        }
+
                         $this->saveEvaluation($licitacion, $result);
                         return $result;
                     }
+                } else {
+                    Log::warning("Gemini API error {$response->status()}: " . substr($response->body(), 0, 200));
                 }
             } catch (\Exception $e) {
-                Log::warning("Gemini API call failed, falling back to heuristic engine: " . $e->getMessage());
+                Log::warning("Gemini API call failed: " . $e->getMessage());
             }
         }
 
-        // Fallback Heurístico determinista alineado con la rúbrica oficial de 4 factores
-        $fallback = $this->heuristicEvaluation($licitacion);
-        $this->saveEvaluation($licitacion, $fallback);
-        return $fallback;
-    }
-
-    /**
-     * Motor heurístico determinista de afinidad fundamentado en los 4 factores oficiales
-     */
-    protected function heuristicEvaluation(Licitacion $licitacion): array
-    {
-        $text = mb_strtoupper($licitacion->objeto . ' ' . $licitacion->entidad . ' ' . $licitacion->departamento, 'UTF-8');
-        
-        // 0. Detección especial de proyectos de Formación, Capacitación o Fortalecimiento Turístico (Línea G)
-        $isTourismCapacityBuilding = (str_contains($text, 'TURIS') || str_contains($text, 'TURÍST') || str_contains($text, 'DESTINO')) &&
-            (str_contains($text, 'FORTALECIMIENTO') || str_contains($text, 'FORMACI') || str_contains($text, 'CAPACIDAD') || str_contains($text, 'CAPACITA') || str_contains($text, 'TALLER') || str_contains($text, 'ASISTENCIA') || str_contains($text, 'MIPYME'));
-
-        // 1. Descarte inmediato por exclusión total estricta (no aplica si es fortalecimiento turístico)
-        if (!$isTourismCapacityBuilding) {
-            $hardExclusions = [
-                'OBRA CIVIL', 'PAVIMENTACIÓN', 'PAVIMENTACION', 'ACUEDUCTO', 'ALCANTARILLADO',
-                'VIGILANCIA', 'SEGURIDAD PRIVADA', 'ARMAMENTO', 'MUNICIONES',
-                'ASEO', 'LIMPIEZA', 'CAFETERÍA', 'RECOLECCIÓN DE RESIDUOS',
-                'MEDICAMENTO', 'HOSPITALARIO', 'QUIRÚRGICO', 'QUIRURGICO', 'REACTIVOS',
-                'ALIMENTACIÓN ESCOLAR', 'PAE', 'COMBUSTIBLE', 'MAQUINARIA PESADA', 'PARQUE AUTOMOTOR',
-                'INTERVENTORÍA DE OBRA', 'INTERVENTORIA DE OBRA', 'SEGUROS', 'PÓLIZAS', 'POLIZAS',
-                // Mantenimiento físico, electromecánico, de equipos y maquinaria
-                'MANTENIMIENTO DE EQUIPO', 'MANTENIMIENTO DE MAQUINARIA', 'MANTENIMIENTO INDUSTRIAL',
-                'MANTENIMIENTO ELECTROMECÁNICO', 'MANTENIMIENTO ELECTROMECANICO', 'MANTENIMIENTO PREVENTIVO Y CORRECTIVO',
-                'MANTENIMIENTO CORRECTIVO', 'MANTENIMIENTO PREVENTIVO DE EQUIPO', 'MANTENIMIENTO LOCATIVO',
-                'MANTENIMIENTO DE VEHÍCULO', 'MANTENIMIENTO DE VEHICULO', 'MANTENIMIENTO DE AIRE', 'CALDERAS',
-                // Manufactura, confección, cuero, calzado, textiles, metalmecánica
-                'MANUFACTURA', 'CUERO', 'CALZADO', 'TEXTIL', 'CONFECCIÓN', 'CONFECCION', 'METALMECÁNICA', 'METALMECANICA',
-                // Ferretería, autopartes, repuestos, insumos industriales
-                'FERRETERÍA', 'FERRETERIA', 'REPUESTOS', 'LUBRICANTES', 'LLANTAS', 'INSUMOS DE LABORATORIO',
-                // Obras e infraestructura vial/geotécnica ajenas
-                'ESTUDIOS Y DISEÑOS VIALES', 'ESTUDIOS GEOTÉCNICOS', 'ESTUDIOS GEOTECNICOS', 'PUENTE PEATONAL',
-                'PUENTE VEHICULAR', 'MEJORAMIENTO DE VÍAS', 'MEJORAMIENTO DE VIAS', 'MEJORAMIENTO DE VIVIENDA',
-                'ESTUDIOS DE SUELOS', 'ALUMBRADO PÚBLICO', 'ALUMBRADO PUBLICO'
-            ];
-
-            foreach ($hardExclusions as $ex) {
-                if (str_contains($text, $ex)) {
-                    return [
-                        'score' => 0,
-                        'nivel' => 'BAJA',
-                        'aplica' => 'NO APLICA',
-                        'lineas_afines' => [],
-                        'justificacion' => "El proceso corresponde a actividades de {$ex} o conexas, las cuales constituyen un criterio de exclusión total para Tornus S.A.S. No presenta componentes de promoción de destinos, creatividad, comunicaciones ni desarrollo turístico.",
-                        'servicios_sugeridos' => [],
-                        'estrategia_postulacion' => 'Descartar',
-                        'puntos_clave' => 'Objeto contractual incompatible con el Registro Único de Proponentes (RUP) y el core estratégico de la agencia.'
-                    ];
-                }
-            }
-        }
-
-        // Factor 1: Correspondencia Objeto y Alcance con Líneas A a I (Máximo 35 puntos)
-        $factor1 = 0;
-        $matchedLines = [];
-
-        $linesMap = [
-            'Línea A - Estrategia y Promoción Turística' => ['PROMOCIÓN TURÍSTICA', 'DESTINO', 'MERCADEO TURÍSTICO', 'REACTIVACIÓN TURÍSTICA', 'ATRACCIÓN DE VISITANTES', 'PLAN DE MARKETING'],
-            'Línea B - Marca Territorial (Place Branding)' => ['MARCA CIUDAD', 'MARCA REGIÓN', 'MARCA DESTINO', 'PLACE BRANDING', 'IDENTIDAD VISUAL', 'NARRATIVA DE MARCA'],
-            'Línea C - Creatividad y Comunicación 360°' => ['CAMPAÑA PUBLICITARIA', 'CREATIVIDAD', 'PLAN DE MEDIOS', 'PAUTA', 'DIFUSIÓN INSTITUCIONAL', 'COMUNICACIONES'],
-            'Línea D - Producción Audiovisual Cine/Digital' => ['AUDIOVISUAL', 'FOTOGRAFÍA', 'BANCO DE IMÁGENES', 'PRODUCCIÓN DE VIDEO', 'SPOT', 'RODAJE', 'DOCUMENTAL'],
-            'Línea E - Promoción Comercial, Ferias y BTL' => ['FERIAS', 'ANATO', 'FITUR', 'EVENTO', 'BTL', 'RUEDA DE NEGOCIOS', 'FAMTRIP', 'PRESSTRIP', 'STAND'],
-            'Línea F - Desarrollo de Producto Turístico' => ['RUTA TURÍSTICA', 'GUÍA TURÍSTICA', 'AVITURISMO', 'TURISMO COMUNITARIO', 'SEÑALÉTICA', 'GASTRONOMÍA'],
-            'Línea G - Competitividad, Formación y Fortalecimiento Turístico' => [
-                'FORTALECIMIENTO', 'CAPACITACIÓN', 'CAPACITACION', 'FORMACIÓN', 'FORMACION',
-                'ASISTENCIA TÉCNICA', 'ASISTENCIA TECNICA', 'TALLERES', 'CAPACIDADES',
-                'MIPYMES', 'DESARROLLO TURÍSTICO', 'DESARROLLO TURISTICO', 'PRESTADORES TURÍSTICOS'
-            ],
-            'Línea H - Inteligencia de Mercados y Analítica' => ['INTELIGENCIA DE MERCADO', 'BIG DATA', 'ANALÍTICA', 'PERFIL DEL VISITANTE', 'OBSERVATORIO'],
-            'Línea I - Plataformas y Presencia Digital' => ['PORTAL WEB', 'PÁGINA WEB', 'APLICACIÓN MÓVIL', 'APP', 'DIGITALIZACIÓN', 'PLATAFORMA INTERACTIVA']
+        // Si Gemini falla o no responde JSON válido, queda PENDIENTE (nunca 45% inventado)
+        $pending = [
+            'filtro_descarte' => null,
+            'puntajes' => null,
+            'score' => null,
+            'nivel' => 'PENDIENTE',
+            'etiqueta' => 'PENDIENTE',
+            'lineas_tornus' => [],
+            'antecedente_tornus' => null,
+            'componente_aliado' => null,
+            'categoria' => $licitacion->categoria ?: 'General',
+            'dictamen' => 'Propuesta pendiente de análisis con pliegos de condiciones.',
+            'punto_clave' => 'Re-evaluar cuando estén disponibles los documentos definitivos.',
+            'estrategia_postulacion' => 'Por verificar'
         ];
 
-        foreach ($linesMap as $lineName => $keywords) {
-            foreach ($keywords as $kw) {
-                if (str_contains($text, $kw)) {
-                    $factor1 = min(35, $factor1 + 12);
-                    $matchedLines[] = $lineName;
-                    break;
-                }
-            }
-        }
-
-        if ($isTourismCapacityBuilding && !in_array('Línea G - Competitividad, Formación y Fortalecimiento Turístico', $matchedLines)) {
-            $factor1 = min(35, $factor1 + 24);
-            $matchedLines[] = 'Línea G - Competitividad, Formación y Fortalecimiento Turístico';
-        }
-
-        $matchedLines = array_values(array_unique($matchedLines));
-
-        // Factor 2: Correspondencia Actividades y Entregables (Máximo 35 puntos)
-        $factor2 = 0;
-        $deliverablesKeywords = [
-            'CAMPAÑA' => 8, 'PIEZAS' => 7, 'CONTENIDO' => 7, 'PUBLICIDAD' => 7,
-            'VIDEO' => 8, 'FOTO' => 6, 'DISEÑO' => 7, 'REDES SOCIALES' => 7,
-            'STAND' => 8, 'LOGÍSTICA' => 6, 'OPERACIÓN' => 6, 'MATERIAL PROMOCIONAL' => 7,
-            'ESTRATEGIA' => 8, 'DIAGNÓSTICO' => 6, 'PLAN' => 6, 'PORTAL' => 8,
-            'FORMACIÓN' => 8, 'FORMACION' => 8, 'CAPACITACIÓN' => 8, 'CAPACITACION' => 8,
-            'TALLERES' => 7, 'ASISTENCIA TÉCNICA' => 7, 'TRANSFERENCIA' => 7, 'FORTALECIMIENTO' => 7,
-            'CAPACIDADES' => 7, 'MENTORÍA' => 6
-        ];
-        foreach ($deliverablesKeywords as $deliv => $points) {
-            if (str_contains($text, $deliv)) {
-                $factor2 = min(35, $factor2 + $points);
-            }
-        }
-
-        // Factor 3: Similitud con Casos del Portafolio y Destinos (Máximo 20 puntos)
-        $factor3 = 0;
-        $portfolioKeywords = [
-            'TURISMO' => 10, 'DESTINO' => 8, 'CULTURA' => 6, 'PATRIMONIO' => 6,
-            'VALLE DEL CAUCA' => 8, 'GUAJIRA' => 8, 'ATLÁNTICO' => 8, 'SANTA MARTA' => 8,
-            'BOGOTÁ' => 6, 'ARMENIA' => 8, 'CUSCO' => 8, 'PAÍS DE LA BELLEZA' => 10
-        ];
-        foreach ($portfolioKeywords as $pkw => $points) {
-            if (str_contains($text, $pkw)) {
-                $factor3 = min(20, $factor3 + $points);
-            }
-        }
-
-        // Factor 4: Sector y Entidad Objetivo (Máximo 10 puntos)
-        $factor4 = 0;
-        $entityKeywords = [
-            'FONTUR' => 10, 'MINCIT' => 10, 'PROCOLOMBIA' => 10, 'PROMPERU' => 10,
-            'IDT' => 9, 'BUREAU' => 9, 'TURISMO' => 8, 'DESARROLLO ECONÓMICO' => 7,
-            'CULTURA' => 6, 'CÁMARA DE COMERCIO' => 8, 'GOBERNACIÓN' => 5, 'ALCALDÍA' => 4
-        ];
-        foreach ($entityKeywords as $ekw => $points) {
-            if (str_contains($text, $ekw)) {
-                $factor4 = min(10, $factor4 + $points);
-            }
-        }
-
-        // Sumatoria total (0 - 100)
-        $score = $factor1 + $factor2 + $factor3 + $factor4;
-
-        // Proyectos de Formación y Fortalecimiento Turístico tienen piso mínimo de afinidad (Línea G)
-        if ($isTourismCapacityBuilding) {
-            $score = max(65, $score);
-        }
-
-        // Si no hubo ningún cruce con líneas de servicio ni entregables, el score base es mínimo
-        if ($factor1 === 0 && $factor2 === 0) {
-            $score = min(25, $score);
-        }
-
-        $cuantia = (float)($licitacion->cuantia ?? 0);
-        $capitalTrabajo = 5058026000; // $5.058M COP
-
-        if ($isTourismCapacityBuilding && (str_contains($text, 'SUMINISTRO') || str_contains($text, 'INSUMOS') || str_contains($text, 'BIENES') || str_contains($text, 'DOTACI'))) {
-            $nivel = ($score >= 70) ? 'ALTA' : 'MEDIA';
-            $aplica = 'APLICA CON CONDICIONES';
-            $estrategia = 'Consorcio / UT';
-            $justificacion = "Oportunidad afín en fortalecimiento de capacidades y desarrollo turístico (Línea G). Contempla formación, talleres y desarrollo empresarial a mipymes turísticas. Al incluir entrega de bienes o insumos, la estrategia recomendada es conformar Consorcio o Unión Temporal con un socio logístico o de suministros.";
-            $puntosClave = "Viabilidad: Requiere aliado o estructura de participación permitida · Tornus puede liderar la dirección técnica, metodológica y formativa, delegando la compra y distribución de insumos a un aliado operativo.";
-            $servicios = [
-                'Diseño metodológico y ejecución del programa de formación y transferencia de capacidades turísticas',
-                'Asistencia técnica, mentorías y diagnóstico de competitividad para mipymes turísticas',
-                'Estructuración de kits y herramientas de fortalecimiento comercial y de marca local'
-            ];
-        } elseif ($score >= 85) {
-            $nivel = 'ALTA';
-            $aplica = 'APLICA';
-            $estrategia = ($cuantia > 10000000000) ? 'Consorcio / UT' : 'Postulación Directa';
-            $justificacion = "Oportunidad con afinidad muy alta (Score {$score}/100). Presenta correspondencia directa con " . (!empty($matchedLines) ? implode(' y ', array_slice($matchedLines, 0, 2)) : 'las líneas estratégicas de Tornus') . ", ajustándose de forma precisa al portafolio y capacidades operativas y creativas acreditadas en el RUP.";
-            $puntosClave = "Revisar los índices financieros habilitantes (Tornus cuenta con liquidez 8,17 y endeudamiento 0,11) y estructurar el equipo senior de creativos y directores de cuenta requeridos.";
-        } elseif ($score >= 70) {
-            $nivel = 'ALTA';
-            $aplica = 'APLICA';
-            $estrategia = ($cuantia > 8000000000) ? 'Consorcio / UT' : 'Postulación Directa';
-            $justificacion = "Oportunidad viable y estratégica (Score {$score}/100). El objeto y alcance coinciden con la propuesta de valor de Tornus en comunicación, mercadeo y posicionamiento. Existe alta probabilidad de éxito en la formulación de propuesta.";
-            $puntosClave = "Verificar plazos de ejecución, requerimientos de personal en territorio y acreditación de experiencia en SMMLV frente a los 20 contratos del RUP.";
-        } elseif ($score >= 50) {
-            $nivel = 'MEDIA';
-            $aplica = 'APLICA CON CONDICIONES';
-            $estrategia = 'Consorcio / UT';
-            $justificacion = "Oportunidad con afinidad media (Score {$score}/100). Contiene actividades que cruzan con las capacidades de Tornus, pero combina componentes que sugieren la conformación de un Consorcio o Unión Temporal con un socio local u operativo.";
-            $puntosClave = "Evaluar el peso del componente creativo frente a la logística o suministros, y definir el porcentaje de participación conveniente.";
-        } elseif ($score >= 20) {
-            $nivel = 'BAJA';
-            $aplica = 'APLICA CON CONDICIONES';
-            $estrategia = 'Consorcio / UT';
-            $justificacion = "Oportunidad con afinidad moderada o inicial (Score {$score}/100). Presenta componentes complementarios a las capacidades de Tornus. Se sugiere evaluar el pliego para determinar viabilidad en alianza o consorcio.";
-            $puntosClave = "Verificar si el alcance afín justifica estructuración de propuesta en alianza.";
-        } else {
-            $nivel = 'BAJA';
-            $aplica = 'NO APLICA';
-            $estrategia = 'Descartar';
-            $justificacion = "Oportunidad con afinidad nula o incompatible (Score {$score}/100). No evidencia una correlación sustancial con el core de negocio, líneas de servicio especializadas ni casos de éxito de Tornus S.A.S.";
-            $puntosClave = "No se sugiere destinar esfuerzos de costeo ni estructuración para esta convocatoria.";
-        }
-
-        // Si el score es menor a 20 o no aplica, no sugerir servicios para no confundir al usuario
-        $servicios = (!empty($matchedLines) && $score >= 20 && $aplica !== 'NO APLICA')
-            ? array_map(function($line) { return explode(' - ', $line)[1] ?? $line; }, $matchedLines)
-            : [];
-
-        return [
-            'score' => $score,
-            'nivel' => $nivel,
-            'aplica' => $aplica,
-            'lineas_afines' => $matchedLines,
-            'justificacion' => $justificacion,
-            'servicios_sugeridos' => array_values(array_unique($servicios)),
-            'estrategia_postulacion' => $estrategia,
-            'puntos_clave' => $puntosClave
-        ];
+        $this->saveEvaluation($licitacion, $pending);
+        return $pending;
     }
 
     protected function saveEvaluation(Licitacion $licitacion, array $data): void
     {
-        $puntosClave = $data['puntos_clave'] ?? null;
-        if (!empty($data['viabilidad_participacion']) && !str_contains($puntosClave ?? '', 'Viabilidad:')) {
-            $puntosClave = "Viabilidad: " . $data['viabilidad_participacion'] . ($puntosClave ? " · " . $puntosClave : "");
+        $licitacion->score = isset($data['score']) && $data['score'] !== null ? (int)$data['score'] : null;
+        $licitacion->nivel = $data['nivel'] ?? 'PENDIENTE';
+        $licitacion->etiqueta = $data['etiqueta'] ?? ($data['aplica'] ?? null);
+        
+        if (!empty($data['categoria'])) {
+            $licitacion->categoria = $data['categoria'];
         }
 
-        $licitacion->score = $data['score'] ?? null;
-        $licitacion->nivel = $data['nivel'] ?? null;
-        $licitacion->justificacion = $data['justificacion'] ?? null;
-        $licitacion->servicios_sugeridos = $data['servicios_sugeridos'] ?? [];
-        $licitacion->estrategia_postulacion = $data['estrategia_postulacion'] ?? null;
-        $licitacion->puntos_clave = $puntosClave;
+        $licitacion->filtro_descarte = $data['filtro_descarte'] ?? null;
+        $licitacion->subpuntajes = $data['puntajes'] ?? ($data['subpuntajes'] ?? null);
+        $licitacion->antecedente_tornus = $data['antecedente_tornus'] ?? null;
+        $licitacion->componente_aliado = $data['componente_aliado'] ?? null;
+
+        $licitacion->justificacion = $data['dictamen'] ?? ($data['justificacion'] ?? null);
+        $licitacion->puntos_clave = $data['punto_clave'] ?? ($data['puntos_clave'] ?? null);
+        $licitacion->estrategia_postulacion = $data['estrategia_postulacion'] ?? ($data['etiqueta'] ?? null);
+
+        // Mapear líneas afines para compatibilidad
+        if (!empty($data['lineas_tornus']) && is_array($data['lineas_tornus'])) {
+            $linesNames = [
+                1 => 'Branding y marca de destino',
+                2 => 'Inteligencia de mercados y datos turísticos',
+                3 => 'Planeación estratégica de turismo',
+                4 => 'Desarrollo creativo y producción de contenido',
+                5 => 'Campañas, plan de medios y comunicaciones',
+                6 => 'Fortalecimiento de capacidades turísticas'
+            ];
+            $sug = [];
+            foreach ($data['lineas_tornus'] as $num) {
+                if (isset($linesNames[$num])) {
+                    $sug[] = $linesNames[$num];
+                }
+            }
+            $licitacion->servicios_sugeridos = $sug;
+        } elseif (isset($data['servicios_sugeridos'])) {
+            $licitacion->servicios_sugeridos = (array)$data['servicios_sugeridos'];
+        }
+
         $licitacion->evaluado_en = now();
         $licitacion->save();
     }

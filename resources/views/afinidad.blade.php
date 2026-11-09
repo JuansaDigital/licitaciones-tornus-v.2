@@ -45,27 +45,37 @@
         </form>
     </div>
 
-    <!-- Filtros por Nivel de Afinidad (Métricas) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    <!-- Filtros por Nivel de Afinidad (Rúbrica Oficial: A, B, C, D) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'all'])) }}" 
-            class="bg-[#fffdf6] border {{ $filterNivel === 'all' ? 'border-[#00232c] ring-1 ring-[#00232c]' : 'border-[#e3dbc2]' }} rounded-lg p-4 shadow-xs transition-all hover:border-[#00232c]">
-            <span class="text-[11px] font-mono uppercase tracking-wider text-[#56686b] block">Total Analizadas</span>
-            <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-[#00232c] mt-1">{{ $stats['total_evaluadas'] }}</div>
+            class="bg-[#fffdf6] border {{ $filterNivel === 'all' ? 'border-[#00232c] ring-1 ring-[#00232c]' : 'border-[#e3dbc2]' }} rounded-lg p-3.5 shadow-xs transition-all hover:border-[#00232c]">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-[#56686b] block">Total Viables (A+B+C)</span>
+            <div class="font-['Instrument_Serif',serif] text-2xl font-bold text-[#00232c] mt-1">{{ $stats['total_evaluadas'] }}</div>
+            <span class="text-[10px] font-mono text-[#56686b] mt-0.5 block">&gt;= 35 pts</span>
         </a>
-        <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'ALTA'])) }}" 
-            class="bg-[#fffdf6] border {{ $filterNivel === 'ALTA' ? 'border-emerald-600 ring-1 ring-emerald-600' : 'border-[#e3dbc2]' }} rounded-lg p-4 shadow-xs transition-all hover:border-emerald-600">
-            <span class="text-[11px] font-mono uppercase tracking-wider text-emerald-800 block font-semibold">Afinidad Alta (&gt;= 70 pts)</span>
-            <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-emerald-800 mt-1">{{ $stats['alta'] }}</div>
+        <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'A'])) }}" 
+            class="bg-[#fffdf6] border {{ in_array($filterNivel, ['A', 'ALTA']) ? 'border-emerald-600 ring-1 ring-emerald-600' : 'border-[#e3dbc2]' }} rounded-lg p-3.5 shadow-xs transition-all hover:border-emerald-600">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-emerald-800 block font-semibold">Nivel A · Directo</span>
+            <div class="font-['Instrument_Serif',serif] text-2xl font-bold text-emerald-800 mt-1">{{ $stats['nivel_a'] }}</div>
+            <span class="text-[10px] font-mono text-emerald-700 mt-0.5 block">75 - 100 pts</span>
         </a>
-        <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'MEDIA'])) }}" 
-            class="bg-[#fffdf6] border {{ $filterNivel === 'MEDIA' ? 'border-amber-600 ring-1 ring-amber-600' : 'border-[#e3dbc2]' }} rounded-lg p-4 shadow-xs transition-all hover:border-amber-600">
-            <span class="text-[11px] font-mono uppercase tracking-wider text-amber-800 block font-semibold">Afinidad Media (40-69 pts)</span>
-            <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-amber-800 mt-1">{{ $stats['media'] }}</div>
+        <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'B'])) }}" 
+            class="bg-[#fffdf6] border {{ in_array($filterNivel, ['B', 'MEDIA']) ? 'border-blue-600 ring-1 ring-blue-600' : 'border-[#e3dbc2]' }} rounded-lg p-3.5 shadow-xs transition-all hover:border-blue-600">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-blue-800 block font-semibold">Nivel B · Con Aliado</span>
+            <div class="font-['Instrument_Serif',serif] text-2xl font-bold text-blue-800 mt-1">{{ $stats['nivel_b'] }}</div>
+            <span class="text-[10px] font-mono text-blue-700 mt-0.5 block">55 - 74 pts</span>
         </a>
-        <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'BAJA'])) }}" 
-            class="bg-[#fffdf6] border {{ $filterNivel === 'BAJA' ? 'border-amber-600 ring-1 ring-amber-600' : 'border-[#e3dbc2]' }} rounded-lg p-4 shadow-xs transition-all hover:border-amber-600">
-            <span class="text-[11px] font-mono uppercase tracking-wider text-amber-900 block font-semibold">Afinidad Inicial (20-39 pts)</span>
-            <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-amber-900 mt-1">{{ $stats['baja'] }}</div>
+        <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'C'])) }}" 
+            class="bg-[#fffdf6] border {{ in_array($filterNivel, ['C', 'BAJA']) ? 'border-amber-600 ring-1 ring-amber-600' : 'border-[#e3dbc2]' }} rounded-lg p-3.5 shadow-xs transition-all hover:border-amber-600">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-amber-800 block font-semibold">Nivel C · Monitorear</span>
+            <div class="font-['Instrument_Serif',serif] text-2xl font-bold text-amber-800 mt-1">{{ $stats['nivel_c'] }}</div>
+            <span class="text-[10px] font-mono text-amber-700 mt-0.5 block">35 - 54 pts</span>
+        </a>
+        <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'D'])) }}" 
+            class="bg-[#fffdf6] border {{ in_array($filterNivel, ['D', 'DESCARTAR']) ? 'border-rose-600 ring-1 ring-rose-600' : 'border-[#e3dbc2]' }} rounded-lg p-3.5 shadow-xs transition-all hover:border-rose-600">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-rose-800 block font-semibold">Nivel D · Descartadas</span>
+            <div class="font-['Instrument_Serif',serif] text-2xl font-bold text-rose-800 mt-1">{{ $stats['nivel_d'] }}</div>
+            <span class="text-[10px] font-mono text-rose-700 mt-0.5 block">&lt; 35 pts</span>
         </a>
     </div>
 
@@ -195,8 +205,12 @@
                                     {{ $lic->codigo_proceso }}
                                 </span>
 
-                                <span class="px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold' : 'bg-rose-50 text-rose-800 border-rose-300 font-bold') }}">
-                                    {{ $lic->score }}% AFINIDAD · {{ $lic->nivel }}
+                                @php
+                                    $nb = $lic->nivel_badge;
+                                @endphp
+                                <span class="px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 {{ $nb['class'] }} font-bold flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $nb['dot'] }}"></span>
+                                    <span>{{ $lic->score }}% AFINIDAD · {{ $nb['code'] }}</span>
                                 </span>
 
                                 @if($lic->estrategia_postulacion)

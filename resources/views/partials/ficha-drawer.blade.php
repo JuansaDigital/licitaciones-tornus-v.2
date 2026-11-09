@@ -39,6 +39,43 @@
                     <p id="ficha-gemini-justificacion" class="text-[#3a4749]"></p>
                 </div>
 
+                <div id="ficha-gemini-antecedente-box" class="hidden bg-emerald-50/60 border border-emerald-200 rounded p-3 text-xs font-mono">
+                    <strong class="text-emerald-950 font-bold block mb-0.5 uppercase text-[10px]">Antecedente Tornus:</strong>
+                    <span id="ficha-gemini-antecedente" class="text-emerald-900 font-sans"></span>
+                </div>
+
+                <div id="ficha-gemini-aliado-box" class="hidden bg-blue-50/60 border border-blue-200 rounded p-3 text-xs font-mono">
+                    <strong class="text-blue-950 font-bold block mb-0.5 uppercase text-[10px]">Componente Requerido para Aliado:</strong>
+                    <span id="ficha-gemini-aliado" class="text-blue-900 font-sans"></span>
+                </div>
+
+                <!-- Desglose Rúbrica de 5 Dimensiones -->
+                <div id="ficha-gemini-rubrica-box" class="hidden bg-white border border-[#e3dbc2] rounded p-3 text-xs font-mono space-y-2">
+                    <strong class="text-[#00232c] font-bold block uppercase text-[10px] tracking-wider">Desglose de Rúbrica (0-100 pts)</strong>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                        <div class="bg-[#fbf9f1] p-1.5 rounded border border-[#e3dbc2]/60">
+                            <span class="text-[#56686b] block text-[9px] uppercase">Encaje Línea (0-35)</span>
+                            <span id="ficha-rubrica-linea" class="font-bold text-[#00232c]"></span>
+                        </div>
+                        <div class="bg-[#fbf9f1] p-1.5 rounded border border-[#e3dbc2]/60">
+                            <span class="text-[#56686b] block text-[9px] uppercase">Experiencia (0-25)</span>
+                            <span id="ficha-rubrica-exp" class="font-bold text-[#00232c]"></span>
+                        </div>
+                        <div class="bg-[#fbf9f1] p-1.5 rounded border border-[#e3dbc2]/60">
+                            <span class="text-[#56686b] block text-[9px] uppercase">Entidad (0-15)</span>
+                            <span id="ficha-rubrica-entidad" class="font-bold text-[#00232c]"></span>
+                        </div>
+                        <div class="bg-[#fbf9f1] p-1.5 rounded border border-[#e3dbc2]/60">
+                            <span class="text-[#56686b] block text-[9px] uppercase">Escala (0-15)</span>
+                            <span id="ficha-rubrica-escala" class="font-bold text-[#00232c]"></span>
+                        </div>
+                        <div class="bg-[#fbf9f1] p-1.5 rounded border border-[#e3dbc2]/60 col-span-2 sm:col-span-1">
+                            <span class="text-[#56686b] block text-[9px] uppercase">Territorio/Tiempo (0-10)</span>
+                            <span id="ficha-rubrica-territorio" class="font-bold text-[#00232c]"></span>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="ficha-gemini-keypoints-box" class="bg-white border border-[#e3dbc2] rounded p-3 text-xs font-mono">
                     <strong class="text-[#00232c] font-bold block mb-0.5">Punto clave a revisar:</strong>
                     <span id="ficha-gemini-puntos" class="text-[#56686b]"></span>
@@ -606,25 +643,64 @@ function renderFichaGeminiBox(lic) {
         
         pill.textContent = lic.score + '% AFINIDAD · ' + (lic.nivel || 'EVALUADO');
         
-        if (lic.score >= 70) {
+        if (lic.score >= 75) {
             box.className = 'p-5 rounded-lg border border-emerald-200 bg-emerald-50/50 border-l-4 border-l-emerald-600 space-y-3';
             pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
-            status.textContent = 'APLICA';
+            status.textContent = 'NIVEL A · APLICA DIRECTO';
             status.className = 'text-xs font-mono font-bold text-emerald-800 tracking-wider';
-        } else if (lic.score >= 20) {
+        } else if (lic.score >= 55) {
+            box.className = 'p-5 rounded-lg border border-blue-200 bg-blue-50/50 border-l-4 border-l-blue-600 space-y-3';
+            pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-800 border border-blue-300';
+            status.textContent = 'NIVEL B · APLICA CON ALIADO';
+            status.className = 'text-xs font-mono font-bold text-blue-800 tracking-wider';
+        } else if (lic.score >= 35) {
             box.className = 'p-5 rounded-lg border border-amber-200 bg-amber-50/50 border-l-4 border-l-amber-500 space-y-3';
             pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300';
-            status.textContent = 'APLICA CON CONDICIONES';
+            status.textContent = 'NIVEL C · MONITOREAR';
             status.className = 'text-xs font-mono font-bold text-amber-800 tracking-wider';
         } else {
             box.className = 'p-5 rounded-lg border border-rose-200 bg-rose-50/40 border-l-4 border-l-rose-500 space-y-3';
             pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-rose-100 text-rose-800 border border-rose-300';
-            status.textContent = 'NO APLICA';
+            status.textContent = 'NIVEL D · DESCARTAR';
             status.className = 'text-xs font-mono font-bold text-rose-800 tracking-wider';
         }
         
         document.getElementById('ficha-gemini-justificacion').textContent = lic.justificacion || 'Evaluación estratégica generada por IA contrastando con el perfil de Tornus Agency.';
         document.getElementById('ficha-gemini-puntos').textContent = lic.puntos_clave || 'Revisar términos de referencia y habilitantes jurídicos antes de postulación.';
+
+        // Antecedente Tornus
+        const antBox = document.getElementById('ficha-gemini-antecedente-box');
+        const antText = document.getElementById('ficha-gemini-antecedente');
+        if (lic.antecedente_tornus && antBox && antText) {
+            antText.textContent = lic.antecedente_tornus;
+            antBox.classList.remove('hidden');
+        } else if (antBox) {
+            antBox.classList.add('hidden');
+        }
+
+        // Componente Aliado
+        const aliBox = document.getElementById('ficha-gemini-aliado-box');
+        const aliText = document.getElementById('ficha-gemini-aliado');
+        if (lic.componente_aliado && aliBox && aliText) {
+            aliText.textContent = lic.componente_aliado;
+            aliBox.classList.remove('hidden');
+        } else if (aliBox) {
+            aliBox.classList.add('hidden');
+        }
+
+        // Desglose de Rúbrica
+        const rubBox = document.getElementById('ficha-gemini-rubrica-box');
+        const subs = lic.subpuntajes;
+        if (subs && typeof subs === 'object' && rubBox) {
+            document.getElementById('ficha-rubrica-linea').textContent = (subs.encaje_linea ?? '-') + '/35';
+            document.getElementById('ficha-rubrica-exp').textContent = (subs.experiencia ?? '-') + '/25';
+            document.getElementById('ficha-rubrica-entidad').textContent = (subs.entidad ?? '-') + '/15';
+            document.getElementById('ficha-rubrica-escala').textContent = (subs.escala ?? '-') + '/15';
+            document.getElementById('ficha-rubrica-territorio').textContent = (subs.territorio_tiempo ?? '-') + '/10';
+            rubBox.classList.remove('hidden');
+        } else if (rubBox) {
+            rubBox.classList.add('hidden');
+        }
     } else {
         box.classList.add('hidden');
         placeholder.classList.remove('hidden');
@@ -661,13 +737,27 @@ async function analyzeWithGemini(id) {
             
             const cardAffinity = document.getElementById('card-affinity-' + id);
             if (cardAffinity) {
-                const colorClass = evalData.score >= 70 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : (evalData.score >= 40 ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-rose-50 text-rose-800 border-rose-200');
-                const dotColor = evalData.score >= 70 ? 'bg-emerald-600' : (evalData.score >= 40 ? 'bg-amber-600' : 'bg-rose-600');
+                let colorClass = 'bg-rose-50 text-rose-800 border-rose-200';
+                let dotColor = 'bg-rose-600';
+                let codeNivel = 'NIVEL D · DESCARTADA';
+                if (evalData.score >= 75) {
+                    colorClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                    dotColor = 'bg-emerald-600';
+                    codeNivel = 'NIVEL A · DIRECTO';
+                } else if (evalData.score >= 55) {
+                    colorClass = 'bg-blue-50 text-blue-800 border-blue-200';
+                    dotColor = 'bg-blue-600';
+                    codeNivel = 'NIVEL B · CON ALIADO';
+                } else if (evalData.score >= 35) {
+                    colorClass = 'bg-amber-50 text-amber-800 border-amber-200';
+                    dotColor = 'bg-amber-600';
+                    codeNivel = 'NIVEL C · MONITOREAR';
+                }
                 
                 cardAffinity.innerHTML = `
                     <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 ${colorClass} border">
                         <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
-                        <span>${evalData.score}% AFINIDAD · ${evalData.nivel}</span>
+                        <span>${evalData.score}% AFINIDAD · ${codeNivel}</span>
                     </span>
                 `;
             }
@@ -681,22 +771,37 @@ async function analyzeWithGemini(id) {
             if (descBox && descText) {
                 descText.textContent = evalData.justificacion || 'Evaluación estratégica completada con Gemini IA.';
                 if (statusText) {
-                    statusText.textContent = evalData.score >= 70 ? 'APLICA DIRECTO' : (evalData.score >= 40 ? 'APLICA CON CONDICIONES' : 'NO APLICA');
-                    statusText.className = 'text-[10px] font-bold tracking-wider ' + (evalData.score >= 70 ? 'text-emerald-800' : (evalData.score >= 40 ? 'text-amber-800' : 'text-rose-800'));
+                    if (evalData.score >= 75) {
+                        statusText.textContent = 'NIVEL A · APLICA DIRECTO';
+                        statusText.className = 'text-[10px] font-bold tracking-wider text-emerald-800';
+                    } else if (evalData.score >= 55) {
+                        statusText.textContent = 'NIVEL B · APLICA CON ALIADO';
+                        statusText.className = 'text-[10px] font-bold tracking-wider text-blue-800';
+                    } else if (evalData.score >= 35) {
+                        statusText.textContent = 'NIVEL C · MONITOREAR';
+                        statusText.className = 'text-[10px] font-bold tracking-wider text-amber-800';
+                    } else {
+                        statusText.textContent = 'NIVEL D · DESCARTADA';
+                        statusText.className = 'text-[10px] font-bold tracking-wider text-rose-800';
+                    }
                 }
                 if (pointsText && evalData.puntos_clave) {
                     pointsText.textContent = evalData.puntos_clave;
                     if (pointsWrapper) pointsWrapper.classList.remove('hidden');
                 }
-                descBox.className = 'my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 text-xs font-mono space-y-1.5 transition-all ' + 
-                    (evalData.score >= 70 ? 'border-l-emerald-600' : (evalData.score >= 40 ? 'border-l-amber-500' : 'border-l-rose-500'));
+                let borderClass = 'border-l-rose-500';
+                if (evalData.score >= 75) borderClass = 'border-l-emerald-600';
+                else if (evalData.score >= 55) borderClass = 'border-l-blue-600';
+                else if (evalData.score >= 35) borderClass = 'border-l-amber-500';
+
+                descBox.className = 'my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 text-xs font-mono space-y-1.5 transition-all ' + borderClass;
                 descBox.classList.remove('hidden');
             }
             
             if (btnText) btnText.textContent = 'Re-evaluar Gemini';
 
-            // Si la evaluación determina que la oferta NO APLICA (score < 40 o Descartar)
-            const isDiscarded = (evalData.score < 40) || (evalData.estrategia_postulacion && evalData.estrategia_postulacion.toLowerCase() === 'descartar');
+            // Si la evaluación determina que la oferta NO APLICA (score < 35 o Descartar)
+            const isDiscarded = (evalData.score < 35) || (evalData.estrategia_postulacion && evalData.estrategia_postulacion.toLowerCase() === 'descartar');
             if (isDiscarded) {
                 const cardEl = document.getElementById('lic-card-' + id);
                 if (cardEl) {

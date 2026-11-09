@@ -249,24 +249,24 @@ class RadarController extends Controller
             ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateFiveMonths])
             ->count();
 
-        // 8. FILTRO INTELIGENTE DE AFINIDAD CON IA (AUTO-TRIAGE TORNUS)
-        // 'viable' (por defecto): Muestra propuestas afines desde un 20% en adelante (score >= 20) o pendientes de evaluar.
+        // 8. FILTRO INTELIGENTE DE AFINIDAD CON IA (RÚBRICA TORNUS A / B / C / D)
+        // 'viable' (por defecto): Muestra propuestas afines de Nivel A, B y C (score >= 35) o pendientes de evaluar.
         // 'all': Muestra todas las propuestas sin discriminación por IA.
-        // 'discarded': Muestra exclusivamente las propuestas descartadas por IA (score < 20).
+        // 'discarded': Muestra exclusivamente las propuestas descartadas de Nivel D (score < 35).
         $selectedIaFilter = $request->input('ia_filter', 'viable');
         if ($selectedIaFilter === 'viable') {
             $query->where(function ($q) {
                 $q->whereNull('score')
-                  ->orWhere('score', '>=', 20);
+                  ->orWhere('score', '>=', 35);
             });
         } elseif ($selectedIaFilter === 'discarded') {
             $query->whereNotNull('score')
-                  ->where('score', '<', 20);
+                  ->where('score', '<', 35);
         }
 
         $discardedCount = (clone $totalQuery)
             ->whereNotNull('score')
-            ->where('score', '<', 20)
+            ->where('score', '<', 35)
             ->count();
 
         $pendingEvaluationCount = (clone $totalQuery)
@@ -274,9 +274,9 @@ class RadarController extends Controller
             ->count();
 
         // ORDENAMIENTO: Cuando el filtro de afinidad está activo ('viable'), ordenar de MAYOR afinidad a MENOR afinidad
-        // (desde 20% en adelante), y colocar luego las pendientes de evaluar ordenadas por fecha de cierre más próxima.
+        // (desde 35% en adelante), y colocar luego las pendientes de evaluar ordenadas por fecha de cierre más próxima.
         if ($selectedIaFilter === 'viable') {
-            $query->orderByRaw("CASE WHEN score IS NOT NULL AND score >= 20 THEN 0 ELSE 1 END ASC")
+            $query->orderByRaw("CASE WHEN score IS NOT NULL AND score >= 35 THEN 0 ELSE 1 END ASC")
                   ->orderBy('score', 'desc')
                   ->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC");
         } else {
