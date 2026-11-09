@@ -205,7 +205,7 @@
                     </button>
 
                     <!-- Menú Desplegable con Buscador en Vivo de Municipios -->
-                    <div id="municipioDropdownMenu" class="hidden absolute top-full left-0 right-0 sm:right-auto sm:w-80 mt-1 bg-white border border-[#e3dbc2] rounded-lg shadow-xl z-50 p-2.5">
+                    <div id="municipioDropdownMenu" class="hidden absolute top-full left-0 right-0 sm:right-auto sm:w-88 mt-1 bg-white border border-[#e3dbc2] rounded-lg shadow-xl z-50 p-2.5">
                         <!-- Campo de Búsqueda Instantánea -->
                         <div class="relative mb-2">
                             <input type="text" id="munSearchInput" oninput="filterMunicipiosList(this.value)"
@@ -225,8 +225,8 @@
                             <span class="text-[10px] text-[#56686b] font-normal" id="munCounterBadge">{{ count($municipios) }} disponibles</span>
                         </button>
 
-                        <!-- Lista de Municipios con Scroll (Renderizado Dinámico Ultrarrápido) -->
-                        <div id="municipiosListContainer" class="max-h-56 overflow-y-auto space-y-0.5 divide-y divide-[#faf6ec]">
+                        <!-- Lista de Municipios con Scroll Completo (1.104 Municipios Disponibles de la A a la Z) -->
+                        <div id="municipiosListContainer" class="max-h-80 overflow-y-auto space-y-0.5 divide-y divide-[#faf6ec] pr-1.5" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 #f7f2df;">
                             <!-- Los municipios se inyectan dinámicamente desde el dataset oficial en memoria -->
                         </div>
                     </div>
@@ -645,27 +645,29 @@ function renderMunicipios(list) {
     const badge = document.getElementById('munCounterBadge');
     if (badge) badge.textContent = list.length + ' disponibles';
 
-    const toRender = list.slice(0, 100);
     let html = '';
+    const selected = (window.SELECTED_MUNICIPIO || '').trim().toLowerCase();
 
-    for (let i = 0; i < toRender.length; i++) {
-        const item = toRender[i];
+    for (let i = 0; i < list.length; i++) {
+        const item = list[i];
         const nom = typeof item === 'object' ? (item.nombre || '') : item;
         const dep = typeof item === 'object' ? (item.departamento || '') : '';
-        const isSelected = (window.SELECTED_MUNICIPIO === nom);
+        const isSelected = (selected === nom.trim().toLowerCase());
         const nomEscaped = nom.replace(/'/g, "\\'");
 
-        html += `<button type="button" onclick="selectMunicipio('${nomEscaped}')" class="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#f7f2df] text-xs font-mono flex items-center justify-between transition-colors cursor-pointer ${isSelected ? 'bg-[#00232c] text-[#fbfb75] font-bold' : 'text-[#00232c]'}">` +
+        html += `<button type="button" onclick="selectMunicipio('${nomEscaped}')" class="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#f7f2df] text-xs font-mono flex items-center justify-between transition-colors cursor-pointer ${isSelected ? 'bg-[#00232c] text-[#fbfb75] font-bold is-selected-mun' : 'text-[#00232c]'}">` +
                 `<span class="truncate">${nom}</span>` +
                 (dep ? `<span class="text-[10px] shrink-0 ml-2 ${isSelected ? 'text-[#fbfb75]/80' : 'text-[#56686b]'}">${dep}</span>` : '') +
                 `</button>`;
     }
 
-    if (list.length > 100) {
-        html += `<div class="p-2 text-center text-[10px] font-mono text-[#56686b] bg-[#faf6ec] border-t border-[#e3dbc2]">Escribe en el buscador para filtrar entre los ${list.length} municipios...</div>`;
-    }
-
     container.innerHTML = html;
+
+    // Si hay un municipio previamente seleccionado, posicionar el scroll sobre él
+    const selectedEl = container.querySelector('.is-selected-mun');
+    if (selectedEl) {
+        setTimeout(() => selectedEl.scrollIntoView({ block: 'nearest' }), 30);
+    }
 }
 
 function selectMunicipio(nombre) {
