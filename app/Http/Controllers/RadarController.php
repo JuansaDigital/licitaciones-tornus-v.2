@@ -98,62 +98,83 @@ class RadarController extends Controller
             $query->where('municipio', 'like', "%{$selectedMunicipio}%");
         }
 
-        // 4b. Filtro por Categoría / Línea de Negocio (Enfoque Turismo, Eventos, Publicidad, etc.)
-        $selectedCategory = trim($request->input('category', 'all'));
-        if ($selectedCategory === 'turismo') {
-            $query->where(function ($q) {
-                $q->where('categoria', 'plan')
-                  ->orWhere('objeto', 'like', '%turis%')
-                  ->orWhere('objeto', 'like', '%fontur%')
-                  ->orWhere('objeto', 'like', '%promper%')
-                  ->orWhere('objeto', 'like', '%mincetur%')
-                  ->orWhere('objeto', 'like', '%dircetur%')
-                  ->orWhere('objeto', 'like', '%famtrip%')
-                  ->orWhere('objeto', 'like', '%destino%')
-                  ->orWhere('entidad', 'like', '%turis%')
-                  ->orWhere('entidad', 'like', '%fontur%')
-                  ->orWhere('entidad', 'like', '%promper%')
-                  ->orWhere('entidad', 'like', '%mincetur%');
-            });
-        } elseif ($selectedCategory === 'eventos') {
-            $query->where(function ($q) {
-                $q->where('categoria', 'evt')
-                  ->orWhere('objeto', 'like', '%evento%')
-                  ->orWhere('objeto', 'like', '%logístic%')
-                  ->orWhere('objeto', 'like', '%logistic%')
-                  ->orWhere('objeto', 'like', '%feria%')
-                  ->orWhere('objeto', 'like', '%congreso%');
-            });
-        } elseif ($selectedCategory === 'publicidad') {
-            $query->where(function ($q) {
-                $q->where('categoria', 'pub')
-                  ->orWhere('objeto', 'like', '%publicidad%')
-                  ->orWhere('objeto', 'like', '%campaña%')
-                  ->orWhere('objeto', 'like', '%pauta%')
-                  ->orWhere('objeto', 'like', '%medios%')
-                  ->orWhere('objeto', 'like', '%marca%');
-            });
-        } elseif ($selectedCategory === 'audiovisual') {
-            $query->where(function ($q) {
-                $q->where('categoria', 'audio')
-                  ->orWhere('objeto', 'like', '%audiovisual%')
-                  ->orWhere('objeto', 'like', '%producción%')
-                  ->orWhere('objeto', 'like', '%fotograf%');
-            });
-        } elseif ($selectedCategory === 'estrategia') {
-            $query->where(function ($q) {
-                $q->where('categoria', 'estrat')
-                  ->orWhere('objeto', 'like', '%estrategia%')
-                  ->orWhere('objeto', 'like', '%consultor%')
-                  ->orWhere('objeto', 'like', '%estudio de mercado%');
-            });
-        } elseif ($selectedCategory === 'digital') {
-            $query->where(function ($q) {
-                $q->where('categoria', 'tech')
-                  ->orWhere('objeto', 'like', '%portal web%')
-                  ->orWhere('objeto', 'like', '%página web%')
-                  ->orWhere('objeto', 'like', '%pagina web%')
-                  ->orWhere('objeto', 'like', '%plataforma%');
+        // 4b. Filtro por Categorías / Líneas de Negocio (Multi-selección)
+        $selectedCategories = $request->input('categories', []);
+        if (!is_array($selectedCategories)) {
+            $selectedCategories = !empty($selectedCategories) ? [$selectedCategories] : [];
+        }
+        // Soporte de compatibilidad hacia atrás con parámetro singular 'category'
+        $selectedCategory = trim($request->input('category', ''));
+        if (empty($selectedCategories) && !empty($selectedCategory) && $selectedCategory !== 'all') {
+            $selectedCategories = [$selectedCategory];
+        }
+
+        if (!empty($selectedCategories) && !in_array('all', $selectedCategories)) {
+            $query->where(function ($q) use ($selectedCategories) {
+                foreach ($selectedCategories as $idx => $cat) {
+                    $applyCondition = function ($sub) use ($cat) {
+                        if ($cat === 'turismo') {
+                            $sub->where('categoria', 'like', '%Turismo%')
+                                ->orWhere('objeto', 'like', '%turis%')
+                                ->orWhere('objeto', 'like', '%fontur%')
+                                ->orWhere('objeto', 'like', '%promper%')
+                                ->orWhere('objeto', 'like', '%mincetur%')
+                                ->orWhere('objeto', 'like', '%dircetur%')
+                                ->orWhere('objeto', 'like', '%famtrip%')
+                                ->orWhere('objeto', 'like', '%destino%')
+                                ->orWhere('entidad', 'like', '%turis%')
+                                ->orWhere('entidad', 'like', '%fontur%')
+                                ->orWhere('entidad', 'like', '%promper%')
+                                ->orWhere('entidad', 'like', '%mincetur%');
+                        } elseif ($cat === 'eventos') {
+                            $sub->where('categoria', 'like', '%Eventos%')
+                                ->orWhere('objeto', 'like', '%evento%')
+                                ->orWhere('objeto', 'like', '%logístic%')
+                                ->orWhere('objeto', 'like', '%logistic%')
+                                ->orWhere('objeto', 'like', '%feria%')
+                                ->orWhere('objeto', 'like', '%congreso%')
+                                ->orWhere('objeto', 'like', '%festival%');
+                        } elseif ($cat === 'publicidad') {
+                            $sub->where('categoria', 'like', '%Publicidad%')
+                                ->orWhere('objeto', 'like', '%publicidad%')
+                                ->orWhere('objeto', 'like', '%campaña%')
+                                ->orWhere('objeto', 'like', '%pauta%')
+                                ->orWhere('objeto', 'like', '%medios%')
+                                ->orWhere('objeto', 'like', '%marca%')
+                                ->orWhere('objeto', 'like', '%creatividad%');
+                        } elseif ($cat === 'audiovisual') {
+                            $sub->where('categoria', 'like', '%Audiovisual%')
+                                ->orWhere('objeto', 'like', '%audiovisual%')
+                                ->orWhere('objeto', 'like', '%producción%')
+                                ->orWhere('objeto', 'like', '%produccion%')
+                                ->orWhere('objeto', 'like', '%fotograf%')
+                                ->orWhere('objeto', 'like', '%video%');
+                        } elseif ($cat === 'estrategia') {
+                            $sub->where('categoria', 'like', '%Estrategia%')
+                                ->orWhere('categoria', 'like', '%Consultoría%')
+                                ->orWhere('objeto', 'like', '%estrategia%')
+                                ->orWhere('objeto', 'like', '%consultor%')
+                                ->orWhere('objeto', 'like', '%estudio de mercado%')
+                                ->orWhere('objeto', 'like', '%diagnóstico%')
+                                ->orWhere('objeto', 'like', '%diagnostico%');
+                        } elseif ($cat === 'digital') {
+                            $sub->where('categoria', 'like', '%Digital%')
+                                ->orWhere('categoria', 'like', '%Tecnología%')
+                                ->orWhere('objeto', 'like', '%portal web%')
+                                ->orWhere('objeto', 'like', '%página web%')
+                                ->orWhere('objeto', 'like', '%pagina web%')
+                                ->orWhere('objeto', 'like', '%plataforma%')
+                                ->orWhere('objeto', 'like', '%software%')
+                                ->orWhere('objeto', 'like', '%aplicación%');
+                        }
+                    };
+
+                    if ($idx === 0) {
+                        $q->where($applyCondition);
+                    } else {
+                        $q->orWhere($applyCondition);
+                    }
+                }
             });
         }
 
@@ -166,20 +187,8 @@ class RadarController extends Controller
             ->pluck('departamento')
             ->toArray();
 
-        $municipiosQuery = Licitacion::on($connection)
-            ->whereNotNull('municipio')
-            ->where('municipio', '!=', '')
-            ->where('municipio', '!=', 'No Definido');
-
-        if (!empty($selectedRegion)) {
-            $municipiosQuery->where('departamento', 'like', "%{$selectedRegion}%");
-        }
-
-        $municipios = $municipiosQuery
-            ->distinct()
-            ->orderBy('municipio')
-            ->pluck('municipio')
-            ->toArray();
+        // Obtener municipios estructurados con maestro completo oficial (1.104 municipios)
+        $municipios = RadarFilterService::getMunicipios($connection, $selectedRegion);
 
         // 6. Conteo de propuestas vigentes en el mercado (aplicando exclusiones activas)
         $totalQuery = Licitacion::on($connection)
@@ -289,6 +298,7 @@ class RadarController extends Controller
             'municipios',
             'selectedMunicipio',
             'selectedCategory',
+            'selectedCategories',
             'selectedUrgency',
             'criticalCount',
             'earlyCount',

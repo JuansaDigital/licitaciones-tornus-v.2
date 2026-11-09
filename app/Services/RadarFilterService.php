@@ -284,4 +284,85 @@ class RadarFilterService
 
         return $counts;
     }
+
+    /**
+     * Obtiene la lista completa de municipios estructurados [ 'nombre' => ..., 'departamento' => ... ]
+     * Para Colombia incluye el maestro oficial de los 1.104 municipios.
+     */
+    public static function getMunicipios(string $connection, string $selectedRegion = ''): array
+    {
+        $market = $connection === 'sqlite_pe' ? 'PE' : 'CO';
+
+        if ($market === 'CO') {
+            $jsonPath = resource_path('data/colombia_municipios.json');
+            if (!file_exists($jsonPath)) {
+                $jsonPath = storage_path('app/colombia_municipios.json');
+            }
+            if (file_exists($jsonPath)) {
+                $raw = json_decode(file_get_contents($jsonPath), true) ?: [];
+                $list = [];
+                $selectedRegionNorm = mb_strtolower(trim($selectedRegion), 'UTF-8');
+
+                foreach ($raw as $item) {
+                    $dept = $item['departamento'] ?? '';
+                    $deptNorm = mb_strtolower(trim($dept), 'UTF-8');
+
+                    if (!empty($selectedRegionNorm)) {
+                        $match = false;
+                        if (str_contains($deptNorm, $selectedRegionNorm) || str_contains($selectedRegionNorm, $deptNorm)) {
+                            $match = true;
+                        } elseif (str_contains($selectedRegionNorm, 'bogot') && (str_contains($deptNorm, 'cundinamarca') || str_contains($deptNorm, 'bogot'))) {
+                            $match = true;
+                        }
+                        if (!$match) {
+                            continue;
+                        }
+                    }
+
+                    foreach ($item['ciudades'] ?? [] as $ciudad) {
+                        $list[] = [
+                            'nombre' => trim($ciudad),
+                            'departamento' => $dept,
+                        ];
+                    }
+                }
+
+                // Asegurar Bogotá D.C. como opción explícita si aplica
+                if (empty($selectedRegionNorm) || str_contains($selectedRegionNorm, 'bogot')) {
+                    $hasBogotaDc = false;
+                    foreach ($list as $it) {
+                        if (mb_strtolower($it['nombre'], 'UTF-8') === 'bogotá d.c.') {
+                            $hasBogotaDc = true;
+                            break;
+                        }
+                    }
+                    if (!$hasBogotaDc) {
+                        array_unshift($list, [
+                            'nombre' => 'Bogotá D.C.',
+                            'departamento' => 'Distrito Capital de Bogotá',
+                        ]);
+                    }
+                }
+
+                usort($list, fn($a, $b) => strcmp($a['nombre'], $b['nombre']));
+                return $list;
+            }
+        }
+
+        // Fallback o Perú: consultar directamente de la base de datos
+        $query = \App\Models\Licitacion::on($connection)
+            ->whereNotNull('municipio')
+            ->where('municipio', '!=', '')
+            ->where('municipio', '!=', 'No Definido');
+
+        if (!empty($selectedRegion)) {
+            $query->where('departamento', 'like', "%{$selectedRegion}%");
+        }
+
+        return $query->select('municipio as nombre', 'departamento')
+            ->distinct()
+            ->orderBy('municipio')
+            ->get()
+            ->toArray();
+    }
 }

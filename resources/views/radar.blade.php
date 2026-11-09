@@ -79,39 +79,162 @@
             <input type="hidden" name="ia_filter" value="{{ $selectedIaFilter ?? 'viable' }}">
             
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
-                <div class="lg:col-span-4 sm:col-span-2 relative">
-                    <input type="text" name="q" value="{{ $search }}" placeholder="Buscar por objeto, palabras clave o entidad..."
-                        class="w-full px-3.5 py-2.5 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c] focus:ring-1 focus:ring-[#00232c] transition-colors font-sans">
+                <!-- Buscador Libre por Objeto / Entidad / Palabras Clave -->
+                <div class="lg:col-span-3 sm:col-span-2 relative">
+                    <input type="text" name="q" value="{{ $search }}" placeholder="Buscar por objeto, entidad o palabra clave..."
+                        class="w-full h-full min-h-[42px] px-3.5 py-2 bg-white border border-[#e3dbc2] rounded text-xs text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c] focus:ring-1 focus:ring-[#00232c] transition-colors font-sans">
                 </div>
+
+                <!-- Líneas de Negocio (Multi-selección con Desplegable y Checkboxes) -->
+                <div class="lg:col-span-3 sm:col-span-1 relative" id="lineasDropdownContainer">
+                    @php
+                        $categoryLabels = [
+                            'turismo' => 'Turismo, Destinos y Marca Territorial',
+                            'eventos' => 'Eventos, Ferias y Operación Logística',
+                            'publicidad' => 'Publicidad, Medios y Creatividad',
+                            'audiovisual' => 'Producción Audiovisual y Fotografía',
+                            'estrategia' => 'Estrategia y Consultoría Especializada',
+                            'digital' => 'Portales Web, Tecnología y Digital',
+                        ];
+                        $selectedCount = count($selectedCategories ?? []);
+                    @endphp
+
+                    <button type="button" id="lineasDropdownBtn" onclick="toggleLineasDropdown()"
+                        class="w-full h-full min-h-[42px] px-3 py-2 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] flex items-center justify-between hover:border-[#00232c] transition-colors text-left cursor-pointer">
+                        <div class="truncate flex items-center gap-1.5 mr-1">
+                            <svg class="w-3.5 h-3.5 text-[#56686b] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                <polyline points="2 17 12 22 22 17"></polyline>
+                                <polyline points="2 12 12 17 22 12"></polyline>
+                            </svg>
+                            <span id="lineasDropdownLabel" class="truncate font-medium">
+                                @if($selectedCount === 0 || $selectedCount === 6)
+                                    Todas las líneas (6)
+                                @elseif($selectedCount === 1)
+                                    {{ $categoryLabels[$selectedCategories[0]] ?? $selectedCategories[0] }}
+                                @else
+                                    {{ $selectedCount }} líneas seleccionadas
+                                @endif
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            @if($selectedCount > 0 && $selectedCount < 6)
+                                <span class="px-1.5 py-0.5 rounded-full text-[10px] bg-[#00232c] text-[#fbfb75] font-bold">
+                                    {{ $selectedCount }}
+                                </span>
+                            @endif
+                            <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                    </button>
+
+                    <!-- Menú Desplegable con Checkboxes -->
+                    <div id="lineasDropdownMenu" class="hidden absolute top-full left-0 mt-1 w-72 sm:w-80 bg-white border border-[#e3dbc2] rounded-lg shadow-xl z-50 p-3">
+                        <div class="flex items-center justify-between pb-2 mb-2 border-b border-[#e3dbc2] text-[11px] font-mono">
+                            <span class="font-bold text-[#00232c] uppercase tracking-wider">Líneas de Negocio</span>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="selectAllLineas(true)" class="text-[#0b4a57] hover:underline font-semibold cursor-pointer">Todas</button>
+                                <span class="text-[#e3dbc2]">|</span>
+                                <button type="button" onclick="selectAllLineas(false)" class="text-[#56686b] hover:text-rose-600 hover:underline cursor-pointer">Limpiar</button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1 max-h-60 overflow-y-auto">
+                            @foreach($categoryLabels as $catKey => $catLabel)
+                                <label class="flex items-start gap-2.5 p-2 rounded hover:bg-[#f7f2df] cursor-pointer transition-colors text-xs font-mono text-[#00232c]">
+                                    <input type="checkbox" name="categories[]" value="{{ $catKey }}"
+                                        {{ in_array($catKey, $selectedCategories ?? []) ? 'checked' : '' }}
+                                        onchange="updateLineasSummary()"
+                                        class="linea-checkbox mt-0.5 rounded border-[#e3dbc2] text-[#00232c] focus:ring-0">
+                                    <span class="leading-tight select-none">{{ $catLabel }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+
+                        <div class="pt-2.5 mt-2.5 border-t border-[#e3dbc2] flex items-center justify-between gap-2">
+                            <span class="text-[10px] font-mono text-[#56686b]" id="lineasSelectedCountText">
+                                {{ $selectedCount === 0 || $selectedCount === 6 ? 'Todas activas' : $selectedCount . ' de 6 activas' }}
+                            </span>
+                            <button type="submit" class="px-3.5 py-1.5 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold transition-colors cursor-pointer">
+                                Aplicar Filtro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selector de Departamentos -->
                 <div class="lg:col-span-2 sm:col-span-1">
-                    <select name="category" onchange="this.form.submit()" class="w-full px-3 py-2.5 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
-                        <option value="all" {{ ($selectedCategory ?? 'all') === 'all' ? 'selected' : '' }}>Todas las líneas</option>
-                        <option value="turismo" {{ ($selectedCategory ?? '') === 'turismo' ? 'selected' : '' }}>Turismo y Destinos</option>
-                        <option value="eventos" {{ ($selectedCategory ?? '') === 'eventos' ? 'selected' : '' }}>Eventos, Ferias y Logística</option>
-                        <option value="publicidad" {{ ($selectedCategory ?? '') === 'publicidad' ? 'selected' : '' }}>Publicidad, Medios y Marca</option>
-                        <option value="audiovisual" {{ ($selectedCategory ?? '') === 'audiovisual' ? 'selected' : '' }}>Producción Audiovisual</option>
-                        <option value="estrategia" {{ ($selectedCategory ?? '') === 'estrategia' ? 'selected' : '' }}>Estrategia y Consultoría</option>
-                        <option value="digital" {{ ($selectedCategory ?? '') === 'digital' ? 'selected' : '' }}>Portales Web y Digital</option>
-                    </select>
-                </div>
-                <div class="lg:col-span-3 sm:col-span-1">
-                    <select name="region" onchange="document.getElementById('municipioSelect').value=''; this.form.submit();" class="w-full px-3 py-2.5 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
+                    <select name="region" id="regionSelect" onchange="onRegionChange(this.value)" class="w-full h-full min-h-[42px] px-3 py-2 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
                         <option value="">Todos los departamentos</option>
                         @foreach($regions as $reg)
                             <option value="{{ $reg }}" {{ $selectedRegion == $reg ? 'selected' : '' }}>{{ $reg }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="lg:col-span-2 sm:col-span-1">
-                    <select name="municipio" id="municipioSelect" onchange="this.form.submit()" class="w-full px-3 py-2.5 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
-                        <option value="">Todos los municipios</option>
-                        @foreach($municipios as $mun)
-                            <option value="{{ $mun }}" {{ ($selectedMunicipio ?? '') == $mun ? 'selected' : '' }}>{{ $mun }}</option>
-                        @endforeach
-                    </select>
+
+                <!-- Selector de Municipios con Buscador Integrado (1.104 Municipios Oficiales) -->
+                <div class="lg:col-span-3 sm:col-span-1 relative" id="municipioDropdownContainer">
+                    <input type="hidden" name="municipio" id="municipioHiddenInput" value="{{ $selectedMunicipio }}">
+
+                    <button type="button" id="municipioDropdownBtn" onclick="toggleMunDropdown()"
+                        class="w-full h-full min-h-[42px] px-3 py-2 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] flex items-center justify-between hover:border-[#00232c] transition-colors text-left cursor-pointer">
+                        <div class="truncate flex items-center gap-1.5 mr-1">
+                            <svg class="w-3.5 h-3.5 {{ !empty($selectedMunicipio) ? 'text-emerald-700' : 'text-[#56686b]' }} shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span id="municipioDropdownLabel" class="truncate {{ !empty($selectedMunicipio) ? 'font-bold text-[#00232c]' : 'text-[#56686b]' }}">
+                                @if(!empty($selectedMunicipio))
+                                    {{ $selectedMunicipio }}
+                                @else
+                                    Todos los municipios ({{ count($municipios) }})
+                                @endif
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            @if(!empty($selectedMunicipio))
+                                <span onclick="clearSelectedMunicipio(event)" class="text-[#56686b] hover:text-rose-600 px-1 font-bold text-xs cursor-pointer" title="Quitar filtro de municipio">
+                                    ×
+                                </span>
+                            @endif
+                            <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                    </button>
+
+                    <!-- Menú Desplegable con Buscador en Vivo de Municipios -->
+                    <div id="municipioDropdownMenu" class="hidden absolute top-full left-0 right-0 sm:right-auto sm:w-80 mt-1 bg-white border border-[#e3dbc2] rounded-lg shadow-xl z-50 p-2.5">
+                        <!-- Campo de Búsqueda Instantánea -->
+                        <div class="relative mb-2">
+                            <input type="text" id="munSearchInput" oninput="filterMunicipiosList(this.value)"
+                                placeholder="Buscar municipio (ej: Manizales, Cali, Villeta)..."
+                                class="w-full pl-8 pr-3 py-1.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c]"
+                                autocomplete="off">
+                            <svg class="w-3.5 h-3.5 text-[#56686b] absolute left-2.5 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </div>
+
+                        <!-- Opción por Defecto: Todos los Municipios -->
+                        <button type="button" onclick="selectMunicipio('')"
+                            class="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#f7f2df] text-xs font-mono font-bold text-[#00232c] border-b border-[#f0ebd8] mb-1 flex items-center justify-between cursor-pointer">
+                            <span>Todos los municipios</span>
+                            <span class="text-[10px] text-[#56686b] font-normal" id="munCounterBadge">{{ count($municipios) }} disponibles</span>
+                        </button>
+
+                        <!-- Lista de Municipios con Scroll (Renderizado Dinámico Ultrarrápido) -->
+                        <div id="municipiosListContainer" class="max-h-56 overflow-y-auto space-y-0.5 divide-y divide-[#faf6ec]">
+                            <!-- Los municipios se inyectan dinámicamente desde el dataset oficial en memoria -->
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Botón de Filtrar -->
                 <div class="lg:col-span-1 sm:col-span-1">
-                    <button type="submit" class="w-full h-full py-2.5 bg-[#0b4a57] hover:bg-[#00232c] text-white rounded text-xs font-mono font-medium transition-colors cursor-pointer">
+                    <button type="submit" class="w-full h-full min-h-[42px] py-2 bg-[#0b4a57] hover:bg-[#00232c] text-white rounded text-xs font-mono font-medium transition-colors cursor-pointer">
                         Filtrar
                     </button>
                 </div>
@@ -464,6 +587,134 @@
 <!-- Modal para Editar Palabra Clave -->
 <script>
 window.licitacionesStore = @json($licitaciones->keyBy('id'));
+window.ALL_MUNICIPIOS = @json($municipios);
+window.SELECTED_MUNICIPIO = @json($selectedMunicipio ?? '');
+
+function toggleLineasDropdown() {
+    const menu = document.getElementById('lineasDropdownMenu');
+    menu.classList.toggle('hidden');
+    document.getElementById('municipioDropdownMenu')?.classList.add('hidden');
+}
+
+function selectAllLineas(select) {
+    document.querySelectorAll('.linea-checkbox').forEach(cb => {
+        cb.checked = select;
+    });
+    updateLineasSummary();
+}
+
+function updateLineasSummary() {
+    const checked = Array.from(document.querySelectorAll('.linea-checkbox:checked'));
+    const label = document.getElementById('lineasDropdownLabel');
+    const countText = document.getElementById('lineasSelectedCountText');
+    if (checked.length === 0 || checked.length === 6) {
+        label.textContent = 'Todas las líneas (6)';
+    } else if (checked.length === 1) {
+        label.textContent = checked[0].closest('label').querySelector('span').textContent.trim();
+    } else {
+        label.textContent = checked.length + ' líneas seleccionadas';
+    }
+    if (countText) {
+        countText.textContent = (checked.length === 0 || checked.length === 6) ? 'Todas activas' : (checked.length + ' de 6 activas');
+    }
+}
+
+function toggleMunDropdown() {
+    const menu = document.getElementById('municipioDropdownMenu');
+    const isHidden = menu.classList.contains('hidden');
+    menu.classList.toggle('hidden');
+    document.getElementById('lineasDropdownMenu')?.classList.add('hidden');
+    if (isHidden) {
+        renderMunicipios(window.ALL_MUNICIPIOS);
+        const input = document.getElementById('munSearchInput');
+        setTimeout(() => input?.focus(), 60);
+    }
+}
+
+function renderMunicipios(list) {
+    const container = document.getElementById('municipiosListContainer');
+    if (!container) return;
+
+    if (!list || list.length === 0) {
+        container.innerHTML = '<div class="p-4 text-center text-xs font-mono text-[#56686b]">No se encontraron municipios coincidentes.</div>';
+        const badge = document.getElementById('munCounterBadge');
+        if (badge) badge.textContent = '0 disponibles';
+        return;
+    }
+
+    const badge = document.getElementById('munCounterBadge');
+    if (badge) badge.textContent = list.length + ' disponibles';
+
+    const toRender = list.slice(0, 100);
+    let html = '';
+
+    for (let i = 0; i < toRender.length; i++) {
+        const item = toRender[i];
+        const nom = typeof item === 'object' ? (item.nombre || '') : item;
+        const dep = typeof item === 'object' ? (item.departamento || '') : '';
+        const isSelected = (window.SELECTED_MUNICIPIO === nom);
+        const nomEscaped = nom.replace(/'/g, "\\'");
+
+        html += `<button type="button" onclick="selectMunicipio('${nomEscaped}')" class="w-full text-left px-2.5 py-1.5 rounded hover:bg-[#f7f2df] text-xs font-mono flex items-center justify-between transition-colors cursor-pointer ${isSelected ? 'bg-[#00232c] text-[#fbfb75] font-bold' : 'text-[#00232c]'}">` +
+                `<span class="truncate">${nom}</span>` +
+                (dep ? `<span class="text-[10px] shrink-0 ml-2 ${isSelected ? 'text-[#fbfb75]/80' : 'text-[#56686b]'}">${dep}</span>` : '') +
+                `</button>`;
+    }
+
+    if (list.length > 100) {
+        html += `<div class="p-2 text-center text-[10px] font-mono text-[#56686b] bg-[#faf6ec] border-t border-[#e3dbc2]">Escribe en el buscador para filtrar entre los ${list.length} municipios...</div>`;
+    }
+
+    container.innerHTML = html;
+}
+
+function selectMunicipio(nombre) {
+    document.getElementById('municipioHiddenInput').value = nombre;
+    document.getElementById('municipioHiddenInput').closest('form').submit();
+}
+
+function clearSelectedMunicipio(event) {
+    event.stopPropagation();
+    selectMunicipio('');
+}
+
+function onRegionChange(val) {
+    document.getElementById('municipioHiddenInput').value = '';
+    document.getElementById('regionSelect').closest('form').submit();
+}
+
+function filterMunicipiosList(term) {
+    term = (term || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (!term) {
+        renderMunicipios(window.ALL_MUNICIPIOS);
+        return;
+    }
+
+    const filtered = (window.ALL_MUNICIPIOS || []).filter(item => {
+        const nom = (typeof item === 'object' ? (item.nombre || '') : item).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const dep = (typeof item === 'object' ? (item.departamento || '') : '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return nom.includes(term) || dep.includes(term);
+    });
+
+    renderMunicipios(filtered);
+}
+
+// Inicializar lista al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    renderMunicipios(window.ALL_MUNICIPIOS);
+});
+
+// Cerrar desplegables al hacer clic fuera
+document.addEventListener('click', function(e) {
+    const lineasContainer = document.getElementById('lineasDropdownContainer');
+    if (lineasContainer && !lineasContainer.contains(e.target)) {
+        document.getElementById('lineasDropdownMenu')?.classList.add('hidden');
+    }
+    const munContainer = document.getElementById('municipioDropdownContainer');
+    if (munContainer && !munContainer.contains(e.target)) {
+        document.getElementById('municipioDropdownMenu')?.classList.add('hidden');
+    }
+});
 </script>
 
 @include('partials.ficha-drawer')
