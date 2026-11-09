@@ -105,9 +105,10 @@ class SecopColombiaService
 
     /**
      * Purga automática de propuestas vencidas o fuera de la ventana de 5 meses.
-     * REGLA DE ORO DE PERSISTENCIA:
-     * NUNCA se eliminan las que están en Cartera (en_cartera = true).
-     * NUNCA se eliminan las que han sido analizadas con IA (score IS NOT NULL).
+     * REGLA DE PERSISTENCIA:
+     * Únicamente se conservan históricamente las propuestas guardadas en Cartera (en_cartera = true).
+     * Toda propuesta cerrada o vencida que NO esté en Cartera se elimina de la base de datos,
+     * incluso si fue analizada con IA, para mantener el radar y afinidad 100% limpios y vigentes.
      */
     public function purgeExpired(string $connection = 'colombia'): int
     {
@@ -116,8 +117,9 @@ class SecopColombiaService
         $fiveMonthsAgo = now()->subMonths(5)->toDateString();
 
         try {
-            // 1. Marcar como 'Cerrado' los procesos vencidos que se conservan por cartera o score
+            // 1. Marcar como 'Cerrado' los procesos vencidos que se conservan por estar en Cartera
             Licitacion::on($connection)
+                ->where('en_cartera', true)
                 ->whereNotNull('fecha_cierre')
                 ->where('fecha_cierre', '!=', '')
                 ->where(function ($sub) use ($nowDateTime, $today) {
@@ -127,10 +129,9 @@ class SecopColombiaService
                 ->whereNotIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
                 ->update(['estado' => 'Cerrado']);
 
-            // 2. Eliminar de la base activa las no guardadas ni analizadas que ya cerraron o superan 5 meses
+            // 2. Eliminar de la base activa todas las que ya cerraron o superan 5 meses y NO están en cartera
             return Licitacion::on($connection)
                 ->where('en_cartera', false)
-                ->whereNull('score')
                 ->where(function ($q) use ($nowDateTime, $today, $fiveMonthsAgo) {
                     $q->where(function ($sq) use ($nowDateTime, $today) {
                         $sq->whereNotNull('fecha_cierre')
@@ -138,7 +139,8 @@ class SecopColombiaService
                                $ts->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
                                   ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
                            });
-                    })->orWhere(function ($sq) use ($fiveMonthsAgo) {
+                    })->orWhereIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
+                      ->orWhere(function ($sq) use ($fiveMonthsAgo) {
                         $sq->whereNotNull('fecha_publicacion')
                            ->whereRaw("substr(fecha_publicacion, 1, 10) < ?", [$fiveMonthsAgo]);
                     });
@@ -158,22 +160,31 @@ class SecopColombiaService
         $today = now()->toDateString();
         $fiveMonthsAgo = now()->subMonths(5)->toDateString();
 
-        // Palabras clave de interés dinámicas según configuración Tornus
+        // Palabras clave de interés y entidades prioritarias dinámicas según configuración Tornus
         $filters = \App\Services\RadarFilterService::getData('CO');
-        $keywords = !empty($filters['keywords']) ? $filters['keywords'] : ['TURISMO', 'BRANDING', 'MARKETING', 'PUBLICIDAD'];
+        $keywords = !empty($filters['keywords']) ? $filters['keywords'] : \App\Services\RadarFilterService::DEFAULT_KEYWORDS_CO;
+        $priorityEntities = !empty($filters['priority_entities']) ? $filters['priority_entities'] : \App\Services\RadarFilterService::DEFAULT_PRIORITY_ENTITIES_CO;
 
-        $whereClauses = [];
+        $criteriaClauses = [];
         foreach (array_slice($keywords, 0, 15) as $kw) {
             $kwEscaped = str_replace("'", "''", trim($kw));
             if (!empty($kwEscaped)) {
-                $whereClauses[] = "upper(nombre_del_procedimiento) LIKE '%{$kwEscaped}%'";
+                $criteriaClauses[] = "upper(nombre_del_procedimiento) LIKE '%{$kwEscaped}%'";
             }
         }
-        $whereKeywords = '(' . implode(' OR ', $whereClauses) . ')';
+
+        foreach (array_slice($priorityEntities, 0, 15) as $pe) {
+            $peEscaped = str_replace("'", "''", trim($pe));
+            if (!empty($peEscaped)) {
+                $criteriaClauses[] = "upper(entidad) LIKE '%{$peEscaped}%'";
+            }
+        }
+
+        $whereCriteria = !empty($criteriaClauses) ? '(' . implode(' OR ', $criteriaClauses) . ')' : "(upper(nombre_del_procedimiento) LIKE '%TURISMO%')";
 
         // Ventana de 5 meses: Procesos publicados en los últimos 5 meses y con cierre vigente
         $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND (fecha_de_recepcion_de >= '{$today}' OR fecha_de_recepcion_de IS NULL))";
-        $whereSql = "{$whereKeywords} AND {$whereDate} AND (upper(nombre_del_procedimiento) NOT LIKE '%CUNDINAMARCA%')";
+        $whereSql = "{$whereCriteria} AND {$whereDate}";
 
         $query = "SELECT id_del_proceso, referencia, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, fecha_de_apertura_de_respuesta, fecha_de_adjudicacion, fecha_de_ultima_publicacion, fase, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
 

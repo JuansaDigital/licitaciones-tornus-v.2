@@ -13,7 +13,27 @@ class AfinidadController extends Controller
     public function index(Request $request)
     {
         $connection = MarketService::connection();
-        $query = Licitacion::on($connection)->whereNotNull('score');
+        $nowDateTime = now()->format('Y-m-d H:i:s');
+        $today = now()->toDateString();
+
+        // REGLA DE VIGENCIA: Solo propuestas vigentes (abiertas) o que estén guardadas en Cartera
+        // Las ofertas que ya cerraron y NO están en cartera se descartan automáticamente.
+        $baseActiveQuery = function () use ($connection, $nowDateTime, $today) {
+            return Licitacion::on($connection)
+                ->whereNotNull('score')
+                ->where(function ($q) use ($nowDateTime, $today) {
+                    $q->where('en_cartera', true)
+                      ->orWhere(function ($sub) use ($nowDateTime, $today) {
+                          $sub->where(function ($dateQ) use ($nowDateTime, $today) {
+                              $dateQ->whereNull('fecha_cierre')
+                                    ->orWhereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
+                                    ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
+                          })->whereNotIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto']);
+                      });
+                });
+        };
+
+        $query = $baseActiveQuery();
 
         // Filtro por Nivel de Afinidad (ALTA, MEDIA, BAJA)
         $filterNivel = $request->input('nivel', 'all');
@@ -49,10 +69,10 @@ class AfinidadController extends Controller
             ->withQueryString();
 
         $stats = [
-            'total_evaluadas' => Licitacion::on($connection)->whereNotNull('score')->count(),
-            'alta' => Licitacion::on($connection)->where('nivel', 'ALTA')->count(),
-            'media' => Licitacion::on($connection)->where('nivel', 'MEDIA')->count(),
-            'baja' => Licitacion::on($connection)->where('nivel', 'BAJA')->count(),
+            'total_evaluadas' => $baseActiveQuery()->count(),
+            'alta' => $baseActiveQuery()->where('nivel', 'ALTA')->count(),
+            'media' => $baseActiveQuery()->where('nivel', 'MEDIA')->count(),
+            'baja' => $baseActiveQuery()->where('nivel', 'BAJA')->count(),
         ];
 
         return view('afinidad', compact(

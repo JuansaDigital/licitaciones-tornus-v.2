@@ -41,7 +41,9 @@ class RadarController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('objeto', 'like', "%{$search}%")
                   ->orWhere('entidad', 'like', "%{$search}%")
-                  ->orWhere('referencia', 'like', "%{$search}%");
+                  ->orWhere('referencia', 'like', "%{$search}%")
+                  ->orWhere('departamento', 'like', "%{$search}%")
+                  ->orWhere('municipio', 'like', "%{$search}%");
             });
 
             // Regla anti-falso positivo si busca "marca"
@@ -84,10 +86,16 @@ class RadarController extends Controller
             });
         }
 
-        // 4. Filtro territorial
+        // 4. Filtro territorial (Departamento y Municipio)
         $selectedRegion = trim($request->input('region', ''));
+        $selectedMunicipio = trim($request->input('municipio', ''));
+
         if (!empty($selectedRegion)) {
             $query->where('departamento', 'like', "%{$selectedRegion}%");
+        }
+
+        if (!empty($selectedMunicipio)) {
+            $query->where('municipio', 'like', "%{$selectedMunicipio}%");
         }
 
         // 4b. Filtro por Categoría / Línea de Negocio (Enfoque Turismo, Eventos, Publicidad, etc.)
@@ -149,13 +157,28 @@ class RadarController extends Controller
             });
         }
 
-        // 5. Regiones disponibles para el filtro
+        // 5. Regiones y Municipios disponibles para el filtro territorial
         $regions = Licitacion::on($connection)
             ->whereNotNull('departamento')
             ->where('departamento', '!=', '')
             ->distinct()
             ->orderBy('departamento')
             ->pluck('departamento')
+            ->toArray();
+
+        $municipiosQuery = Licitacion::on($connection)
+            ->whereNotNull('municipio')
+            ->where('municipio', '!=', '')
+            ->where('municipio', '!=', 'No Definido');
+
+        if (!empty($selectedRegion)) {
+            $municipiosQuery->where('departamento', 'like', "%{$selectedRegion}%");
+        }
+
+        $municipios = $municipiosQuery
+            ->distinct()
+            ->orderBy('municipio')
+            ->pluck('municipio')
             ->toArray();
 
         // 6. Conteo de propuestas vigentes en el mercado (aplicando exclusiones activas)
@@ -181,13 +204,13 @@ class RadarController extends Controller
         }
         $totalCount = $totalQuery->count();
 
-        // 7. Filtro de Plazo de Cierre (Vencimiento)
+        // 7. Filtro de Plazo de Cierre (Vencimiento Estratégico)
+        // - 'all': Todos los plazos vigentes
+        // - 'critical': Tiempos críticos (desde 7 días hacia 0 horas / cierre urgente)
+        // - 'early': Alertas tempranas (desde 7 días hasta 5 meses con tiempo de antelación)
         $selectedUrgency = $request->input('urgency', 'all');
-        $dateCritical = now()->addDays(2)->toDateString();
         $dateWeek = now()->addDays(7)->toDateString();
-        $dateMonthStart = now()->addDays(15)->toDateString();
-        $dateMonthEnd = now()->addDays(30)->toDateString();
-        $dateQuarterEnd = now()->addDays(90)->toDateString();
+        $dateFiveMonths = now()->addMonths(5)->toDateString();
 
         if ($selectedUrgency === 'critical') {
             $query->whereNotNull('fecha_cierre')
@@ -195,20 +218,27 @@ class RadarController extends Controller
                       $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
                           ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
                   })
-                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateCritical]);
-        } elseif ($selectedUrgency === 'week') {
-            $query->whereNotNull('fecha_cierre')
-                  ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateCritical])
                   ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateWeek]);
-        } elseif ($selectedUrgency === 'month') {
+        } elseif ($selectedUrgency === 'early') {
             $query->whereNotNull('fecha_cierre')
-                  ->whereRaw("substr(fecha_cierre, 1, 10) >= ?", [$dateMonthStart])
-                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateMonthEnd]);
-        } elseif ($selectedUrgency === 'quarter') {
-            $query->whereNotNull('fecha_cierre')
-                  ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateMonthEnd])
-                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateQuarterEnd]);
+                  ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateWeek])
+                  ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateFiveMonths]);
         }
+
+        $criticalCount = (clone $totalQuery)
+            ->whereNotNull('fecha_cierre')
+            ->where(function ($sub) use ($nowDateTime, $today) {
+                $sub->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre >= ?", [$nowDateTime])
+                    ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) >= ?", [$today]);
+            })
+            ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateWeek])
+            ->count();
+
+        $earlyCount = (clone $totalQuery)
+            ->whereNotNull('fecha_cierre')
+            ->whereRaw("substr(fecha_cierre, 1, 10) > ?", [$dateWeek])
+            ->whereRaw("substr(fecha_cierre, 1, 10) <= ?", [$dateFiveMonths])
+            ->count();
 
         // 8. FILTRO INTELIGENTE DE AFINIDAD CON IA (AUTO-TRIAGE TORNUS)
         // 'viable' (por defecto): Oculta propuestas con score < 40 o marcadas como 'Descartar'.
@@ -256,8 +286,12 @@ class RadarController extends Controller
             'licitaciones',
             'regions',
             'selectedRegion',
+            'municipios',
+            'selectedMunicipio',
             'selectedCategory',
             'selectedUrgency',
+            'criticalCount',
+            'earlyCount',
             'selectedIaFilter',
             'discardedCount',
             'pendingEvaluationCount',

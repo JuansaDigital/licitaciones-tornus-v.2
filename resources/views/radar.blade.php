@@ -78,15 +78,15 @@
             <input type="hidden" name="urgency" value="{{ $selectedUrgency }}">
             <input type="hidden" name="ia_filter" value="{{ $selectedIaFilter ?? 'viable' }}">
             
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
-                <div class="md:col-span-5 relative">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                <div class="lg:col-span-4 sm:col-span-2 relative">
                     <input type="text" name="q" value="{{ $search }}" placeholder="Buscar por objeto, palabras clave o entidad..."
                         class="w-full px-3.5 py-2.5 bg-white border border-[#e3dbc2] rounded text-sm text-[#00232c] placeholder-[#9db3b4] focus:outline-none focus:border-[#00232c] focus:ring-1 focus:ring-[#00232c] transition-colors font-sans">
                 </div>
-                <div class="md:col-span-3">
+                <div class="lg:col-span-2 sm:col-span-1">
                     <select name="category" onchange="this.form.submit()" class="w-full px-3 py-2.5 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
-                        <option value="all" {{ ($selectedCategory ?? 'all') === 'all' ? 'selected' : '' }}>Todas las líneas de negocio</option>
-                        <option value="turismo" {{ ($selectedCategory ?? '') === 'turismo' ? 'selected' : '' }}>Enfoque Turismo y Destinos</option>
+                        <option value="all" {{ ($selectedCategory ?? 'all') === 'all' ? 'selected' : '' }}>Todas las líneas</option>
+                        <option value="turismo" {{ ($selectedCategory ?? '') === 'turismo' ? 'selected' : '' }}>Turismo y Destinos</option>
                         <option value="eventos" {{ ($selectedCategory ?? '') === 'eventos' ? 'selected' : '' }}>Eventos, Ferias y Logística</option>
                         <option value="publicidad" {{ ($selectedCategory ?? '') === 'publicidad' ? 'selected' : '' }}>Publicidad, Medios y Marca</option>
                         <option value="audiovisual" {{ ($selectedCategory ?? '') === 'audiovisual' ? 'selected' : '' }}>Producción Audiovisual</option>
@@ -94,22 +94,30 @@
                         <option value="digital" {{ ($selectedCategory ?? '') === 'digital' ? 'selected' : '' }}>Portales Web y Digital</option>
                     </select>
                 </div>
-                <div class="md:col-span-3">
-                    <select name="region" onchange="this.form.submit()" class="w-full px-3 py-2.5 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
-                        <option value="">Todas las regiones / departamentos</option>
+                <div class="lg:col-span-3 sm:col-span-1">
+                    <select name="region" onchange="document.getElementById('municipioSelect').value=''; this.form.submit();" class="w-full px-3 py-2.5 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
+                        <option value="">Todos los departamentos</option>
                         @foreach($regions as $reg)
                             <option value="{{ $reg }}" {{ $selectedRegion == $reg ? 'selected' : '' }}>{{ $reg }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="md:col-span-1">
+                <div class="lg:col-span-2 sm:col-span-1">
+                    <select name="municipio" id="municipioSelect" onchange="this.form.submit()" class="w-full px-3 py-2.5 bg-white border border-[#e3dbc2] rounded text-xs font-mono text-[#00232c] focus:outline-none focus:border-[#00232c]">
+                        <option value="">Todos los municipios</option>
+                        @foreach($municipios as $mun)
+                            <option value="{{ $mun }}" {{ ($selectedMunicipio ?? '') == $mun ? 'selected' : '' }}>{{ $mun }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="lg:col-span-1 sm:col-span-1">
                     <button type="submit" class="w-full h-full py-2.5 bg-[#0b4a57] hover:bg-[#00232c] text-white rounded text-xs font-mono font-medium transition-colors cursor-pointer">
                         Filtrar
                     </button>
                 </div>
             </div>
 
-            <!-- FILTROS DE TIEMPO Y VENCIMIENTO (SEMÁFORO DE URGENCIAS) -->
+            <!-- FILTROS DE TIEMPO Y VENCIMIENTO (PLAZOS ESTRATÉGICOS) -->
             <div class="pt-3 border-t border-[#e3dbc2] flex flex-wrap items-center gap-2 font-mono text-xs">
                 <span class="text-[#56686b] font-semibold mr-1">PLAZO DE CIERRE:</span>
                 
@@ -119,27 +127,23 @@
                 </a>
                 
                 <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'critical'])) }}"
-                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'critical' ? 'border-rose-400 bg-rose-100 text-rose-900 font-bold' : 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100' }}">
+                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'critical' ? 'border-rose-400 bg-rose-100 text-rose-900 font-bold' : 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100' }}"
+                    title="Propuestas con cierre urgente en los próximos 7 días (de 7 días hacia 0 horas)">
                     <span class="w-2 h-2 rounded-full bg-rose-600"></span>
-                    <span>Crítico: &lt; 48 horas</span>
+                    <span>Tiempos Críticos: ≤ 7 días (7 días a 0h)</span>
+                    @if(isset($criticalCount) && $criticalCount > 0)
+                        <span class="ml-1 px-1.5 py-0.2 rounded text-[10px] {{ $selectedUrgency === 'critical' ? 'bg-rose-800 text-white' : 'bg-rose-200 text-rose-800' }}">{{ $criticalCount }}</span>
+                    @endif
                 </a>
 
-                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'week'])) }}"
-                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'week' ? 'border-amber-400 bg-amber-100 text-amber-900 font-bold' : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' }}">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span>Esta semana: 3 a 7 días</span>
-                </a>
-
-                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'month'])) }}"
-                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'month' ? 'border-emerald-400 bg-emerald-100 text-emerald-900 font-bold' : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' }}">
+                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'early'])) }}"
+                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'early' ? 'border-emerald-400 bg-emerald-100 text-emerald-900 font-bold' : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' }}"
+                    title="Propuestas con tiempo de antelación para formulación y estructuración (desde 7 días hasta 5 meses)">
                     <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    <span>Con tiempo: 15 a 30 días</span>
-                </a>
-
-                <a href="{{ route('radar', array_merge(request()->query(), ['urgency' => 'quarter'])) }}"
-                    class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ $selectedUrgency === 'quarter' ? 'border-blue-400 bg-blue-100 text-blue-900 font-bold' : 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100' }}">
-                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span>Con tiempo: 1 a 3 meses</span>
+                    <span>Alertas Tempranas: 7 días a 5 meses</span>
+                    @if(isset($earlyCount) && $earlyCount > 0)
+                        <span class="ml-1 px-1.5 py-0.2 rounded text-[10px] {{ $selectedUrgency === 'early' ? 'bg-emerald-800 text-white' : 'bg-emerald-200 text-emerald-800' }}">{{ $earlyCount }}</span>
+                    @endif
                 </a>
 
                 <span class="text-[#e3dbc2] mx-1 hidden sm:inline">|</span>

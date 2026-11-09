@@ -16,7 +16,14 @@ class RadarFilterService
         'promoción',
         'Plan de medios',
         'Estrategia de turismo',
-        'Difusión del destino'
+        'Difusión del destino',
+        'OPERACION LOGISTICA',
+        'LOGISTICA',
+        'FERIA',
+        'FESTIVAL',
+        'EVENTO',
+        'TURISTICA',
+        'TURISTICO'
     ];
 
     public const DEFAULT_EXCLUSIONS_CO = [
@@ -76,8 +83,7 @@ class RadarFilterService
         'SUMINISTRO AGUA',
         'BATERIAS',
         'ACUEDUCTO',
-        'ALCANTARILLADO',
-        'CUNDINAMARCA'
+        'ALCANTARILLADO'
     ];
 
     public const DEFAULT_PRIORITY_ENTITIES_CO = [
@@ -85,7 +91,11 @@ class RadarFilterService
         'FONDO NACIONAL DEL TURISMO',
         'SECRETARIA DE DESARROLLO ECONOMICO',
         'SECRETARIA DE TURISMO',
+        'SECRETARIA DE CULTURA Y TURISMO',
         'INSTITUTO DISTRITAL DE TURISMO',
+        'INSTITUTO DE CULTURA Y TURISMO',
+        'INSTITUTO MUNICIPAL PARA EL TURISMO',
+        'INSTITUTO MUNICIPAL DE TURISMO',
         'IDT',
         'IDECUT',
         'MINCIT',

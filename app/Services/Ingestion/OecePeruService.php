@@ -377,7 +377,10 @@ class OecePeruService
 
     /**
      * Purga automática de propuestas vencidas o fuera de la ventana de 5 meses en Perú.
-     * REGLA DE ORO: No borra si está en cartera o analizada con IA.
+     * REGLA DE PERSISTENCIA:
+     * Únicamente se conservan históricamente las propuestas guardadas en Cartera (en_cartera = true).
+     * Toda propuesta cerrada o vencida que NO esté en Cartera se elimina de la base de datos,
+     * incluso si fue analizada con IA.
      */
     public function purgeExpired(string $connection = 'peru'): int
     {
@@ -386,8 +389,9 @@ class OecePeruService
         $fiveMonthsAgo = now()->subMonths(5)->toDateString();
 
         try {
-            // 1. Marcar como 'Cerrado' los procesos vencidos que se conservan por cartera o score
+            // 1. Marcar como 'Cerrado' los procesos vencidos que se conservan por estar en Cartera
             Licitacion::on($connection)
+                ->where('en_cartera', true)
                 ->whereNotNull('fecha_cierre')
                 ->where('fecha_cierre', '!=', '')
                 ->where(function ($sub) use ($nowDateTime, $today) {
@@ -397,10 +401,9 @@ class OecePeruService
                 ->whereNotIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
                 ->update(['estado' => 'Cerrado']);
 
-            // 2. Eliminar de la base activa las no guardadas ni analizadas que ya cerraron o superan 5 meses
+            // 2. Eliminar de la base activa todas las que ya cerraron o superan 5 meses y NO están en cartera
             return Licitacion::on($connection)
                 ->where('en_cartera', false)
-                ->whereNull('score')
                 ->where(function ($q) use ($nowDateTime, $today, $fiveMonthsAgo) {
                     $q->where(function ($sq) use ($nowDateTime, $today) {
                         $sq->whereNotNull('fecha_cierre')
@@ -408,7 +411,8 @@ class OecePeruService
                                $ts->whereRaw("length(fecha_cierre) > 10 AND fecha_cierre < ?", [$nowDateTime])
                                   ->orWhereRaw("length(fecha_cierre) <= 10 AND substr(fecha_cierre, 1, 10) < ?", [$today]);
                            });
-                    })->orWhere(function ($sq) use ($fiveMonthsAgo) {
+                    })->orWhereIn('estado', ['Cerrado', 'Adjudicado', 'Cancelado', 'Desierto'])
+                      ->orWhere(function ($sq) use ($fiveMonthsAgo) {
                         $sq->whereNotNull('fecha_publicacion')
                            ->whereRaw("substr(fecha_publicacion, 1, 10) < ?", [$fiveMonthsAgo]);
                     });

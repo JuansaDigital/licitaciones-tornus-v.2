@@ -378,6 +378,10 @@ class PerfilTornusController extends Controller
 
     public function update(Request $request)
     {
+        if (!\Illuminate\Support\Facades\Auth::check() || !\Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            return back()->withErrors(['error' => 'Solo los administradores tienen permiso para modificar los criterios estratégicos y perfil de Tornus.']);
+        }
+
         $currentProfile = self::getActiveProfile();
 
         $updatedData = array_merge($currentProfile, [

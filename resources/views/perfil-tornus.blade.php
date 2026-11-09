@@ -81,12 +81,10 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <span>Equipo Senior</span>
             </button>
-            @if(Auth::user()->isAdmin())
             <button type="button" onclick="showProfileTab('filtros')" id="tabBtn-filtros" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span class="font-bold">Filtros de Rastreo (Por País)</span>
             </button>
-            @endif
             <button type="button" onclick="showProfileTab('evaluador')" id="tabBtn-evaluador" class="profile-tab-btn px-3.5 py-2 rounded-md border border-[#e3dbc2] bg-white text-[#56686b] hover:text-[#00232c] hover:bg-[#f7f2df] transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 <span>Metodología & Rúbrica IA</span>
@@ -425,12 +423,21 @@
             </div>
         </div>
 
-        @if(Auth::user()->isAdmin())
         <!-- ========================================================================= -->
         <!-- TAB 6: FILTROS DE RASTREO POR PAÍS (COLOMBIA VS PERÚ - MULTI-TENANT)     -->
         <!-- ========================================================================= -->
         <div id="tabContent-filtros" class="profile-tab-pane pt-6 space-y-6 hidden">
             
+            @if(!Auth::user()->isAdmin())
+            <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-blue-900">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-700 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <span><strong>Modo Consulta (Solo Lectura):</strong> Como colaborador puedes revisar las palabras clave, exclusiones y entidades prioritarias del motor de rastreo. La edición y ajuste de estos parámetros está reservada al Administrador.</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold uppercase border border-blue-200 shrink-0 self-start sm:self-auto">Colaborador</span>
+            </div>
+            @endif
+
             <div class="p-4 bg-white border border-[#e3dbc2] rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h3 class="font-mono text-xs font-bold uppercase tracking-wider text-[#00232c] flex items-center gap-2">
@@ -475,6 +482,7 @@
                                 {{ count($filtersCO['priority_entities'] ?? []) }} entidades
                             </span>
                         </div>
+                        @if(Auth::user()->isAdmin())
                         <form action="{{ route('radar.priority_entities.reset') }}" method="POST">
                             @csrf
                             <input type="hidden" name="market" value="CO">
@@ -482,22 +490,26 @@
                                 Restablecer predeterminadas CO
                             </button>
                         </form>
+                        @endif
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
                         @foreach($filtersCO['priority_entities'] ?? [] as $ent)
                             <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono">
                                 <span class="font-bold text-[#00232c] uppercase">{{ $ent }}</span>
+                                @if(Auth::user()->isAdmin())
                                 <form action="{{ route('radar.priority_entities.remove') }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="market" value="CO">
                                     <input type="hidden" name="entity" value="{{ $ent }}">
                                     <button type="submit" class="text-[#9db3b4] hover:text-rose-700 text-xs cursor-pointer" title="Eliminar">✕</button>
                                 </form>
+                                @endif
                             </div>
                         @endforeach
                     </div>
 
+                    @if(Auth::user()->isAdmin())
                     <form action="{{ route('radar.priority_entities.add') }}" method="POST" class="pt-2 flex flex-col sm:flex-row items-center gap-2 max-w-2xl">
                         @csrf
                         <input type="hidden" name="market" value="CO">
@@ -507,6 +519,7 @@
                             + AGREGAR EN CO
                         </button>
                     </form>
+                    @endif
                 </div>
 
                 <!-- 2. Palabras Clave Colombia -->
@@ -525,6 +538,7 @@
                         @foreach($filtersCO['keywords'] ?? [] as $kw)
                             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded p-2.5 flex items-center justify-between gap-2 text-xs font-mono">
                                 <span class="font-bold text-[#00232c] truncate">{{ $kw }}</span>
+                                @if(Auth::user()->isAdmin())
                                 <div class="flex items-center gap-1 shrink-0">
                                     <button type="button" onclick="openEditKeywordModal('{{ addslashes($kw) }}', 'CO')" class="px-1.5 py-0.5 rounded text-[10px] text-[#56686b] hover:text-[#00232c] cursor-pointer">
                                         Editar
@@ -536,10 +550,12 @@
                                         <button type="submit" class="px-1.5 py-0.5 rounded text-[10px] text-rose-700 hover:text-rose-900 cursor-pointer">✕</button>
                                     </form>
                                 </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>
 
+                    @if(Auth::user()->isAdmin())
                     <form action="{{ route('radar.keywords.add') }}" method="POST" class="pt-2 flex flex-col sm:flex-row items-center gap-2 max-w-2xl">
                         @csrf
                         <input type="hidden" name="market" value="CO">
@@ -549,6 +565,7 @@
                             + AGREGAR PALABRA CO
                         </button>
                     </form>
+                    @endif
                 </div>
 
                 <!-- 3. Palabras a Excluir Colombia -->
@@ -567,16 +584,19 @@
                         @foreach($filtersCO['exclusions'] ?? [] as $ex)
                             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded p-2 flex items-center justify-between gap-1 text-[11px] font-mono">
                                 <span class="text-[#00232c] truncate">{{ $ex }}</span>
+                                @if(Auth::user()->isAdmin())
                                 <form action="{{ route('radar.exclusions.remove') }}" method="POST" class="inline shrink-0">
                                     @csrf
                                     <input type="hidden" name="market" value="CO">
                                     <input type="hidden" name="exclusion" value="{{ $ex }}">
                                     <button type="submit" class="text-rose-700 hover:text-rose-900 cursor-pointer">✕</button>
                                 </form>
+                                @endif
                             </div>
                         @endforeach
                     </div>
 
+                    @if(Auth::user()->isAdmin())
                     <form action="{{ route('radar.exclusions.add') }}" method="POST" class="pt-2 flex flex-col sm:flex-row items-center gap-2 max-w-2xl">
                         @csrf
                         <input type="hidden" name="market" value="CO">
@@ -586,6 +606,7 @@
                             + AGREGAR EXCLUSIÓN CO
                         </button>
                     </form>
+                    @endif
                 </div>
             </div>
 
@@ -611,6 +632,7 @@
                                 {{ count($filtersPE['priority_entities'] ?? []) }} entidades
                             </span>
                         </div>
+                        @if(Auth::user()->isAdmin())
                         <form action="{{ route('radar.priority_entities.reset') }}" method="POST">
                             @csrf
                             <input type="hidden" name="market" value="PE">
@@ -618,22 +640,26 @@
                                 Restablecer predeterminadas PE
                             </button>
                         </form>
+                        @endif
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
                         @foreach($filtersPE['priority_entities'] ?? [] as $ent)
                             <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-xs font-mono">
                                 <span class="font-bold text-[#00232c] uppercase">{{ $ent }}</span>
+                                @if(Auth::user()->isAdmin())
                                 <form action="{{ route('radar.priority_entities.remove') }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="market" value="PE">
                                     <input type="hidden" name="entity" value="{{ $ent }}">
                                     <button type="submit" class="text-[#9db3b4] hover:text-rose-700 text-xs cursor-pointer" title="Eliminar">✕</button>
                                 </form>
+                                @endif
                             </div>
                         @endforeach
                     </div>
 
+                    @if(Auth::user()->isAdmin())
                     <form action="{{ route('radar.priority_entities.add') }}" method="POST" class="pt-2 flex flex-col sm:flex-row items-center gap-2 max-w-2xl">
                         @csrf
                         <input type="hidden" name="market" value="PE">
@@ -643,6 +669,7 @@
                             + AGREGAR EN PE
                         </button>
                     </form>
+                    @endif
                 </div>
 
                 <!-- 2. Palabras Clave Perú -->
@@ -661,6 +688,7 @@
                         @foreach($filtersPE['keywords'] ?? [] as $kw)
                             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded p-2.5 flex items-center justify-between gap-2 text-xs font-mono">
                                 <span class="font-bold text-[#00232c] truncate">{{ $kw }}</span>
+                                @if(Auth::user()->isAdmin())
                                 <div class="flex items-center gap-1 shrink-0">
                                     <button type="button" onclick="openEditKeywordModal('{{ addslashes($kw) }}', 'PE')" class="px-1.5 py-0.5 rounded text-[10px] text-[#56686b] hover:text-[#00232c] cursor-pointer">
                                         Editar
@@ -672,10 +700,12 @@
                                         <button type="submit" class="px-1.5 py-0.5 rounded text-[10px] text-rose-700 hover:text-rose-900 cursor-pointer">✕</button>
                                     </form>
                                 </div>
+                                @endif
                             </div>
                         @endforeach
                     </div>
 
+                    @if(Auth::user()->isAdmin())
                     <form action="{{ route('radar.keywords.add') }}" method="POST" class="pt-2 flex flex-col sm:flex-row items-center gap-2 max-w-2xl">
                         @csrf
                         <input type="hidden" name="market" value="PE">
@@ -685,6 +715,7 @@
                             + AGREGAR PALABRA PE
                         </button>
                     </form>
+                    @endif
                 </div>
 
                 <!-- 3. Palabras a Excluir Perú -->
@@ -703,16 +734,19 @@
                         @foreach($filtersPE['exclusions'] ?? [] as $ex)
                             <div class="bg-[#fbf9f1] border border-[#e3dbc2] rounded p-2 flex items-center justify-between gap-1 text-[11px] font-mono">
                                 <span class="text-[#00232c] truncate">{{ $ex }}</span>
+                                @if(Auth::user()->isAdmin())
                                 <form action="{{ route('radar.exclusions.remove') }}" method="POST" class="inline shrink-0">
                                     @csrf
                                     <input type="hidden" name="market" value="PE">
                                     <input type="hidden" name="exclusion" value="{{ $ex }}">
                                     <button type="submit" class="text-rose-700 hover:text-rose-900 cursor-pointer">✕</button>
                                 </form>
+                                @endif
                             </div>
                         @endforeach
                     </div>
 
+                    @if(Auth::user()->isAdmin())
                     <form action="{{ route('radar.exclusions.add') }}" method="POST" class="pt-2 flex flex-col sm:flex-row items-center gap-2 max-w-2xl">
                         @csrf
                         <input type="hidden" name="market" value="PE">
@@ -722,12 +756,12 @@
                             + AGREGAR EXCLUSIÓN PE
                         </button>
                     </form>
+                    @endif
                 </div>
 
             </div>
 
         </div>
-        @endif
 
         <!-- ========================================== -->
         <!-- TAB 7: METODOLOGÍA & RÚBRICA DEL EVALUADOR -->
@@ -793,7 +827,7 @@
                         </div>
                         <h4 class="font-mono text-xs font-bold text-[#00232c] uppercase">Semáforo de Plazos</h4>
                         <p class="text-[11px] font-mono text-[#56686b] leading-normal">
-                            Monitoreo en tiempo real de tiempos de cierre. Clasificación de criticidad: &lt;48h (Crítico con horas exactas), 3-7 días (Tiempo Justo) y &gt;7 días (Ideal para estructuración).
+                            Monitoreo en tiempo real de tiempos de cierre. Clasificación operativa: Tiempos Críticos (≤ 7 días hacia 0h para cierre urgente) y Alertas Tempranas (7 días a 5 meses con tiempo de antelación).
                         </p>
                     </div>
 
@@ -860,6 +894,16 @@
                 </div>
             </div>
 
+            @if(!Auth::user()->isAdmin())
+            <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-blue-900">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-700 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <span><strong>Modo Consulta (Solo Lectura):</strong> La metodología de 4 fases y la configuración estratégica para la IA están disponibles para consulta. La modificación de directrices está reservada al Administrador.</span>
+                </div>
+                <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-bold uppercase border border-blue-200 shrink-0 self-start sm:self-auto">Colaborador</span>
+            </div>
+            @endif
+
             <!-- Formulario de Configuración de Criterios Editables -->
             <form action="{{ route('perfil.update') }}" method="POST" class="space-y-6">
                 @csrf
@@ -871,7 +915,8 @@
                             Razón Social
                         </label>
                         <input type="text" name="nombre_agencia" value="{{ old('nombre_agencia', $profile['nombre_agencia'] ?? 'TORNUS S.A.S.') }}" required
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans">
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans">
                     </div>
 
                     <div>
@@ -879,7 +924,8 @@
                             Marca Comercial
                         </label>
                         <input type="text" name="marca_comercial" value="{{ old('marca_comercial', $profile['marca_comercial'] ?? 'Tornus Agency') }}" required
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans">
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans">
                     </div>
 
                     <div>
@@ -887,7 +933,8 @@
                             Sitio Web Oficial
                         </label>
                         <input type="url" name="sitio_web" value="{{ old('sitio_web', $profile['sitio_web'] ?? 'https://tornus.agency') }}"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans">
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans">
                     </div>
                 </div>
 
@@ -898,7 +945,8 @@
                             Instagram Corporativo
                         </label>
                         <input type="text" name="instagram" value="{{ old('instagram', $profile['redes_sociales']['instagram'] ?? 'https://instagram.com/tornusagency') }}"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans">
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans">
                     </div>
 
                     <div>
@@ -906,7 +954,8 @@
                             LinkedIn Corporativo
                         </label>
                         <input type="text" name="linkedin" value="{{ old('linkedin', $profile['redes_sociales']['linkedin'] ?? 'https://linkedin.com/company/tornusagency') }}"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans">
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans">
                     </div>
                 </div>
 
@@ -917,7 +966,8 @@
                             Propuesta de Valor Integral (Contexto Maestro)
                         </label>
                         <textarea name="propuesta_valor" rows="3" required
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans leading-relaxed">{{ old('propuesta_valor', $profile['propuesta_valor'] ?? '') }}</textarea>
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans leading-relaxed">{{ old('propuesta_valor', $profile['propuesta_valor'] ?? '') }}</textarea>
                     </div>
 
                     <div>
@@ -925,7 +975,8 @@
                             Posicionamiento Sintético para la IA (Instrucción de Enfoque)
                         </label>
                         <textarea name="posicionamiento_sintetico" rows="2"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans leading-relaxed">{{ old('posicionamiento_sintetico', $profile['posicionamiento_sintetico'] ?? '') }}</textarea>
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans leading-relaxed">{{ old('posicionamiento_sintetico', $profile['posicionamiento_sintetico'] ?? '') }}</textarea>
                     </div>
                 </div>
 
@@ -935,7 +986,8 @@
                         Servicios Principales (Uno por línea)
                     </label>
                     <textarea name="servicios_principales" rows="6" required
-                        class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-mono text-xs leading-relaxed">{{ old('servicios_principales', isset($profile['servicios_principales']) ? implode("\n", $profile['servicios_principales']) : '') }}</textarea>
+                        @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                        class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-mono text-xs leading-relaxed">{{ old('servicios_principales', isset($profile['servicios_principales']) ? implode("\n", $profile['servicios_principales']) : '') }}</textarea>
                 </div>
 
                 <!-- Fila 5: Entidades Objetivo & Exclusiones (2 Columnas) -->
@@ -945,7 +997,8 @@
                             Entidades Objetivo / Foco Estratégico (Una por línea)
                         </label>
                         <textarea name="entidades_objetivo" rows="6"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-mono text-xs leading-relaxed">{{ old('entidades_objetivo', isset($profile['entidades_objetivo']) ? implode("\n", $profile['entidades_objetivo']) : '') }}</textarea>
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-mono text-xs leading-relaxed">{{ old('entidades_objetivo', isset($profile['entidades_objetivo']) ? implode("\n", $profile['entidades_objetivo']) : '') }}</textarea>
                     </div>
 
                     <div>
@@ -953,7 +1006,8 @@
                             Criterios de Exclusión Total (Descarte Inmediato - Score 0)
                         </label>
                         <textarea name="criterios_exclusion" rows="6"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-rose-600 focus:bg-white font-mono text-xs leading-relaxed">{{ old('criterios_exclusion', isset($profile['criterios_exclusion']) ? implode("\n", $profile['criterios_exclusion']) : '') }}</textarea>
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-rose-600 font-mono text-xs leading-relaxed">{{ old('criterios_exclusion', isset($profile['criterios_exclusion']) ? implode("\n", $profile['criterios_exclusion']) : '') }}</textarea>
                     </div>
                 </div>
 
@@ -964,7 +1018,8 @@
                             Rango de Presupuesto Ideal y Capacidad
                         </label>
                         <input type="text" name="rango_presupuesto_ideal" value="{{ old('rango_presupuesto_ideal', $profile['rango_presupuesto_ideal'] ?? '') }}"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans">
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans">
                     </div>
 
                     <div>
@@ -972,15 +1027,17 @@
                             Notas Estratégicas Adicionales
                         </label>
                         <input type="text" name="notas_adicionales" value="{{ old('notas_adicionales', $profile['notas_adicionales'] ?? '') }}"
-                            class="w-full px-3.5 py-2.5 bg-[#fbf9f1] border border-[#e3dbc2] rounded text-sm text-[#00232c] focus:outline-none focus:border-[#00232c] focus:bg-white font-sans">
+                            @disabled(!Auth::user()->isAdmin()) @readonly(!Auth::user()->isAdmin())
+                            class="w-full px-3.5 py-2.5 {{ !Auth::user()->isAdmin() ? 'bg-slate-100/70 text-slate-700 cursor-not-allowed' : 'bg-[#fbf9f1] text-[#00232c] focus:bg-white' }} border border-[#e3dbc2] rounded text-sm focus:outline-none focus:border-[#00232c] font-sans">
                     </div>
                 </div>
 
                 <!-- Botones de Acción -->
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-[#e3dbc2]">
                     <a href="{{ route('radar') }}" class="px-5 py-2.5 border border-[#e3dbc2] bg-white rounded text-xs font-mono font-bold tracking-wider text-[#56686b] hover:bg-[#f7f2df] transition-colors">
-                        CANCELAR
+                        {{ Auth::user()->isAdmin() ? 'CANCELAR' : 'VOLVER AL RADAR' }}
                     </a>
+                    @if(Auth::user()->isAdmin())
                     <button type="submit" class="px-6 py-2.5 bg-[#00232c] hover:bg-[#0b4a57] text-[#fbfb75] rounded text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-xs transition-colors cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -989,6 +1046,11 @@
                         </svg>
                         <span>GUARDAR PERFIL ESTRATÉGICO</span>
                     </button>
+                    @else
+                    <div class="px-4 py-2 bg-slate-100 border border-slate-200 rounded text-xs font-mono text-slate-500 font-semibold">
+                        Modo Solo Lectura · Edición reservada al Administrador
+                    </div>
+                    @endif
                 </div>
             </form>
         </div>
