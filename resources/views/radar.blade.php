@@ -483,7 +483,7 @@
                     @php
                         $cardBadge = $lic->nivel_badge;
                     @endphp
-                    <div id="card-gemini-box-{{ $lic->id }}" class="{{ $lic->score !== null ? '' : 'hidden' }} my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 {{ $cardBadge['border'] }} text-xs font-mono space-y-1.5 transition-all">
+                    <div id="card-gemini-box-{{ $lic->id }}" class="{{ $lic->score !== null ? '' : 'hidden' }} my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 {{ $cardBadge['border'] ?? 'border-l-slate-400' }} text-xs font-mono space-y-1.5 transition-all">
                         <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-[#e3dbc2]/60">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-[#00232c] flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
@@ -491,8 +491,8 @@
                                 </svg>
                                 <span>DICTAMEN ESTRATÉGICO GEMINI IA</span>
                             </span>
-                            <span id="card-gemini-status-{{ $lic->id }}" class="text-[10px] font-bold tracking-wider {{ $cardBadge['text'] }}">
-                                {{ $cardBadge['label'] }}
+                            <span id="card-gemini-status-{{ $lic->id }}" class="text-[10px] font-bold tracking-wider {{ $cardBadge['text'] ?? 'text-[#00232c]' }}">
+                                {{ $cardBadge['label'] ?? ($cardBadge['etiqueta'] ?? 'PENDIENTE') }}
                             </span>
                         </div>
                         <p id="card-gemini-desc-{{ $lic->id }}" class="text-[#3a4749] font-sans text-xs leading-relaxed pt-0.5">
@@ -524,9 +524,9 @@
                             <!-- Badge de Afinidad si ya está evaluado -->
                             <span id="card-affinity-{{ $lic->id }}" class="inline-flex">
                                 @if($lic->score !== null)
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $cardBadge['class'] }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $cardBadge['dot'] }}"></span>
-                                        <span>{{ $lic->score }}% AFINIDAD · {{ $cardBadge['code'] }}</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $cardBadge['class'] ?? 'bg-slate-100 text-slate-700 border-slate-200' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $cardBadge['dot'] ?? 'bg-slate-400' }}"></span>
+                                        <span>{{ $lic->score }}% AFINIDAD · {{ $cardBadge['code'] ?? ($cardBadge['nivel'] ?? 'PENDIENTE') }}</span>
                                     </span>
                                 @endif
                             </span>

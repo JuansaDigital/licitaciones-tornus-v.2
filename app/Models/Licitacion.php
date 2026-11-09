@@ -336,9 +336,13 @@ class Licitacion extends Model
             return [
                 'nivel'    => 'PENDIENTE',
                 'etiqueta' => 'PENDIENTE',
+                'label'    => 'PENDIENTE DE ANÁLISIS',
+                'code'     => 'PENDIENTE',
                 'class'    => 'bg-slate-100 text-slate-700 border-slate-200',
                 'badge'    => 'Pendiente de Análisis',
                 'dot'      => 'bg-slate-400',
+                'border'   => 'border-l-slate-400',
+                'text'     => 'text-slate-700',
             ];
         }
 
@@ -346,9 +350,13 @@ class Licitacion extends Model
             return [
                 'nivel'    => 'A',
                 'etiqueta' => 'APLICA DIRECTO',
+                'label'    => 'APLICA DIRECTO',
+                'code'     => 'NIVEL A · DIRECTO',
                 'class'    => 'bg-emerald-50 text-emerald-800 border-emerald-200',
                 'badge'    => 'Nivel A · Aplica Directo',
                 'dot'      => 'bg-emerald-500',
+                'border'   => 'border-l-emerald-600',
+                'text'     => 'text-emerald-800',
             ];
         }
 
@@ -356,9 +364,13 @@ class Licitacion extends Model
             return [
                 'nivel'    => 'B',
                 'etiqueta' => 'APLICA CON ALIADO',
+                'label'    => 'APLICA CON ALIADO',
+                'code'     => 'NIVEL B · CON ALIADO',
                 'class'    => 'bg-blue-50 text-blue-800 border-blue-200',
                 'badge'    => 'Nivel B · Aplica con Aliado',
                 'dot'      => 'bg-blue-500',
+                'border'   => 'border-l-blue-600',
+                'text'     => 'text-blue-800',
             ];
         }
 
@@ -366,18 +378,26 @@ class Licitacion extends Model
             return [
                 'nivel'    => 'C',
                 'etiqueta' => 'MONITOREAR',
+                'label'    => 'MONITOREAR',
+                'code'     => 'NIVEL C · MONITOREAR',
                 'class'    => 'bg-amber-50 text-amber-800 border-amber-200',
                 'badge'    => 'Nivel C · Monitorear',
                 'dot'      => 'bg-amber-500',
+                'border'   => 'border-l-amber-500',
+                'text'     => 'text-amber-800',
             ];
         }
 
         return [
             'nivel'    => 'D',
             'etiqueta' => 'DESCARTAR',
+            'label'    => 'NO APLICA · DESCARTADA',
+            'code'     => 'NIVEL D · DESCARTADA',
             'class'    => 'bg-rose-50 text-rose-800 border-rose-200',
             'badge'    => 'Nivel D · Descartar',
             'dot'      => 'bg-rose-500',
+            'border'   => 'border-l-rose-500',
+            'text'     => 'text-rose-800',
         ];
     }
 }
