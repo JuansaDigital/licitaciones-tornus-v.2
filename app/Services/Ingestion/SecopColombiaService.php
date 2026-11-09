@@ -210,7 +210,7 @@ class SecopColombiaService
         $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND (fecha_de_recepcion_de >= '{$today}' OR fecha_de_recepcion_de IS NULL))";
         $whereSql = "{$whereCriteria} AND {$whereDate}";
 
-        $query = "SELECT id_del_proceso, referencia, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, fecha_de_apertura_de_respuesta, fecha_de_adjudicacion, fecha_de_ultima_publicacion, fase, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
+        $query = "SELECT id_del_proceso, referencia_del_proceso, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, fecha_de_apertura_de_respuesta, fecha_de_adjudicacion, fecha_de_ultima_publicacion, fase, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
 
         $count = 0;
         try {
@@ -241,7 +241,7 @@ class SecopColombiaService
                 $records = $data['rows'] ?? $data ?? [];
                 if (is_array($records)) {
                     foreach ($records as $row) {
-                        $extId = $row['id_del_proceso'] ?? $row['referencia'] ?? null;
+                        $extId = $row['id_del_proceso'] ?? $row['referencia_del_proceso'] ?? $row['referencia'] ?? null;
                         if (!$extId) continue;
 
                         $cuantia = (float)($row['precio_base'] ?? 0);
@@ -250,7 +250,7 @@ class SecopColombiaService
                         $lic = Licitacion::on('colombia')->updateOrCreate(
                             ['external_id' => $extId],
                             [
-                                'referencia' => $row['referencia'] ?? $extId,
+                                'referencia' => $row['referencia_del_proceso'] ?? $row['referencia'] ?? $extId,
                                 'entidad' => $row['entidad'] ?? 'Entidad Pública',
                                 'nit_entidad' => $row['nit_entidad'] ?? null,
                                 'orden_entidad' => $row['ordenentidad'] ?? null,
