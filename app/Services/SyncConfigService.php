@@ -31,7 +31,7 @@ class SyncConfigService
         $path = self::getFilePath();
         $default = [
             'frequency' => 'everyTwoHours',
-            'daily_manual_limit' => 15,
+            'daily_manual_limit' => 50,
             'email_frequency' => 'daily',
             'today_count' => 0,
             'last_sync_date' => now()->toDateString(),
@@ -109,10 +109,18 @@ class SyncConfigService
     public static function canManualSync(): bool
     {
         $config = self::getConfig();
-        $limit = (int) ($config['daily_manual_limit'] ?? 15);
+        $limit = (int) ($config['daily_manual_limit'] ?? 50);
         $count = (int) ($config['today_count'] ?? 0);
 
         return $count < $limit;
+    }
+
+    public static function resetTodayCount(): void
+    {
+        $config = self::getConfig();
+        $config['today_count'] = 0;
+        $config['last_sync_date'] = now()->toDateString();
+        file_put_contents(self::getFilePath(), json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
 
     public static function recordSync(): void

@@ -6,8 +6,26 @@
 <div class="space-y-6">
 
     @if (session('status'))
-        <div class="p-3.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center justify-between">
-            <span>{{ session('status') }}</span>
+        <div class="p-3.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center justify-between shadow-2xs">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>{{ session('status') }}</span>
+            </div>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="p-3.5 rounded bg-amber-50 border border-amber-200 text-amber-900 text-xs font-mono flex items-center justify-between shadow-2xs">
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ $errors->first() }}</span>
+            </div>
         </div>
     @endif
 
@@ -47,7 +65,7 @@
                 </form>
 
                 <!-- Botón de Auto-Triage con IA -->
-                <form action="{{ route('radar.auto_triage') }}" method="POST">
+                <form action="{{ route('radar.auto_triage') }}" method="POST" onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.classList.add('opacity-75'); btn.querySelector('span').textContent = 'Analizando con Gemini...';">
                     @csrf
                     <button type="submit" class="px-3.5 py-2 bg-[#0b4a57] hover:bg-[#00232c] text-[#fbfb75] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer" title="Analizar propuestas con Gemini y descartar automáticamente las que no tienen que ver con Tornus">
                         <svg class="w-3.5 h-3.5 text-[#fbfb75]" fill="currentColor" viewBox="0 0 24 24">
@@ -61,7 +79,7 @@
                 </form>
 
                 <!-- Botón de actualización de radar -->
-                <form action="{{ route('radar.sync') }}" method="POST">
+                <form action="{{ route('radar.sync') }}" method="POST" onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.classList.add('opacity-75'); btn.querySelector('span').textContent = 'Sincronizando con SECOP II...';">
                     @csrf
                     <button type="submit" class="px-3.5 py-2 bg-[#00232c] text-[#fbfb75] hover:bg-[#0b4a57] rounded text-xs font-mono font-semibold transition-colors flex items-center gap-2 shadow-xs cursor-pointer">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
