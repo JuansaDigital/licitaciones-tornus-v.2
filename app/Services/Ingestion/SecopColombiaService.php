@@ -210,8 +210,8 @@ class SecopColombiaService
 
         $whereCriteria = !empty($criteriaClauses) ? '(' . implode(' OR ', $criteriaClauses) . ')' : "(upper(nombre_del_procedimiento) LIKE '%TURISMO%')";
 
-        // Ventana de 5 meses: Procesos publicados en los últimos 5 meses y con cierre vigente
-        $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND (fecha_de_recepcion_de >= '{$today}' OR fecha_de_recepcion_de IS NULL))";
+        // Procesos con fecha de cierre vigente y en estado abierto / convocados para ofertar
+        $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND fecha_de_recepcion_de >= '{$today}' AND estado_del_procedimiento NOT IN ('Cerrado', 'Evaluación', 'En evaluación', 'Adjudicado', 'Cancelado', 'Desierto', 'Terminado', 'Celebrado'))";
         $whereSql = "{$whereCriteria} AND {$whereDate}";
 
         $query = "SELECT id_del_proceso, referencia_del_proceso, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, fecha_de_apertura_de_respuesta, fecha_de_adjudicacion, fecha_de_ultima_publicacion, fase, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
