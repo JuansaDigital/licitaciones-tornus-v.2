@@ -22,6 +22,8 @@ class SecopColombiaService
 
     /**
      * Normaliza y preserva fecha y hora exacta de SECOP II (YYYY-MM-DD HH:mm:ss)
+     * Resuelve con precisión el formato de fecha colombiano (d/m/Y Día/Mes/Año)
+     * para evitar que días y meses se inviertan (ej: 09/10/2026 => 9 de octubre, no septiembre).
      */
     public function parseSecopDate(?string $value): ?string
     {
@@ -30,6 +32,28 @@ class SecopColombiaService
         }
 
         $trimmed = trim($value);
+
+        // Si contiene barras '/', se trata del formato estándar colombiano: d/m/Y (Día / Mes / Año)
+        if (str_contains($trimmed, '/')) {
+            $formats = [
+                '!d/m/Y h:i:s A',
+                '!j/n/Y h:i:s A',
+                '!d/m/Y g:i:s A',
+                '!j/n/Y g:i:s A',
+                '!d/m/Y H:i:s',
+                '!j/n/Y H:i:s',
+                '!d/m/Y H:i',
+                '!j/n/Y H:i',
+                '!d/m/Y',
+                '!j/n/Y',
+            ];
+            foreach ($formats as $fmt) {
+                $d = \DateTime::createFromFormat($fmt, $trimmed);
+                if ($d !== false) {
+                    return $d->format('Y-m-d H:i:s');
+                }
+            }
+        }
 
         try {
             $dt = new \DateTime($trimmed);
@@ -242,8 +266,8 @@ class SecopColombiaService
                                 'codigo_unspsc' => $row['codigo_principal_de_categoria'] ?? null,
                                 'estado' => $hasAdjudicacion ? 'Adjudicado' : ($row['estado_del_procedimiento'] ?? 'Abierto'),
                                 'fase' => $row['fase'] ?? ($hasAdjudicacion ? 'Adjudicado' : 'Presentación de ofertas'),
-                                'fecha_publicacion' => $this->parseSecopDate($row['fecha_de_publicacion_del'] ?? null),
-                                'fecha_cierre' => $this->parseSecopDate($row['fecha_de_recepcion_de'] ?? null),
+                                'fecha_publicacion' => $this->parseSecopDate($row['fecha_de_publicacion_del'] ?? $row['fecha_de_publicacion_fase_3'] ?? $row['fecha_de_publicacion_fase_2'] ?? null),
+                                'fecha_cierre' => $this->parseSecopDate($row['fecha_de_recepcion_de'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
                                 'fecha_apertura_ofertas' => $this->parseSecopDate($row['fecha_de_apertura_efectiva'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
                                 'adenda_fecha' => $this->parseSecopDate($row['fecha_de_ultima_publicacion'] ?? null),
                                 'fase2_fecha' => $this->parseSecopDate($row['fecha_de_adjudicacion'] ?? null),
