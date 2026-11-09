@@ -47,7 +47,11 @@ LÍNEAS DE SERVICIO QUE DEBES RECONOCER:
 - D. Producción audiovisual y branded content: Videos promocionales, documentales, series de contenido, fotografía y bancos de imágenes, cobertura en tiempo real, storytelling.
 - E. Promoción comercial y activaciones internacionales: Ferias (ANATO, FITUR), lanzamientos BTL, ruedas de negocios, FamTrips/PressTrips. (Nota: Evalúa la logística como componente de estas estrategias; no asumas que cualquier contrato puramente logístico tiene alta afinidad).
 - F. Desarrollo de producto y contenidos turísticos especializados: Rutas, circuitos, guías turísticas, aviturismo, senderismo, turismo cultural/comunitario, señalética interpretativa.
-- G. Competitividad y fortalecimiento empresarial turístico: Formación y fortalecimiento en marketing, IA aplicada, acompañamiento a empresarios. (Nota: Distingue el acompañamiento empresarial de certificación o educación reglada).
+- G. Competitividad, formación y fortalecimiento de capacidades en el sector turístico:
+  Estrategias de fortalecimiento empresarial y desarrollo de capacidades locales para la gestión y el desarrollo turístico, programas de formación, talleres, asistencia técnica, mentoría y fortalecimiento a mipymes, emprendimientos y prestadores turísticos.
+  REGLA OBLIGATORIA PARA FORMACIÓN Y FORTALECIMIENTO TURÍSTICO:
+  Todo proyecto orientado a formar, capacitar, transferir metodologías o fortalecer capacidades de actores, prestadores o mipymes turísticas tiene ALTA AFINIDAD con Tornus (Línea G y Línea F). Pondera estos proyectos con puntuación positiva (Score 65 a 85).
+  Si el proyecto incluye como componente complementario la entrega de bienes, dotaciones, insumos o kits de fortalecimiento a las mipymes/emprendimientos turísticos, NO LO DESCARTES: clasifícalo como Viable y sugiere "Consorcio / UT" (para que un aliado logístico o de suministros asuma la compra/entrega mientras Tornus lidera el componente técnico, formativo y metodológico).
 - H. Inteligencia de mercados y analítica: Captación, procesamiento y análisis de datos turísticos, diagnóstico de demanda y sentimiento. (Nota: Valida el alcance antes de atribuir capacidades en estadística o sistemas de información ajenos).
 - I. Herramientas y presencia digital para destinos: Portales y ecosistemas digitales orientados a promoción turística y digitalización de oferta. (Nota: No generalices estas capacidades como experiencia en software empresarial, ciberseguridad o ERP).
 
@@ -66,16 +70,16 @@ DATOS DE LA LICITACIÓN CONVOCADA:
 2. FILTROS PARA REDUCIR FALSOS POSITIVOS (DESCARTE O BAJA AFINIDAD):
 Asigna baja afinidad (Score 0 a 30) o descarta procesos cuyo alcance principal sea:
 - Construcción, mantenimiento de infraestructura u obra civil.
-- Suministro de equipos, mobiliario o bienes sin componente creativo relevante.
+- Suministro puro de insumos, mercancías, equipos o bienes aislados sin componente técnico, formativo ni creativo (ATENCIÓN: NO aplica a kits de herramientas o insumos de fortalecimiento empresarial entregados en el marco de programas de formación y desarrollo turístico de la Línea G).
 - Aseo, vigilancia, alimentación escolar (PAE) o transporte aislados.
 - Venta de tiquetes, alojamiento o intermediación de viajes sin estrategia promocional.
 - Alquiler de sonido, tarimas, carpas o sillas como único servicio.
 - Impresión de piezas ya diseñadas, sin estrategia ni creación de contenidos.
 - Desarrollo de software empresarial, ciberseguridad o infraestructura de TI ajenos al marketing.
 - Consultorías jurídicas, contables, clínicas o de ingeniería civil.
-- Formación genérica sin conexión con las capacidades descritas.
+- Formación genérica desvinculada de turismo, cultura o creatividad (ATENCIÓN: Toda formación en turismo, desarrollo turístico local, fortalecimiento de capacidades para prestadores o mipymes turísticas, marketing o innovación turística es ALTAMENTE AFÍN a Tornus).
 - Servicios individuales que no permitan la participación de una persona jurídica.
-EXCEPCIÓN DE PROYECTO INTEGRAL: No descartes automáticamente un proyecto integral por contener alguna de estas actividades secundarias. Determina qué componente domina el alcance y el presupuesto. (Ej: 'Promoción y prevención en salud' solo es afín si contrata campaña de comunicación publicitaria ejecutable por Tornus; 'Producción de documental cultural' tiene alta afinidad aunque no mencione turismo; 'Operador logístico de eventos' tiene afinidad condicionada a entregables de montaje de ferias/diseño).
+EXCEPCIÓN DE PROYECTO INTEGRAL: No descartes automáticamente un proyecto integral por contener alguna de estas actividades secundarias. Determina qué componente domina el alcance y el presupuesto. (Ej: 'Promoción y prevención en salud' solo es afín si contrata campaña de comunicación publicitaria ejecutable por Tornus; 'Producción de documental cultural' tiene alta afinidad aunque no mencione turismo; 'Operador logístico de eventos' tiene afinidad condicionada a entregables de montaje de ferias/diseño; 'Fortalecimiento turístico con insumos' es afín vía Consorcio/UT para formación).
 
 3. EVALUACIÓN Y PONDERACIÓN EXACTA DE AFINIDAD (Score 0 a 100):
 Calcula el puntaje utilizando estrictamente estos 4 pesos oficiales:
@@ -185,29 +189,29 @@ EOT;
     {
         $text = mb_strtoupper($licitacion->objeto . ' ' . $licitacion->entidad . ' ' . $licitacion->categoria . ' ' . $licitacion->departamento, 'UTF-8');
         
-        $exclusions = $this->agencyProfile['criterios_exclusion'] ?? [
-            'OBRA CIVIL', 'PAVIMENTACIÓN', 'ACUEDUCTO', 'ALCANTARILLADO', 'VIGILANCIA', 'SEGURIDAD PRIVADA',
-            'ASEO', 'LIMPIEZA', 'CAFETERÍA', 'MEDICAMENTO', 'HOSPITALARIO', 'QUIRÚRGICO',
-            'ALIMENTACIÓN ESCOLAR', 'PAE', 'COMBUSTIBLE', 'MAQUINARIA PESADA', 'PARQUE AUTOMOTOR',
-            'INTERVENTORÍA DE OBRA'
-        ];
+        // 0. Detección especial de proyectos de Formación, Capacitación o Fortalecimiento Turístico (Línea G)
+        $isTourismCapacityBuilding = (str_contains($text, 'TURIS') || str_contains($text, 'TURÍST') || str_contains($text, 'DESTINO')) &&
+            (str_contains($text, 'FORTALECIMIENTO') || str_contains($text, 'FORMACI') || str_contains($text, 'CAPACIDAD') || str_contains($text, 'CAPACITA') || str_contains($text, 'TALLER') || str_contains($text, 'ASISTENCIA') || str_contains($text, 'MIPYME'));
 
-        // 1. Descarte inmediato por exclusión total
-        foreach ($exclusions as $ex) {
-            $normalizedEx = mb_strtoupper(trim($ex), 'UTF-8');
-            $words = preg_split('/[\s,]+/', $normalizedEx);
-            foreach ($words as $w) {
-                if (strlen($w) >= 5 && str_contains($text, $w)) {
-                    // Evitar falsos positivos si la palabra es común en turismo
-                    if (in_array($w, ['SERVICIOS', 'SUMINISTRO', 'PROGRAMA', 'APOYO', 'GESTIÓN'])) {
-                        continue;
-                    }
+        // 1. Descarte inmediato por exclusión total estricta (no aplica si es fortalecimiento turístico)
+        if (!$isTourismCapacityBuilding) {
+            $hardExclusions = [
+                'OBRA CIVIL', 'PAVIMENTACIÓN', 'PAVIMENTACION', 'ACUEDUCTO', 'ALCANTARILLADO',
+                'VIGILANCIA', 'SEGURIDAD PRIVADA', 'ARMAMENTO', 'MUNICIONES',
+                'ASEO', 'LIMPIEZA', 'CAFETERÍA', 'RECOLECCIÓN DE RESIDUOS',
+                'MEDICAMENTO', 'HOSPITALARIO', 'QUIRÚRGICO', 'QUIRURGICO', 'REACTIVOS',
+                'ALIMENTACIÓN ESCOLAR', 'PAE', 'COMBUSTIBLE', 'MAQUINARIA PESADA', 'PARQUE AUTOMOTOR',
+                'INTERVENTORÍA DE OBRA', 'INTERVENTORIA DE OBRA', 'SEGUROS', 'PÓLIZAS', 'POLIZAS'
+            ];
+
+            foreach ($hardExclusions as $ex) {
+                if (str_contains($text, $ex)) {
                     return [
                         'score' => 0,
                         'nivel' => 'BAJA',
                         'aplica' => 'NO APLICA',
                         'lineas_afines' => [],
-                        'justificacion' => "El proceso corresponde a actividades de {$w} o conexas, las cuales constituyen un criterio de exclusión total para Tornus S.A.S. No presenta componentes de promoción de destinos, creatividad, comunicaciones ni desarrollo turístico.",
+                        'justificacion' => "El proceso corresponde a actividades de {$ex} o conexas, las cuales constituyen un criterio de exclusión total para Tornus S.A.S. No presenta componentes de promoción de destinos, creatividad, comunicaciones ni desarrollo turístico.",
                         'servicios_sugeridos' => [],
                         'estrategia_postulacion' => 'Descartar',
                         'puntos_clave' => 'Objeto contractual incompatible con el Registro Único de Proponentes (RUP) y el core estratégico de la agencia.'
@@ -227,7 +231,11 @@ EOT;
             'Línea D - Producción Audiovisual Cine/Digital' => ['AUDIOVISUAL', 'FOTOGRAFÍA', 'BANCO DE IMÁGENES', 'PRODUCCIÓN DE VIDEO', 'SPOT', 'RODAJE', 'DOCUMENTAL'],
             'Línea E - Promoción Comercial, Ferias y BTL' => ['FERIAS', 'ANATO', 'FITUR', 'EVENTO', 'BTL', 'RUEDA DE NEGOCIOS', 'FAMTRIP', 'PRESSTRIP', 'STAND'],
             'Línea F - Desarrollo de Producto Turístico' => ['RUTA TURÍSTICA', 'GUÍA TURÍSTICA', 'AVITURISMO', 'TURISMO COMUNITARIO', 'SEÑALÉTICA', 'GASTRONOMÍA'],
-            'Línea G - Competitividad y Capacitación' => ['FORTALECIMIENTO', 'CAPACITACIÓN', 'ASISTENCIA TÉCNICA', 'TALLERES', 'PRESTADORES TURÍSTICOS'],
+            'Línea G - Competitividad, Formación y Fortalecimiento Turístico' => [
+                'FORTALECIMIENTO', 'CAPACITACIÓN', 'CAPACITACION', 'FORMACIÓN', 'FORMACION',
+                'ASISTENCIA TÉCNICA', 'ASISTENCIA TECNICA', 'TALLERES', 'CAPACIDADES',
+                'MIPYMES', 'DESARROLLO TURÍSTICO', 'DESARROLLO TURISTICO', 'PRESTADORES TURÍSTICOS'
+            ],
             'Línea H - Inteligencia de Mercados y Analítica' => ['INTELIGENCIA DE MERCADO', 'BIG DATA', 'ANALÍTICA', 'PERFIL DEL VISITANTE', 'OBSERVATORIO'],
             'Línea I - Plataformas y Presencia Digital' => ['PORTAL WEB', 'PÁGINA WEB', 'APLICACIÓN MÓVIL', 'APP', 'DIGITALIZACIÓN', 'PLATAFORMA INTERACTIVA']
         ];
@@ -241,6 +249,12 @@ EOT;
                 }
             }
         }
+
+        if ($isTourismCapacityBuilding && !in_array('Línea G - Competitividad, Formación y Fortalecimiento Turístico', $matchedLines)) {
+            $factor1 = min(35, $factor1 + 24);
+            $matchedLines[] = 'Línea G - Competitividad, Formación y Fortalecimiento Turístico';
+        }
+
         $matchedLines = array_values(array_unique($matchedLines));
 
         // Factor 2: Correspondencia Actividades y Entregables (Máximo 35 puntos)
@@ -249,7 +263,10 @@ EOT;
             'CAMPAÑA' => 8, 'PIEZAS' => 7, 'CONTENIDO' => 7, 'PUBLICIDAD' => 7,
             'VIDEO' => 8, 'FOTO' => 6, 'DISEÑO' => 7, 'REDES SOCIALES' => 7,
             'STAND' => 8, 'LOGÍSTICA' => 6, 'OPERACIÓN' => 6, 'MATERIAL PROMOCIONAL' => 7,
-            'ESTRATEGIA' => 8, 'DIAGNÓSTICO' => 6, 'PLAN' => 6, 'PORTAL' => 8
+            'ESTRATEGIA' => 8, 'DIAGNÓSTICO' => 6, 'PLAN' => 6, 'PORTAL' => 8,
+            'FORMACIÓN' => 8, 'FORMACION' => 8, 'CAPACITACIÓN' => 8, 'CAPACITACION' => 8,
+            'TALLERES' => 7, 'ASISTENCIA TÉCNICA' => 7, 'TRANSFERENCIA' => 7, 'FORTALECIMIENTO' => 7,
+            'CAPACIDADES' => 7, 'MENTORÍA' => 6
         ];
         foreach ($deliverablesKeywords as $deliv => $points) {
             if (str_contains($text, $deliv)) {
@@ -286,6 +303,11 @@ EOT;
         // Sumatoria total (0 - 100)
         $score = $factor1 + $factor2 + $factor3 + $factor4;
 
+        // Proyectos de Formación y Fortalecimiento Turístico tienen piso mínimo de afinidad (Línea G)
+        if ($isTourismCapacityBuilding) {
+            $score = max(65, $score);
+        }
+
         // Si no hubo ningún cruce con líneas de servicio ni entregables, el score base es mínimo
         if ($factor1 === 0 && $factor2 === 0) {
             $score = min(25, $score);
@@ -294,7 +316,18 @@ EOT;
         $cuantia = (float)($licitacion->cuantia ?? 0);
         $capitalTrabajo = 5058026000; // $5.058M COP
 
-        if ($score >= 85) {
+        if ($isTourismCapacityBuilding && (str_contains($text, 'SUMINISTRO') || str_contains($text, 'INSUMOS') || str_contains($text, 'BIENES') || str_contains($text, 'DOTACI'))) {
+            $nivel = ($score >= 70) ? 'ALTA' : 'MEDIA';
+            $aplica = 'APLICA CON CONDICIONES';
+            $estrategia = 'Consorcio / UT';
+            $justificacion = "Oportunidad afín en fortalecimiento de capacidades y desarrollo turístico (Línea G). Contempla formación, talleres y desarrollo empresarial a mipymes turísticas. Al incluir entrega de bienes o insumos, la estrategia recomendada es conformar Consorcio o Unión Temporal con un socio logístico o de suministros.";
+            $puntosClave = "Viabilidad: Requiere aliado o estructura de participación permitida · Tornus puede liderar la dirección técnica, metodológica y formativa, delegando la compra y distribución de insumos a un aliado operativo.";
+            $servicios = [
+                'Diseño metodológico y ejecución del programa de formación y transferencia de capacidades turísticas',
+                'Asistencia técnica, mentorías y diagnóstico de competitividad para mipymes turísticas',
+                'Estructuración de kits y herramientas de fortalecimiento comercial y de marca local'
+            ];
+        } elseif ($score >= 85) {
             $nivel = 'ALTA';
             $aplica = 'APLICA';
             $estrategia = ($cuantia > 10000000000) ? 'Consorcio / UT' : 'Postulación Directa';
