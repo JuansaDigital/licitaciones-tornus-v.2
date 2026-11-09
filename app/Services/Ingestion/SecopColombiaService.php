@@ -218,27 +218,18 @@ class SecopColombiaService
 
         $count = 0;
         try {
-            $client = Http::withoutVerifying()->timeout(25);
+            $client = Http::withoutVerifying()->timeout(35);
             if ($this->keyId && $this->secret) {
                 $client = $client->withBasicAuth($this->keyId, $this->secret);
             }
-            if ($this->keyId) {
-                $client = $client->withHeaders(['X-App-Token' => $this->keyId]);
-            }
 
-            // Intentar endpoint v3
-            $v3Url = "https://www.datos.gov.co/api/v3/views/{$this->datasetId}/query.json";
-            $response = $client->get($v3Url, ['query' => $query]);
-
-            // Si no responde v3, consultar endpoint SODA 2.1
-            if (!$response->successful()) {
-                $sodaUrl = "https://www.datos.gov.co/resource/{$this->datasetId}.json";
-                $response = $client->get($sodaUrl, [
-                    '$where' => $whereSql,
-                    '$limit' => $limit,
-                    '$order' => 'fecha_de_recepcion_de DESC'
-                ]);
-            }
+            // Consultar endpoint SODA 2.1 oficial de SECOP II
+            $sodaUrl = "https://www.datos.gov.co/resource/{$this->datasetId}.json";
+            $response = $client->get($sodaUrl, [
+                '$where' => $whereSql,
+                '$limit' => $limit,
+                '$order' => 'fecha_de_recepcion_de DESC'
+            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
