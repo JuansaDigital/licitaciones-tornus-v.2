@@ -16,11 +16,12 @@ class AfinidadController extends Controller
         $nowDateTime = now()->format('Y-m-d H:i:s');
         $today = now()->toDateString();
 
-        // REGLA DE VIGENCIA: Solo propuestas vigentes (abiertas) o que estén guardadas en Cartera
-        // Las ofertas que ya cerraron y NO están en cartera se descartan automáticamente.
+        // REGLA DE VIGENCIA Y AFINIDAD: Solo propuestas afines desde un 20% en adelante (score >= 20)
+        // que estén vigentes (abiertas) o guardadas en Cartera.
         $baseActiveQuery = function () use ($connection, $nowDateTime, $today) {
             return Licitacion::on($connection)
                 ->whereNotNull('score')
+                ->where('score', '>=', 20)
                 ->where(function ($q) use ($nowDateTime, $today) {
                     $q->where('en_cartera', true)
                       ->orWhere(function ($sub) use ($nowDateTime, $today) {
@@ -35,10 +36,14 @@ class AfinidadController extends Controller
 
         $query = $baseActiveQuery();
 
-        // Filtro por Nivel de Afinidad (ALTA, MEDIA, BAJA)
+        // Filtro por Nivel de Afinidad (ALTA >= 70, MEDIA 40-69, BAJA 20-39)
         $filterNivel = $request->input('nivel', 'all');
-        if (in_array(strtoupper($filterNivel), ['ALTA', 'MEDIA', 'BAJA'])) {
-            $query->where('nivel', strtoupper($filterNivel));
+        if (strtoupper($filterNivel) === 'ALTA') {
+            $query->where('score', '>=', 70);
+        } elseif (strtoupper($filterNivel) === 'MEDIA') {
+            $query->whereBetween('score', [40, 69]);
+        } elseif (strtoupper($filterNivel) === 'BAJA') {
+            $query->whereBetween('score', [20, 39]);
         }
 
         // Filtro por Fecha (Período o Rango Personalizado)
@@ -70,9 +75,9 @@ class AfinidadController extends Controller
 
         $stats = [
             'total_evaluadas' => $baseActiveQuery()->count(),
-            'alta' => $baseActiveQuery()->where('nivel', 'ALTA')->count(),
-            'media' => $baseActiveQuery()->where('nivel', 'MEDIA')->count(),
-            'baja' => $baseActiveQuery()->where('nivel', 'BAJA')->count(),
+            'alta' => $baseActiveQuery()->where('score', '>=', 70)->count(),
+            'media' => $baseActiveQuery()->whereBetween('score', [40, 69])->count(),
+            'baja' => $baseActiveQuery()->whereBetween('score', [20, 39])->count(),
         ];
 
         return view('afinidad', compact(

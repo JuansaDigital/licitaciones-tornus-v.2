@@ -580,7 +580,7 @@ function renderFichaGeminiBox(lic) {
             pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
             status.textContent = 'APLICA';
             status.className = 'text-xs font-mono font-bold text-emerald-800 tracking-wider';
-        } else if (lic.score >= 50) {
+        } else if (lic.score >= 20) {
             box.className = 'p-5 rounded-lg border border-amber-200 bg-amber-50/50 border-l-4 border-l-amber-500 space-y-3';
             pill.className = 'px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300';
             status.textContent = 'APLICA CON CONDICIONES';

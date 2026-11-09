@@ -63,9 +63,9 @@
             <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-amber-800 mt-1">{{ $stats['media'] }}</div>
         </a>
         <a href="{{ route('afinidad', array_merge(request()->query(), ['nivel' => 'BAJA'])) }}" 
-            class="bg-[#fffdf6] border {{ $filterNivel === 'BAJA' ? 'border-rose-600 ring-1 ring-rose-600' : 'border-[#e3dbc2]' }} rounded-lg p-4 shadow-xs transition-all hover:border-rose-600">
-            <span class="text-[11px] font-mono uppercase tracking-wider text-rose-800 block font-semibold">Afinidad Baja (&lt; 40 pts)</span>
-            <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-rose-800 mt-1">{{ $stats['baja'] }}</div>
+            class="bg-[#fffdf6] border {{ $filterNivel === 'BAJA' ? 'border-amber-600 ring-1 ring-amber-600' : 'border-[#e3dbc2]' }} rounded-lg p-4 shadow-xs transition-all hover:border-amber-600">
+            <span class="text-[11px] font-mono uppercase tracking-wider text-amber-900 block font-semibold">Afinidad Inicial (20-39 pts)</span>
+            <div class="font-['Instrument_Serif',serif] text-3xl font-bold text-amber-900 mt-1">{{ $stats['baja'] }}</div>
         </a>
     </div>
 

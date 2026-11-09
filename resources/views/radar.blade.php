@@ -320,7 +320,7 @@
                     <a href="{{ route('radar', array_merge(request()->query(), ['ia_filter' => 'viable'])) }}"
                         class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ ($selectedIaFilter ?? 'viable') === 'viable' ? 'border-emerald-600 bg-emerald-100 text-emerald-950 font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}">
                         <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                        <span>Solo Oportunidades Viables (Afines o Pendientes)</span>
+                        <span>Solo Oportunidades Viables (Afines &ge; 20% o Pendientes)</span>
                         @if(($selectedIaFilter ?? 'viable') === 'viable')
                             <span class="text-[10px] bg-emerald-700 text-white px-1.5 py-0.2 rounded font-mono">Activo</span>
                         @endif
@@ -339,14 +339,14 @@
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
-                        <span>Descartadas por IA</span>
+                        <span>Descartadas por IA (&lt; 20%)</span>
                         <span class="text-[10px] bg-rose-200 text-rose-900 px-1.5 py-0.2 rounded font-bold">{{ $discardedCount ?? 0 }}</span>
                     </a>
                 </div>
 
                 @if(($discardedCount ?? 0) > 0 && ($selectedIaFilter ?? 'viable') === 'viable')
                     <div class="text-[11px] text-[#56686b] italic">
-                        <span>{{ $discardedCount }} ofertas no afines ocultadas automáticamente</span>
+                        <span>{{ $discardedCount }} ofertas no afines (&lt; 20%) ocultadas automáticamente</span>
                     </div>
                 @endif
             </div>
@@ -389,7 +389,7 @@
                                 </span>
                             @endif
 
-                            @if($lic->score !== null && ($lic->score < 40 || strcasecmp($lic->estrategia_postulacion ?? '', 'Descartar') === 0))
+                            @if($lic->score !== null && $lic->score < 20)
                                 <span class="px-2 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200 font-bold whitespace-nowrap shrink-0 flex items-center gap-1">
                                     <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -467,7 +467,7 @@
                     </h3>
 
                     <!-- Dictamen Estratégico de Gemini en la Tarjeta (Visible si está evaluado o al presionar Analizar) -->
-                    <div id="card-gemini-box-{{ $lic->id }}" class="{{ $lic->score !== null ? '' : 'hidden' }} my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 {{ ($lic->score ?? 0) >= 70 ? 'border-l-emerald-600' : (($lic->score ?? 0) >= 40 ? 'border-l-amber-500' : 'border-l-rose-500') }} text-xs font-mono space-y-1.5 transition-all">
+                    <div id="card-gemini-box-{{ $lic->id }}" class="{{ $lic->score !== null ? '' : 'hidden' }} my-3 p-3.5 rounded-lg bg-[#fbf9f1] border border-[#e3dbc2] border-l-4 {{ ($lic->score ?? 0) >= 70 ? 'border-l-emerald-600' : (($lic->score ?? 0) >= 20 ? 'border-l-amber-500' : 'border-l-rose-500') }} text-xs font-mono space-y-1.5 transition-all">
                         <div class="flex items-center justify-between gap-2 pb-1.5 border-b border-[#e3dbc2]/60">
                             <span class="text-[10px] font-bold uppercase tracking-wider text-[#00232c] flex items-center gap-1.5">
                                 <svg class="w-3.5 h-3.5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
@@ -475,8 +475,8 @@
                                 </svg>
                                 <span>DICTAMEN ESTRATÉGICO GEMINI IA</span>
                             </span>
-                            <span id="card-gemini-status-{{ $lic->id }}" class="text-[10px] font-bold tracking-wider {{ ($lic->score ?? 0) >= 70 ? 'text-emerald-800' : (($lic->score ?? 0) >= 40 ? 'text-amber-800' : 'text-rose-800') }}">
-                                {{ ($lic->score ?? 0) >= 70 ? 'APLICA DIRECTO' : (($lic->score ?? 0) >= 40 ? 'APLICA CON CONDICIONES' : 'NO APLICA') }}
+                            <span id="card-gemini-status-{{ $lic->id }}" class="text-[10px] font-bold tracking-wider {{ ($lic->score ?? 0) >= 70 ? 'text-emerald-800' : (($lic->score ?? 0) >= 20 ? 'text-amber-800' : 'text-rose-800') }}">
+                                {{ ($lic->score ?? 0) >= 70 ? 'APLICA DIRECTO' : (($lic->score ?? 0) >= 20 ? 'APLICA CON CONDICIONES' : 'NO APLICA') }}
                             </span>
                         </div>
                         <p id="card-gemini-desc-{{ $lic->id }}" class="text-[#3a4749] font-sans text-xs leading-relaxed pt-0.5">
@@ -498,8 +498,8 @@
                             <!-- Badge de Afinidad si ya está evaluado -->
                             <span id="card-affinity-{{ $lic->id }}" class="inline-flex">
                                 @if($lic->score !== null)
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : ($lic->score >= 40 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200') }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $lic->score >= 70 ? 'bg-emerald-600' : ($lic->score >= 40 ? 'bg-amber-600' : 'bg-rose-600') }}"></span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 {{ $lic->score >= 70 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : ($lic->score >= 20 ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-rose-50 text-rose-800 border border-rose-200') }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $lic->score >= 70 ? 'bg-emerald-600' : ($lic->score >= 20 ? 'bg-amber-600' : 'bg-rose-600') }}"></span>
                                         <span>{{ $lic->score }}% AFINIDAD · {{ $lic->nivel }}</span>
                                     </span>
                                 @endif

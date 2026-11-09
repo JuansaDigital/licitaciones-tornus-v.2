@@ -360,16 +360,22 @@ EOT;
             $estrategia = 'Consorcio / UT';
             $justificacion = "Oportunidad con afinidad media (Score {$score}/100). Contiene actividades que cruzan con las capacidades de Tornus, pero combina componentes que sugieren la conformación de un Consorcio o Unión Temporal con un socio local u operativo.";
             $puntosClave = "Evaluar el peso del componente creativo frente a la logística o suministros, y definir el porcentaje de participación conveniente.";
+        } elseif ($score >= 20) {
+            $nivel = 'BAJA';
+            $aplica = 'APLICA CON CONDICIONES';
+            $estrategia = 'Consorcio / UT';
+            $justificacion = "Oportunidad con afinidad moderada o inicial (Score {$score}/100). Presenta componentes complementarios a las capacidades de Tornus. Se sugiere evaluar el pliego para determinar viabilidad en alianza o consorcio.";
+            $puntosClave = "Verificar si el alcance afín justifica estructuración de propuesta en alianza.";
         } else {
             $nivel = 'BAJA';
             $aplica = 'NO APLICA';
             $estrategia = 'Descartar';
-            $justificacion = "Oportunidad con afinidad baja (Score {$score}/100). No evidencia una correlación sustancial con el core de negocio, líneas de servicio especializadas ni casos de éxito de Tornus S.A.S.";
+            $justificacion = "Oportunidad con afinidad nula o incompatible (Score {$score}/100). No evidencia una correlación sustancial con el core de negocio, líneas de servicio especializadas ni casos de éxito de Tornus S.A.S.";
             $puntosClave = "No se sugiere destinar esfuerzos de costeo ni estructuración para esta convocatoria.";
         }
 
-        // Si el score es bajo o no aplica, no sugerir servicios para no confundir al usuario
-        $servicios = (!empty($matchedLines) && $score >= 40 && $aplica !== 'NO APLICA')
+        // Si el score es menor a 20 o no aplica, no sugerir servicios para no confundir al usuario
+        $servicios = (!empty($matchedLines) && $score >= 20 && $aplica !== 'NO APLICA')
             ? array_map(function($line) { return explode(' - ', $line)[1] ?? $line; }, $matchedLines)
             : [];
 

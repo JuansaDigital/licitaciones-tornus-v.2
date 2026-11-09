@@ -250,42 +250,40 @@ class RadarController extends Controller
             ->count();
 
         // 8. FILTRO INTELIGENTE DE AFINIDAD CON IA (AUTO-TRIAGE TORNUS)
-        // 'viable' (por defecto): Oculta propuestas con score < 40 o marcadas como 'Descartar'.
+        // 'viable' (por defecto): Muestra propuestas afines desde un 20% en adelante (score >= 20) o pendientes de evaluar.
         // 'all': Muestra todas las propuestas sin discriminación por IA.
-        // 'discarded': Muestra exclusivamente las propuestas descartadas por IA para auditoría.
+        // 'discarded': Muestra exclusivamente las propuestas descartadas por IA (score < 20).
         $selectedIaFilter = $request->input('ia_filter', 'viable');
         if ($selectedIaFilter === 'viable') {
             $query->where(function ($q) {
                 $q->whereNull('score')
-                  ->orWhere(function ($sub) {
-                      $sub->where('score', '>=', 40)
-                          ->where(function ($s2) {
-                              $s2->whereNull('estrategia_postulacion')
-                                 ->orWhere('estrategia_postulacion', '!=', 'Descartar');
-                          });
-                  });
+                  ->orWhere('score', '>=', 20);
             });
         } elseif ($selectedIaFilter === 'discarded') {
             $query->whereNotNull('score')
-                  ->where(function ($q) {
-                      $q->where('score', '<', 40)
-                        ->orWhere('estrategia_postulacion', 'Descartar');
-                  });
+                  ->where('score', '<', 20);
         }
 
         $discardedCount = (clone $totalQuery)
             ->whereNotNull('score')
-            ->where(function ($q) {
-                $q->where('score', '<', 40)
-                  ->orWhere('estrategia_postulacion', 'Descartar');
-            })->count();
+            ->where('score', '<', 20)
+            ->count();
 
         $pendingEvaluationCount = (clone $totalQuery)
             ->whereNull('score')
             ->count();
 
+        // ORDENAMIENTO: Cuando el filtro de afinidad está activo ('viable'), ordenar de MAYOR afinidad a MENOR afinidad
+        // (desde 20% en adelante), y colocar luego las pendientes de evaluar ordenadas por fecha de cierre más próxima.
+        if ($selectedIaFilter === 'viable') {
+            $query->orderByRaw("CASE WHEN score IS NOT NULL AND score >= 20 THEN 0 ELSE 1 END ASC")
+                  ->orderBy('score', 'desc')
+                  ->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC");
+        } else {
+            $query->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC");
+        }
+
         $licitaciones = $query
-            ->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC")
             ->paginate(15)
             ->withQueryString();
 
@@ -339,7 +337,7 @@ class RadarController extends Controller
             try {
                 $res = $gemini->evaluate($lic);
                 $evaluadas++;
-                if (($res['score'] ?? 0) < 40 || strcasecmp($res['estrategia_postulacion'] ?? '', 'Descartar') === 0) {
+                if (($res['score'] ?? 0) < 20 || strcasecmp($res['estrategia_postulacion'] ?? '', 'Descartar') === 0) {
                     $descartadas++;
                 }
             } catch (\Throwable $e) {
