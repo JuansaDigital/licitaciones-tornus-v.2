@@ -17,7 +17,7 @@
 
     <!-- Encabezado Superior -->
     <header class="bg-[#00232c] text-[#f7f2df] border-b border-[#15424d] sticky top-0 z-50 shadow-sm">
-        <div class="w-[95%] sm:w-[90%] mx-auto px-2 sm:px-4">
+        <div class="max-w-[1850px] w-full mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
             <div class="flex items-center justify-between h-16">
                 
                 <!-- Logo y Navegación de Retorno -->
@@ -68,7 +68,7 @@
     </header>
 
     <!-- Contenido Principal -->
-    <main class="flex-1 w-[95%] sm:w-[90%] mx-auto py-8 space-y-6">
+    <main class="flex-1 max-w-[1850px] w-full mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 space-y-6">
 
         @if (session('status'))
             <div class="p-3.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono flex items-center justify-between">
@@ -787,7 +787,7 @@
 
     <!-- Pie inferior -->
     <footer class="bg-[#00232c] text-[#9db3b4] border-t border-[#15424d] py-6 text-xs font-mono mt-8">
-        <div class="w-[95%] sm:w-[90%] mx-auto px-2 sm:px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="max-w-[1850px] w-full mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
                 Tornus Agency · Todos los derechos reservados copyright © 2026
             </div>
