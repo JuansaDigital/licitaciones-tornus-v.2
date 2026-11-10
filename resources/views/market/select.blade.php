@@ -23,7 +23,7 @@
 
     <!-- Barra de Navegación Superior (Sin enlaces operativos, solo logo, usuario, configuración y salida) -->
     <header class="relative z-10 w-full bg-[#00232c]/90 border-b border-[#15424d] backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-[95%] sm:w-[90%] mx-auto px-2 sm:px-4">
             <div class="flex items-center justify-between h-16">
                 
                 <!-- Logo Oficial Único en el Extremo Izquierdo -->
@@ -238,7 +238,7 @@
     </main>
 
     <!-- Pie inferior sobre el Wallpaper -->
-    <footer class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-[#f7f2df]/80 border-t border-white/10">
+    <footer class="relative z-10 w-[95%] sm:w-[90%] mx-auto px-2 sm:px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-[#f7f2df]/80 border-t border-white/10">
         <div>
             Tornus Agency · Todos los derechos reservados copyright © 2026
         </div>
