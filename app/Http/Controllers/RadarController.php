@@ -535,7 +535,7 @@ class RadarController extends Controller
 
         if ($newCount > 0) {
             $statusMsg = "Sincronización exitosa con " . ($isPeru ? 'SEACE/OECE Perú' : 'SECOP II Colombia') . ": Se detectaron e ingresaron {$newCount} nuevas licitaciones al radar y se actualizaron {$updatedCount} procesos existentes (se depuraron {$purged} licitaciones vencidas).";
-            return redirect()->route('radar', ['sort' => 'recientes'])->with('status', $statusMsg);
+            return redirect()->route('radar', ['sort' => 'recientes', 'ia_filter' => 'all'])->with('status', $statusMsg);
         }
 
         $statusMsg = "Sincronización exitosa: El radar se encuentra 100% al día con las últimas ofertas publicadas. Se verificaron y actualizaron {$updatedCount} procesos vigentes (se depuraron {$purged} licitaciones vencidas).";

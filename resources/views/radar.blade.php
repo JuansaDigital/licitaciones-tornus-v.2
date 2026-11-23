@@ -338,7 +338,7 @@
                     <a href="{{ route('radar', array_merge(request()->query(), ['ia_filter' => 'viable'])) }}"
                         class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1.5 {{ ($selectedIaFilter ?? 'viable') === 'viable' ? 'border-emerald-600 bg-emerald-100 text-emerald-950 font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}">
                         <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                        <span>Solo Oportunidades Viables (Afines &ge; 20% o Pendientes)</span>
+                        <span>Solo Oportunidades Viables (Afines &ge; 35% o Pendientes)</span>
                         @if(($selectedIaFilter ?? 'viable') === 'viable')
                             <span class="text-[10px] bg-emerald-700 text-white px-1.5 py-0.2 rounded font-mono">Activo</span>
                         @endif
@@ -357,14 +357,14 @@
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
-                        <span>Descartadas por IA (&lt; 20%)</span>
+                        <span>Descartadas por IA (&lt; 35%)</span>
                         <span class="text-[10px] bg-rose-200 text-rose-900 px-1.5 py-0.2 rounded font-bold">{{ $discardedCount ?? 0 }}</span>
                     </a>
                 </div>
 
                 @if(($discardedCount ?? 0) > 0 && ($selectedIaFilter ?? 'viable') === 'viable')
                     <div class="text-[11px] text-[#56686b] italic">
-                        <span>{{ $discardedCount }} ofertas no afines (&lt; 20%) ocultadas automáticamente</span>
+                        <span>{{ $discardedCount }} ofertas no afines (&lt; 35%) ocultadas automáticamente</span>
                     </div>
                 @endif
             </div>
