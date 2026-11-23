@@ -456,9 +456,9 @@
                 <div id="lic-card-{{ $lic->id }}" class="licitacion-card bg-[#fffdf6] border {{ $isPriority ? 'border-[#00232c] ring-1 ring-[#00232c]/20 shadow-sm' : 'border-[#e3dbc2] shadow-xs' }} border-l-4 {{ $isPriority ? 'border-l-[#00232c]' : 'border-l-[#8a252c]' }} rounded p-4 sm:p-5 hover:border-[#0b4a57] transition-all">
                     
                     <!-- Fila Superior: Badges a la izquierda y Presupuesto a la derecha -->
-                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2.5">
                         
-                        <!-- Badges con ancho seguro y whitespace-nowrap para evitar desbordes -->
+                        <!-- Badges con jerarquía visual ordenada -->
                         <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-w-0 flex-1">
                             @if($isRecent)
                                 <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold whitespace-nowrap shrink-0 flex items-center gap-1 shadow-2xs" title="Publicada o ingresada recientemente en compras públicas">
@@ -486,21 +486,6 @@
                                 </span>
                             @endif
 
-                            <!-- Badge de Vencimiento: Cierra hoy / Cierra en X días -->
-                            <span class="px-2 py-0.5 rounded {{ $urgency['class'] }} font-medium whitespace-nowrap shrink-0">
-                                {{ $urgency['badge'] }}
-                            </span>
-
-                            <!-- Departamento / Resto del país -->
-                            <span class="px-2 py-0.5 rounded bg-[#00232c] text-[#fbfb75] font-bold whitespace-nowrap shrink-0">
-                                {{ $lic->departamento ?: 'Resto del país' }}
-                            </span>
-
-                            <!-- Categoría -->
-                            <span class="px-2 py-0.5 rounded bg-[#ece6d5] text-[#56686b] whitespace-nowrap shrink-0">
-                                {{ $lic->categoria ?: 'Servicios Generales' }}
-                            </span>
-
                             <!-- Estado / Fase Oficial -->
                             @php
                                 $faseInfo = $lic->fase_badge;
@@ -510,14 +495,31 @@
                                 <span>{{ $faseInfo['label'] }}</span>
                             </span>
 
-                            <!-- Ventana de Convocatoria para Ofertar -->
-                            <span class="px-1.5 py-0.5 text-[#56686b] flex items-center gap-1 whitespace-nowrap shrink-0" title="Tiempo de convocatoria para presentar ofertas">
-                                <svg class="w-3.5 h-3.5 text-[#56686b] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                </svg>
-                                <span>{{ $lic->dias_convocatoria ? $lic->dias_convocatoria . ' d conv.' : 'Plazo s/pliego' }}</span>
+                            <!-- Badge de Vencimiento: Cierra hoy / Cierra en X días -->
+                            <span class="px-2 py-0.5 rounded {{ $urgency['class'] }} font-medium whitespace-nowrap shrink-0">
+                                {{ $urgency['badge'] }}
                             </span>
+
+                            <!-- Departamento / Ubicación -->
+                            <span class="px-2 py-0.5 rounded bg-[#00232c] text-[#fbfb75] font-bold whitespace-nowrap shrink-0">
+                                {{ $lic->departamento ?: 'Resto del país' }}
+                            </span>
+
+                            <!-- Categoría -->
+                            <span class="px-2 py-0.5 rounded bg-[#ece6d5] text-[#56686b] whitespace-nowrap shrink-0">
+                                {{ $lic->categoria ?: 'Servicios Generales' }}
+                            </span>
+
+                            <!-- Ventana de Convocatoria para Ofertar -->
+                            @if($lic->dias_convocatoria)
+                                <span class="px-1.5 py-0.5 text-[#56686b] flex items-center gap-1 whitespace-nowrap shrink-0" title="Tiempo de convocatoria para presentar ofertas">
+                                    <svg class="w-3.5 h-3.5 text-[#56686b] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <span>{{ $lic->dias_convocatoria }} d conv.</span>
+                                </span>
+                            @endif
 
                             <!-- Modalidad -->
                             <span class="px-2 py-0.5 rounded bg-[#dce6e7] text-[#0b4a57] font-medium whitespace-nowrap shrink-0">
@@ -562,7 +564,7 @@
                     </div>
 
                     <!-- Objeto / Título Completo sin desborde -->
-                    <h3 class="w-full block text-sm sm:text-[15px] font-bold text-[#00232c] leading-snug line-clamp-2 my-2.5 break-words">
+                    <h3 class="w-full block text-sm sm:text-base font-bold text-[#00232c] leading-snug line-clamp-2 my-2.5 break-words">
                         {{ (!empty($lic->objeto) && $lic->objeto !== 'No definido') ? $lic->objeto : ($lic->referencia ?: 'Licitación pública en ' . App\Services\MarketService::sourceName()) }}
                     </h3>
 
@@ -600,13 +602,20 @@
                         </div>
                     </div>
 
-                    <!-- Fila Inferior: Ubicación a la izquierda y 2 Filas de Botones a la derecha -->
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 border-t border-[#f2ece0]">
+                    <!-- Fila Inferior: Ubicación y Entidad a la izquierda; Barra Unificada de Acciones a la derecha -->
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-[#f2ece0]">
                         
-                        <!-- Ubicación y Entidad -->
+                        <!-- Ubicación, Entidad y Afinidad -->
                         <div class="text-xs font-mono text-[#56686b] flex flex-wrap items-center gap-2 min-w-0 flex-1">
-                            <strong class="text-[#00232c] whitespace-nowrap">{{ $lic->municipio ? $lic->municipio . ' · ' . $lic->departamento : ($lic->departamento ?: 'Nacional') }}</strong>
-                            <span class="truncate max-w-xs sm:max-w-md">{{ $lic->entidad }}</span>
+                            <span class="inline-flex items-center gap-1 font-semibold text-[#00232c] whitespace-nowrap">
+                                <svg class="w-3.5 h-3.5 text-[#00232c]/70 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                <span>{{ $lic->municipio ? $lic->municipio . ' · ' . $lic->departamento : ($lic->departamento ?: 'Nacional') }}</span>
+                            </span>
+                            <span class="text-[#9db3b4]">·</span>
+                            <span class="truncate max-w-xs sm:max-w-md text-[#56686b]" title="{{ $lic->entidad }}">{{ $lic->entidad }}</span>
 
                             <!-- Badge de Afinidad si ya está evaluado -->
                             <span id="card-affinity-{{ $lic->id }}" class="inline-flex">
@@ -619,92 +628,79 @@
                             </span>
                         </div>
 
-                        <!-- Grupo de Botones de Acción (2 Filas como en la imagen) -->
-                        <div class="flex flex-col items-end gap-1.5 shrink-0">
+                        <!-- Barra Unificada de Acciones (1 Sola Fila limpia y elegante) -->
+                        <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono shrink-0">
                             
-                            <!-- Fila 1 de Botones: Preparar, Compartir, Ver en SECOP II, Descartar -->
-                            <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
-                                <!-- Botón Preparar -->
-                                <button type="button" onclick="openFichaModal({{ $lic->id }})"
-                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
-                                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                                        <polyline points="10 9 9 9 8 9"></polyline>
+                            <!-- Botón Ficha 360 -->
+                            <button type="button" onclick="openFichaModal({{ $lic->id }})"
+                                class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs"
+                                title="Ver ficha técnica completa y pliegos 360">
+                                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <span>Ficha 360</span>
+                            </button>
+
+                            <!-- Botón Analizar con Gemini -->
+                            <button type="button" id="btn-analyze-{{ $lic->id }}" onclick="analyzeWithGemini({{ $lic->id }})"
+                                class="px-3 py-1 text-white bg-[#4338ca] hover:bg-[#3730a3] rounded font-semibold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer whitespace-nowrap">
+                                <svg class="w-3.5 h-3.5 text-indigo-200" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                                </svg>
+                                <span id="btn-text-{{ $lic->id }}">{{ $lic->score !== null ? 'Re-evaluar Gemini' : 'Analizar con Gemini' }}</span>
+                            </button>
+
+                            <!-- Botón Guardar en Cartera -->
+                            <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline" onsubmit="return toggleCarteraAjax(event, {{ $lic->id }})">
+                                @csrf
+                                <button type="submit" id="btn-cartera-{{ $lic->id }}"
+                                    class="px-2.5 py-1 rounded font-medium transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
+                                    <svg id="icon-cartera-{{ $lic->id }}" class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                     </svg>
-                                    <span>Preparar</span>
+                                    <span id="text-cartera-{{ $lic->id }}">{{ $lic->en_cartera ? 'Guardado' : 'Guardar' }}</span>
                                 </button>
+                            </form>
 
-                                <!-- Botón Compartir -->
-                                <button type="button" onclick="shareLicitacion({{ $lic->id }})"
-                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
-                                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <circle cx="18" cy="5" r="3"></circle>
-                                        <circle cx="6" cy="12" r="3"></circle>
-                                        <circle cx="18" cy="19" r="3"></circle>
-                                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            <!-- Botón Ver en SECOP II -->
+                            @if($lic->url_proceso)
+                                <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer"
+                                    class="px-2.5 py-1 bg-white border border-[#00232c] hover:bg-[#00232c] text-[#00232c] hover:text-white rounded font-medium transition-colors flex items-center gap-1 whitespace-nowrap shadow-2xs">
+                                    <span>Ver en {{ App\Services\MarketService::sourceName() }}</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
                                     </svg>
-                                    <span>Compartir</span>
-                                </button>
+                                </a>
+                            @endif
 
-                                <!-- Botón Ver en SECOP II -->
-                                @if($lic->url_proceso)
-                                    <a href="{{ $lic->url_proceso }}" target="_blank" rel="noopener noreferrer"
-                                        class="px-2.5 py-1 bg-white border border-[#00232c] hover:bg-[#00232c] text-[#00232c] hover:text-white rounded font-medium transition-colors flex items-center gap-1 whitespace-nowrap">
-                                        <span>Ver en {{ App\Services\MarketService::sourceName() }}</span>
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                            <polyline points="15 3 21 3 21 9"></polyline>
-                                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                                        </svg>
-                                    </a>
-                                @endif
+                            <!-- Botón Compartir -->
+                            <button type="button" onclick="shareLicitacion({{ $lic->id }})"
+                                class="px-2 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs"
+                                title="Copiar detalles y enlace al portapapeles">
+                                <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                                </svg>
+                                <span class="hidden sm:inline">Compartir</span>
+                            </button>
 
-                                <!-- Botón Descartar -->
-                                <button type="button" onclick="dismissCard('lic-card-{{ $lic->id }}')"
-                                    class="px-2.5 py-1 bg-white border border-[#e3dbc2] hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 rounded text-[#56686b] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
-                                    <span>✕ DESCARTAR</span>
-                                </button>
-                            </div>
-
-                            <!-- Fila 2 de Botones: Ficha, Analizar con Gemini, Guardar -->
-                            <div class="flex flex-wrap items-center gap-1.5 text-xs font-mono">
-                                <!-- Botón Ficha -->
-                                <button type="button" onclick="openFichaModal({{ $lic->id }})"
-                                    class="px-3 py-1 bg-white border border-[#e3dbc2] hover:bg-[#f7f2df] rounded text-[#00232c] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap">
-                                    <svg class="w-3.5 h-3.5 text-[#56686b]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                    </svg>
-                                    <span>Ficha</span>
-                                </button>
-
-                                <!-- Botón Analizar con Gemini -->
-                                <button type="button" id="btn-analyze-{{ $lic->id }}" onclick="analyzeWithGemini({{ $lic->id }})"
-                                    class="px-3.5 py-1 text-white bg-[#4338ca] hover:bg-[#3730a3] rounded font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer whitespace-nowrap">
-                                    <svg class="w-3.5 h-3.5 text-indigo-200" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
-                                    </svg>
-                                    <span id="btn-text-{{ $lic->id }}">{{ $lic->score !== null ? 'Re-evaluar Gemini' : 'Analizar con Gemini' }}</span>
-                                </button>
-
-                                <!-- Botón Guardar en Cartera -->
-                                <form action="{{ route('radar.cartera', $lic->id) }}" method="POST" class="inline" onsubmit="return toggleCarteraAjax(event, {{ $lic->id }})">
-                                    @csrf
-                                    <button type="submit" id="btn-cartera-{{ $lic->id }}"
-                                        class="px-3 py-1 rounded font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap {{ $lic->en_cartera ? 'bg-emerald-700 text-white hover:bg-emerald-800' : 'bg-white text-[#00232c] border border-[#e3dbc2] hover:bg-[#f7f2df]' }}">
-                                        <svg id="icon-cartera-{{ $lic->id }}" class="w-3.5 h-3.5 {{ $lic->en_cartera ? 'text-white' : 'text-[#56686b]' }}" fill="{{ $lic->en_cartera ? 'currentColor' : 'none' }}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                        </svg>
-                                        <span id="text-cartera-{{ $lic->id }}">{{ $lic->en_cartera ? 'Guardado' : 'Guardar' }}</span>
-                                    </button>
-                                </form>
-                            </div>
-
+                            <!-- Botón Descartar (Con icono SVG limpio) -->
+                            <button type="button" onclick="dismissCard('lic-card-{{ $lic->id }}')"
+                                class="px-2 py-1 bg-white border border-[#e3dbc2] hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 rounded text-[#56686b] font-medium transition-colors flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-2xs"
+                                title="Descartar esta tarjeta temporalmente">
+                                <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                <span class="hidden sm:inline">Descartar</span>
+                            </button>
                         </div>
 
                     </div>
