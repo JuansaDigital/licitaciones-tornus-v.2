@@ -541,8 +541,8 @@
                         </div>
                     </div>
 
-                    <!-- Objeto / Título con ancho equilibrado para no desbordarse ni pegarse al borde derecho -->
-                    <h3 class="block text-sm sm:text-base font-bold text-[#00232c] leading-snug my-2 break-words max-w-4xl lg:max-w-5xl">
+                    <!-- Objeto / Título en 3 líneas con ancho cómodo y tipografía destacada -->
+                    <h3 class="block text-base sm:text-[17px] font-bold text-[#00232c] leading-snug my-2.5 break-words line-clamp-3 max-w-2xl lg:max-w-3xl">
                         {{ (!empty($lic->objeto) && $lic->objeto !== 'No definido') ? $lic->objeto : ($lic->referencia ?: 'Licitación pública en ' . App\Services\MarketService::sourceName()) }}
                     </h3>
 
