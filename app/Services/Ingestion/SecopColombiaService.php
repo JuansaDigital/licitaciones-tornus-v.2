@@ -214,9 +214,10 @@ class SecopColombiaService
         $whereDate = "(fecha_de_publicacion_del >= '{$fiveMonthsAgo}' AND fecha_de_recepcion_de >= '{$today}' AND estado_del_procedimiento NOT IN ('Cerrado', 'Evaluación', 'En evaluación', 'Adjudicado', 'Cancelado', 'Desierto', 'Terminado', 'Celebrado'))";
         $whereSql = "{$whereCriteria} AND {$whereDate}";
 
-        $query = "SELECT id_del_proceso, referencia_del_proceso, entidad, nit_entidad, ordenentidad, ciudad_entidad, departamento_entidad, nombre_del_procedimiento, precio_base, fecha_de_recepcion_de, fecha_de_publicacion_del, fecha_de_apertura_efectiva, fecha_de_apertura_de_respuesta, fecha_de_adjudicacion, fecha_de_ultima_publicacion, fase, urlproceso, modalidad_de_contratacion, tipo_de_contrato, duracion, unidad_de_duracion, codigo_principal_de_categoria, estado_del_procedimiento WHERE {$whereSql} ORDER BY fecha_de_recepcion_de DESC LIMIT {$limit}";
+        $totalCount = 0;
+        $newCount = 0;
+        $updatedCount = 0;
 
-        $count = 0;
         try {
             $client = Http::withoutVerifying()->timeout(35);
             if ($this->keyId && $this->secret) {
@@ -225,65 +226,83 @@ class SecopColombiaService
 
             // Consultar endpoint SODA 2.1 oficial de SECOP II
             $sodaUrl = "https://www.datos.gov.co/resource/{$this->datasetId}.json";
-            $response = $client->get($sodaUrl, [
-                '$where' => $whereSql,
-                '$limit' => $limit,
-                '$order' => 'fecha_de_recepcion_de DESC'
-            ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $records = $data['rows'] ?? $data ?? [];
-                if (is_array($records)) {
-                    foreach ($records as $row) {
-                        $extId = $row['id_del_proceso'] ?? $row['referencia_del_proceso'] ?? $row['referencia'] ?? null;
-                        if (!$extId) continue;
+            // ESTRATEGIA DUAL DE INGESTIÓN:
+            // 1. Prioridad Principal: Ofertas más recientemente publicadas (ORDER BY fecha_de_publicacion_del DESC)
+            //    Garantiza que toda nueva licitación aparezca en el Radar tan pronto como es publicada en SECOP II.
+            // 2. Prioridad de Mantenimiento: Ofertas recientemente modificadas o con adendas (ORDER BY fecha_de_ultima_publicacion DESC)
+            $syncBatches = [
+                ['order' => 'fecha_de_publicacion_del DESC', 'limit' => $limit],
+                ['order' => 'fecha_de_ultima_publicacion DESC', 'limit' => 50],
+            ];
 
-                        $cuantia = (float)($row['precio_base'] ?? 0);
-                        $hasAdjudicacion = !empty($row['fecha_de_adjudicacion']);
+            foreach ($syncBatches as $batch) {
+                $response = $client->get($sodaUrl, [
+                    '$where' => $whereSql,
+                    '$limit' => $batch['limit'],
+                    '$order' => $batch['order']
+                ]);
 
-                        $lic = Licitacion::on('colombia')->updateOrCreate(
-                            ['external_id' => $extId],
-                            [
-                                'referencia' => $row['referencia_del_proceso'] ?? $row['referencia'] ?? $extId,
-                                'entidad' => $row['entidad'] ?? 'Entidad Pública',
-                                'nit_entidad' => $row['nit_entidad'] ?? null,
-                                'orden_entidad' => $row['ordenentidad'] ?? null,
-                                'objeto' => $row['nombre_del_procedimiento'] ?? '',
-                                'departamento' => $row['departamento_entidad'] ?? '',
-                                'municipio' => $row['ciudad_entidad'] ?? '',
-                                'cuantia' => $cuantia,
-                                'moneda' => 'COP',
-                                'tipo_proceso' => $row['modalidad_de_contratacion'] ?? 'Convocatoria Pública',
-                                'tipo_contrato' => $row['tipo_de_contrato'] ?? null,
-                                'duracion' => !empty($row['duracion']) ? (string)$row['duracion'] : null,
-                                'unidad_duracion' => $row['unidad_de_duracion'] ?? null,
-                                'codigo_unspsc' => $row['codigo_principal_de_categoria'] ?? null,
-                                'estado' => $hasAdjudicacion ? 'Adjudicado' : ($row['estado_del_procedimiento'] ?? 'Abierto'),
-                                'fase' => $row['fase'] ?? ($hasAdjudicacion ? 'Adjudicado' : 'Presentación de ofertas'),
-                                'fecha_publicacion' => $this->parseSecopDate($row['fecha_de_publicacion_del'] ?? $row['fecha_de_publicacion_fase_3'] ?? $row['fecha_de_publicacion_fase_2'] ?? null),
-                                'fecha_cierre' => $this->parseSecopDate($row['fecha_de_recepcion_de'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
-                                'fecha_apertura_ofertas' => $this->parseSecopDate($row['fecha_de_apertura_efectiva'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
-                                'adenda_fecha' => $this->parseSecopDate($row['fecha_de_ultima_publicacion'] ?? null),
-                                'fase2_fecha' => $this->parseSecopDate($row['fecha_de_adjudicacion'] ?? null),
-                                'url_proceso' => is_array($row['urlproceso'] ?? null) ? ($row['urlproceso']['url'] ?? null) : ($row['urlproceso'] ?? null),
-                            ]
-                        );
+                if ($response->successful()) {
+                    $records = $response->json();
+                    $records = $records['rows'] ?? $records ?? [];
+                    if (is_array($records)) {
+                        foreach ($records as $row) {
+                            $extId = $row['id_del_proceso'] ?? $row['referencia_del_proceso'] ?? $row['referencia'] ?? null;
+                            if (!$extId) continue;
 
-                        // Auto-evaluación inmediata con IA: ninguna propuesta queda sin score
-                        if ($lic->score === null) {
-                            try {
-                                app(\App\Services\GeminiAffinityService::class)->evaluate($lic);
-                            } catch (\Throwable $e) {
-                                Log::warning("Error en auto-evaluación inmediata #{$lic->id}: " . $e->getMessage());
+                            $cuantia = (float)($row['precio_base'] ?? 0);
+                            $hasAdjudicacion = !empty($row['fecha_de_adjudicacion']);
+
+                            $lic = Licitacion::on('colombia')->updateOrCreate(
+                                ['external_id' => $extId],
+                                [
+                                    'referencia' => $row['referencia_del_proceso'] ?? $row['referencia'] ?? $extId,
+                                    'entidad' => $row['entidad'] ?? 'Entidad Pública',
+                                    'nit_entidad' => $row['nit_entidad'] ?? null,
+                                    'orden_entidad' => $row['ordenentidad'] ?? null,
+                                    'objeto' => $row['nombre_del_procedimiento'] ?? '',
+                                    'departamento' => $row['departamento_entidad'] ?? '',
+                                    'municipio' => $row['ciudad_entidad'] ?? '',
+                                    'cuantia' => $cuantia,
+                                    'moneda' => 'COP',
+                                    'tipo_proceso' => $row['modalidad_de_contratacion'] ?? 'Convocatoria Pública',
+                                    'tipo_contrato' => $row['tipo_de_contrato'] ?? null,
+                                    'duracion' => !empty($row['duracion']) ? (string)$row['duracion'] : null,
+                                    'unidad_duracion' => $row['unidad_de_duracion'] ?? null,
+                                    'codigo_unspsc' => $row['codigo_principal_de_categoria'] ?? null,
+                                    'estado' => $hasAdjudicacion ? 'Adjudicado' : ($row['estado_del_procedimiento'] ?? 'Abierto'),
+                                    'fase' => $row['fase'] ?? ($hasAdjudicacion ? 'Adjudicado' : 'Presentación de ofertas'),
+                                    'fecha_publicacion' => $this->parseSecopDate($row['fecha_de_publicacion_del'] ?? $row['fecha_de_publicacion_fase_3'] ?? $row['fecha_de_publicacion_fase_2'] ?? null),
+                                    'fecha_cierre' => $this->parseSecopDate($row['fecha_de_recepcion_de'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
+                                    'fecha_apertura_ofertas' => $this->parseSecopDate($row['fecha_de_apertura_efectiva'] ?? $row['fecha_de_apertura_de_respuesta'] ?? null),
+                                    'adenda_fecha' => $this->parseSecopDate($row['fecha_de_ultima_publicacion'] ?? null),
+                                    'fase2_fecha' => $this->parseSecopDate($row['fecha_de_adjudicacion'] ?? null),
+                                    'url_proceso' => is_array($row['urlproceso'] ?? null) ? ($row['urlproceso']['url'] ?? null) : ($row['urlproceso'] ?? null),
+                                ]
+                            );
+
+                            if ($lic->wasRecentlyCreated) {
+                                $newCount++;
+                            } else {
+                                $updatedCount++;
                             }
-                        }
 
-                        $count++;
+                            // Auto-evaluación inmediata con IA: ninguna propuesta queda sin score
+                            if ($lic->score === null) {
+                                try {
+                                    app(\App\Services\GeminiAffinityService::class)->evaluate($lic);
+                                } catch (\Throwable $e) {
+                                    Log::warning("Error en auto-evaluación inmediata #{$lic->id}: " . $e->getMessage());
+                                }
+                            }
+
+                            $totalCount++;
+                        }
                     }
+                } else {
+                    Log::warning("SECOP II API status: " . $response->status());
                 }
-            } else {
-                Log::warning("SECOP II API status: " . $response->status());
             }
         } catch (\Exception $e) {
             Log::error("Error sincronizando SECOP II: " . $e->getMessage());
@@ -293,7 +312,9 @@ class SecopColombiaService
         $purged = $this->purgeExpired('colombia');
 
         return [
-            'synced' => $count,
+            'synced' => $totalCount,
+            'new' => $newCount,
+            'updated' => $updatedCount,
             'purged' => $purged
         ];
     }

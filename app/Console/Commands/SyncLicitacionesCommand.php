@@ -31,8 +31,10 @@ class SyncLicitacionesCommand extends Command
             // 2. Intentar API en vivo con ventana de 5 meses y purga automática
             $live = $secop->syncFromSocrata(100);
             $syncedCount = is_array($live) ? ($live['synced'] ?? 0) : $live;
+            $newCount = is_array($live) ? ($live['new'] ?? 0) : 0;
+            $updatedCount = is_array($live) ? ($live['updated'] ?? 0) : 0;
             $purgedCount = is_array($live) ? ($live['purged'] ?? 0) : 0;
-            $this->info("  Sincronizados {$syncedCount} registros en vivo desde SECOP II (ventana 5 meses).");
+            $this->info("  SECOP II Colombia: {$newCount} nuevas licitaciones ingresadas, {$updatedCount} actualizadas (total consultadas: {$syncedCount}).");
             $this->info("  Depuradas {$purgedCount} propuestas vencidas (respetando Cartera y evaluaciones IA).");
         }
 

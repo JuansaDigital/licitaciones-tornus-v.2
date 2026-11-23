@@ -371,7 +371,59 @@
         </form>
     </div>
 
+    <!-- Barra de Control de Resultados y Criterio de Ordenamiento -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 pt-1 font-mono text-xs">
+        <div class="flex items-center gap-2 text-[#56686b]">
+            <span class="font-bold text-[#00232c]">{{ $licitaciones->total() }}</span>
+            <span>licitaciones activas en radar</span>
+            @if(($selectedSort ?? 'afinidad') === 'recientes')
+                <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-[10px] flex items-center gap-1">
+                    <svg class="w-2.5 h-2.5 text-emerald-600" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
+                    <span>Orden: Más Recientes</span>
+                </span>
+            @endif
+        </div>
 
+        <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-[#56686b] font-semibold mr-1">ORDENAR POR:</span>
+            
+            <a href="{{ route('radar', array_merge(request()->query(), ['sort' => 'afinidad'])) }}"
+               class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1 {{ ($selectedSort ?? 'afinidad') === 'afinidad' ? 'border-[#00232c] bg-[#00232c] text-[#fbfb75] font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}"
+               title="Ordenar por afinidad de IA (Score más alto primero)">
+                <svg class="w-3 h-3 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L9.5 9.5L2 12L9.5 14.5L12 22L14.5 14.5L22 12L14.5 9.5L12 2Z"/>
+                </svg>
+                <span>Mayor Afinidad</span>
+            </a>
+
+            <a href="{{ route('radar', array_merge(request()->query(), ['sort' => 'recientes'])) }}"
+               class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1 {{ ($selectedSort ?? 'afinidad') === 'recientes' ? 'border-emerald-600 bg-emerald-100 text-emerald-950 font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}"
+               title="Ordenar por fecha de publicación (ofertas más nuevas primero)">
+                <svg class="w-3 h-3 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>Más Recientes</span>
+            </a>
+
+            <a href="{{ route('radar', array_merge(request()->query(), ['sort' => 'cierre'])) }}"
+               class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1 {{ ($selectedSort ?? 'afinidad') === 'cierre' ? 'border-rose-400 bg-rose-100 text-rose-950 font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}"
+               title="Ordenar por fecha de cierre más próxima (vencimiento urgente primero)">
+                <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <span>Próximas a Vencer</span>
+            </a>
+
+            <a href="{{ route('radar', array_merge(request()->query(), ['sort' => 'cuantia'])) }}"
+               class="px-2.5 py-1 rounded border transition-colors flex items-center gap-1 {{ ($selectedSort ?? 'afinidad') === 'cuantia' ? 'border-[#00232c] bg-[#00232c] text-[#fbfb75] font-bold shadow-2xs' : 'border-[#e3dbc2] bg-white text-[#56686b] hover:bg-[#f7f2df]' }}"
+               title="Ordenar por cuantía presupuestal (mayor valor primero)">
+                <span>Mayor Presupuesto</span>
+            </a>
+        </div>
+    </div>
 
     <!-- Lista Dinámica de Licitaciones -->
     @if ($licitaciones->isEmpty())
@@ -390,6 +442,16 @@
                             break;
                         }
                     }
+
+                    $isRecent = false;
+                    if (!empty($lic->fecha_publicacion)) {
+                        try {
+                            $isRecent = \Carbon\Carbon::parse($lic->fecha_publicacion)->gte(now()->subDays(3));
+                        } catch (\Throwable $e) {}
+                    }
+                    if (!$isRecent && !empty($lic->created_at)) {
+                        $isRecent = $lic->created_at->gte(now()->subDays(2));
+                    }
                 @endphp
                 <div id="lic-card-{{ $lic->id }}" class="licitacion-card bg-[#fffdf6] border {{ $isPriority ? 'border-[#00232c] ring-1 ring-[#00232c]/20 shadow-sm' : 'border-[#e3dbc2] shadow-xs' }} border-l-4 {{ $isPriority ? 'border-l-[#00232c]' : 'border-l-[#8a252c]' }} rounded p-4 sm:p-5 hover:border-[#0b4a57] transition-all">
                     
@@ -398,6 +460,13 @@
                         
                         <!-- Badges con ancho seguro y whitespace-nowrap para evitar desbordes -->
                         <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-w-0 flex-1">
+                            @if($isRecent)
+                                <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold whitespace-nowrap shrink-0 flex items-center gap-1 shadow-2xs" title="Publicada o ingresada recientemente en compras públicas">
+                                    <svg class="w-2 h-2 text-emerald-600" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3"/></svg>
+                                    <span>NUEVA</span>
+                                </span>
+                            @endif
+
                             @if($isPriority)
                                 <span class="px-2 py-0.5 rounded bg-[#fbfb75] text-[#00232c] border border-[#d4d455] font-bold whitespace-nowrap shrink-0 flex items-center gap-1 shadow-2xs" title="Entidad Prioritaria del Radar">
                                     <svg class="w-3 h-3 text-[#00232c]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

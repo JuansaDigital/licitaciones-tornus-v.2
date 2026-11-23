@@ -273,14 +273,31 @@ class RadarController extends Controller
             ->whereNull('score')
             ->count();
 
-        // ORDENAMIENTO: Cuando el filtro de afinidad está activo ('viable'), ordenar de MAYOR afinidad a MENOR afinidad
-        // (desde 35% en adelante), y colocar luego las pendientes de evaluar ordenadas por fecha de cierre más próxima.
-        if ($selectedIaFilter === 'viable') {
-            $query->orderByRaw("CASE WHEN score IS NOT NULL AND score >= 35 THEN 0 ELSE 1 END ASC")
-                  ->orderBy('score', 'desc')
-                  ->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC");
+        // 9. CRITERIO DE ORDENAMIENTO EN RADAR:
+        // - 'afinidad' (por defecto): Mayor afinidad IA descendente, luego fecha de cierre próxima
+        // - 'recientes': Publicación más reciente primero (para auditar y ver inmediatamente las ofertas recién llegadas)
+        // - 'cierre': Cierre más próximo primero (cronológico urgente)
+        // - 'cuantia': Mayor presupuesto licitado primero
+        $selectedSort = $request->input('sort', 'afinidad');
+
+        if ($selectedSort === 'recientes') {
+            $query->orderByRaw("CASE WHEN fecha_publicacion IS NOT NULL AND fecha_publicacion != '' THEN fecha_publicacion ELSE created_at END DESC")
+                  ->orderBy('id', 'desc');
+        } elseif ($selectedSort === 'cierre') {
+            $query->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC")
+                  ->orderBy('score', 'desc');
+        } elseif ($selectedSort === 'cuantia') {
+            $query->orderBy('cuantia', 'desc')
+                  ->orderBy('score', 'desc');
         } else {
-            $query->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC");
+            // 'afinidad'
+            if ($selectedIaFilter === 'viable') {
+                $query->orderByRaw("CASE WHEN score IS NOT NULL AND score >= 35 THEN 0 ELSE 1 END ASC")
+                      ->orderBy('score', 'desc')
+                      ->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC");
+            } else {
+                $query->orderByRaw("CASE WHEN fecha_cierre IS NOT NULL AND fecha_cierre != '' THEN fecha_cierre ELSE '9999-12-31' END ASC");
+            }
         }
 
         $licitaciones = $query
@@ -309,7 +326,8 @@ class RadarController extends Controller
             'exclusions',
             'priorityEntities',
             'priorityEntityCounts',
-            'selectedPriorityOnly'
+            'selectedPriorityOnly',
+            'selectedSort'
         ));
     }
 
@@ -488,14 +506,19 @@ class RadarController extends Controller
 
         $isPeru = MarketService::isPeru();
         $synced = 0;
+        $newCount = 0;
+        $updatedCount = 0;
         $purged = 0;
 
         if ($isPeru) {
             $synced = $oece->syncFromApi(2);
             $purged = $oece->purgeExpired('peru');
+            $newCount = $synced;
         } else {
             $res = $secop->syncFromSocrata(100);
             $synced = is_array($res) ? ($res['synced'] ?? 0) : $res;
+            $newCount = is_array($res) ? ($res['new'] ?? 0) : 0;
+            $updatedCount = is_array($res) ? ($res['updated'] ?? 0) : 0;
             $purged = is_array($res) ? ($res['purged'] ?? 0) : $secop->purgeExpired('colombia');
         }
 
@@ -510,7 +533,13 @@ class RadarController extends Controller
             }
         }
 
-        return back()->with('status', "Radar sincronizado con éxito (ventana de los últimos 5 meses hasta hoy). Se actualizaron {$synced} procesos en vivo y se depuraron {$purged} licitaciones vencidas no guardadas.");
+        if ($newCount > 0) {
+            $statusMsg = "Sincronización exitosa con " . ($isPeru ? 'SEACE/OECE Perú' : 'SECOP II Colombia') . ": Se detectaron e ingresaron {$newCount} nuevas licitaciones al radar y se actualizaron {$updatedCount} procesos existentes (se depuraron {$purged} licitaciones vencidas).";
+            return redirect()->route('radar', ['sort' => 'recientes'])->with('status', $statusMsg);
+        }
+
+        $statusMsg = "Sincronización exitosa: El radar se encuentra 100% al día con las últimas ofertas publicadas. Se verificaron y actualizaron {$updatedCount} procesos vigentes (se depuraron {$purged} licitaciones vencidas).";
+        return back()->with('status', $statusMsg);
     }
 
     public function exportExcel()
