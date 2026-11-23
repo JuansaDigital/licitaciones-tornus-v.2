@@ -455,8 +455,8 @@
                 @endphp
                 <div id="lic-card-{{ $lic->id }}" class="licitacion-card bg-[#fffdf6] border {{ $isPriority ? 'border-[#00232c] ring-1 ring-[#00232c]/20 shadow-sm' : 'border-[#e3dbc2] shadow-xs' }} border-l-4 {{ $isPriority ? 'border-l-[#00232c]' : 'border-l-[#8a252c]' }} rounded p-4 sm:p-5 hover:border-[#0b4a57] transition-all">
                     
-                    <!-- Fila Superior: Badges a la izquierda y Presupuesto a la derecha -->
-                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2.5">
+                    <!-- Fila Superior: Badges a la izquierda y Presupuesto compacto a la derecha -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2">
                         
                         <!-- Badges con jerarquía visual ordenada -->
                         <div class="flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-w-0 flex-1">
@@ -527,10 +527,10 @@
                             </span>
                         </div>
 
-                        <!-- Presupuesto Oficial & Fechas Clave -->
+                        <!-- Presupuesto Oficial (Alineado en una sola fila compacta con los badges) -->
                         <div class="text-right shrink-0">
                             @if(empty($lic->cuantia) || (float)$lic->cuantia <= 0)
-                                <div class="font-bold text-xs sm:text-[13px] text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded inline-block tracking-tight mb-1 whitespace-nowrap">
+                                <div class="font-bold text-xs sm:text-[13px] text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded tracking-tight whitespace-nowrap">
                                     A definir (RFI / Cotización)
                                 </div>
                             @else
@@ -538,33 +538,11 @@
                                     {{ $lic->formatted_cuantia }}
                                 </div>
                             @endif
-
-                            <div class="text-[11px] font-mono text-[#56686b] whitespace-nowrap">
-                                Cierre de ofertas: <strong class="text-[#00232c]">{{ $lic->fecha_cierre ? (strlen($lic->fecha_cierre) > 10 && substr($lic->fecha_cierre, 11, 5) !== '00:00' ? date('d M · H:i', strtotime($lic->fecha_cierre)) : date('d M', strtotime($lic->fecha_cierre))) : 'Pendiente' }}</strong>
-                            </div>
-                            @if($lic->fecha_publicacion)
-                                <div class="text-[10px] font-mono text-[#56686b] whitespace-nowrap">
-                                    Apertura / Salida: <strong>{{ date('d M', strtotime($lic->fecha_publicacion)) }}</strong>
-                                </div>
-                            @endif
-                            @if(!empty($lic->adenda_fecha))
-                                <div class="text-[10px] font-mono text-amber-800 whitespace-nowrap" title="Última modificación o adenda registrada en el pliego">
-                                    Última adenda: <strong>{{ date('d M', strtotime($lic->adenda_fecha)) }}</strong>
-                                </div>
-                            @endif
-                            @if(!empty($lic->fecha_apertura_ofertas) && $lic->fecha_apertura_ofertas !== $lic->fecha_cierre)
-                                <div class="text-[10px] font-mono text-blue-800 whitespace-nowrap" title="Apertura pública de sobres / inicio de evaluación">
-                                    Apertura ofertas: <strong>{{ date('d M', strtotime($lic->fecha_apertura_ofertas)) }}</strong>
-                                </div>
-                            @endif
-                            <div class="text-[10px] font-mono text-[#9db3b4] mt-0.5 max-w-[220px] truncate ml-auto" title="{{ $lic->codigo_proceso }}">
-                                {{ $lic->codigo_proceso }}
-                            </div>
                         </div>
                     </div>
 
-                    <!-- Objeto / Título Completo sin desborde -->
-                    <h3 class="w-full block text-sm sm:text-base font-bold text-[#00232c] leading-snug line-clamp-2 my-2.5 break-words">
+                    <!-- Objeto / Título con ancho equilibrado para no desbordarse ni pegarse al borde derecho -->
+                    <h3 class="block text-sm sm:text-base font-bold text-[#00232c] leading-snug my-2 break-words max-w-4xl lg:max-w-5xl">
                         {{ (!empty($lic->objeto) && $lic->objeto !== 'No definido') ? $lic->objeto : ($lic->referencia ?: 'Licitación pública en ' . App\Services\MarketService::sourceName()) }}
                     </h3>
 
@@ -602,11 +580,11 @@
                         </div>
                     </div>
 
-                    <!-- Fila Inferior: Ubicación y Entidad a la izquierda; Barra Unificada de Acciones a la derecha -->
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-[#f2ece0]">
+                    <!-- Fila Inferior: Ubicación, Entidad y Metadatos a la izquierda; Barra Unificada de Acciones a la derecha -->
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2.5 border-t border-[#f2ece0]">
                         
-                        <!-- Ubicación, Entidad y Afinidad -->
-                        <div class="text-xs font-mono text-[#56686b] flex flex-wrap items-center gap-2 min-w-0 flex-1">
+                        <!-- Ubicación, Entidad, Fechas Clave y Afinidad -->
+                        <div class="text-xs font-mono text-[#56686b] flex flex-wrap items-center gap-x-2.5 gap-y-1 min-w-0 flex-1">
                             <span class="inline-flex items-center gap-1 font-semibold text-[#00232c] whitespace-nowrap">
                                 <svg class="w-3.5 h-3.5 text-[#00232c]/70 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -615,7 +593,33 @@
                                 <span>{{ $lic->municipio ? $lic->municipio . ' · ' . $lic->departamento : ($lic->departamento ?: 'Nacional') }}</span>
                             </span>
                             <span class="text-[#9db3b4]">·</span>
-                            <span class="truncate max-w-xs sm:max-w-md text-[#56686b]" title="{{ $lic->entidad }}">{{ $lic->entidad }}</span>
+                            <span class="truncate max-w-xs sm:max-w-sm text-[#00232c]" title="{{ $lic->entidad }}">{{ $lic->entidad }}</span>
+
+                            @if($lic->codigo_proceso)
+                                <span class="text-[#9db3b4]">·</span>
+                                <span class="text-[11px] text-[#56686b] font-mono whitespace-nowrap" title="Código de proceso">{{ $lic->codigo_proceso }}</span>
+                            @endif
+
+                            @if($lic->fecha_cierre)
+                                <span class="text-[#9db3b4]">·</span>
+                                <span class="text-[11px] text-[#56686b] whitespace-nowrap">
+                                    Cierre: <strong class="text-[#00232c]">{{ strlen($lic->fecha_cierre) > 10 && substr($lic->fecha_cierre, 11, 5) !== '00:00' ? date('d M · H:i', strtotime($lic->fecha_cierre)) : date('d M', strtotime($lic->fecha_cierre)) }}</strong>
+                                </span>
+                            @endif
+
+                            @if($lic->fecha_publicacion)
+                                <span class="text-[#9db3b4]">·</span>
+                                <span class="text-[11px] text-[#56686b] whitespace-nowrap">
+                                    Apertura: <strong>{{ date('d M', strtotime($lic->fecha_publicacion)) }}</strong>
+                                </span>
+                            @endif
+
+                            @if(!empty($lic->adenda_fecha))
+                                <span class="text-[#9db3b4]">·</span>
+                                <span class="text-[11px] text-amber-800 whitespace-nowrap" title="Última modificación o adenda registrada">
+                                    Adenda: <strong>{{ date('d M', strtotime($lic->adenda_fecha)) }}</strong>
+                                </span>
+                            @endif
 
                             <!-- Badge de Afinidad si ya está evaluado -->
                             <span id="card-affinity-{{ $lic->id }}" class="inline-flex">
